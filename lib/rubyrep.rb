@@ -1,5 +1,5 @@
 $:.unshift File.dirname(__FILE__)
 
-module Rubyrep
+module RR
   
 end
