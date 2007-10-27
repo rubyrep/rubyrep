@@ -1,4 +1,4 @@
-module Rubyrep #:nodoc:
+module RR #:nodoc:
   module VERSION #:nodoc:
     MAJOR = 0
     MINOR = 0
