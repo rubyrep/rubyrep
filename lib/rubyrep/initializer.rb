@@ -8,12 +8,11 @@ module RR
 
     # connection settings for the "right" database
     attr_accessor :right
-
   end
 
   # The settings of the current deployment are passed to Rubyrep through the
   # Initializer::run method.
-  # The method yields the a Configuration object for overwriting of the default
+  # The method yields a Configuration object for overwriting of the default
   # settings.
   # Accordingly a configuration file should look something like this:
   #
@@ -35,9 +34,9 @@ module RR
       @@configuration
     end
 
-    # Yields the current Configuration object to enabl overwriting of
+    # Yields the current Configuration object to enable overwriting of
     # configuration values.
-    # See class documentation for usage example.
+    # Refer to the Initializer class documentation for a usage example.
     def self.run
       yield configuration
     end

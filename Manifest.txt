@@ -6,12 +6,14 @@ Rakefile
 config/hoe.rb
 config/requirements.rb
 lib/rubyrep.rb
+lib/rubyrep/initializer.rb
 lib/rubyrep/version.rb
 log/debug.log
 script/destroy
 script/generate
 script/txt2html
 setup.rb
+spec/initializer_spec.rb
 spec/rubyrep_spec.rb
 spec/spec.opts
 spec/spec_helper.rb
