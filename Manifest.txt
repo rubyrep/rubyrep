@@ -5,6 +5,7 @@ README.txt
 Rakefile
 config/hoe.rb
 config/requirements.rb
+config/test_config.rb
 lib/rubyrep.rb
 lib/rubyrep/initializer.rb
 lib/rubyrep/version.rb
@@ -13,10 +14,12 @@ script/destroy
 script/generate
 script/txt2html
 setup.rb
+spec/database_rake_spec.rb
 spec/initializer_spec.rb
 spec/rubyrep_spec.rb
 spec/spec.opts
 spec/spec_helper.rb
+tasks/database.rake
 tasks/deployment.rake
 tasks/environment.rake
 tasks/rspec.rake
