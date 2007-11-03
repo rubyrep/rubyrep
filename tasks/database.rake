@@ -30,9 +30,9 @@ def drop_database(config)
   end
 end
 
-# Creates the sample scheme in the database specified by the give 
+# Creates the sample schema in the database specified by the give 
 # Configuration object
-def create_sample_scheme(config)
+def create_sample_schema(config)
   ActiveRecord::Base.establish_connection(config)
   ActiveRecord::Base.connection
   
@@ -54,7 +54,7 @@ def create_sample_scheme(config)
   end
 end
 
-def drop_sample_scheme(config)
+def drop_sample_schema(config)
   ActiveRecord::Base.establish_connection(config)
   ActiveRecord::Base.connection
   
@@ -79,19 +79,19 @@ namespace :db do
       drop_database RR::Initializer.configuration.right rescue nil
     end
     
-    desc "Rebuilds the test databases & schemes"
-    task :rebuild => [:drop_scheme, :drop, :create, :create_scheme]
+    desc "Rebuilds the test databases & schemas"
+    task :rebuild => [:drop_schema, :drop, :create, :create_schema]
     
-    desc "Create the sample schemes"
+    desc "Create the sample schemas"
     task :create_schema do
-      create_sample_scheme RR::Initializer.configuration.left rescue nil
-      create_sample_scheme RR::Initializer.configuration.right rescue nil
+      create_sample_schema RR::Initializer.configuration.left rescue nil
+      create_sample_schema RR::Initializer.configuration.right rescue nil
     end
 
-    desc "Drops the sample schemes"
+    desc "Drops the sample schemas"
     task :drop_schema do
-      drop_sample_scheme RR::Initializer.configuration.left rescue nil
-      drop_sample_scheme RR::Initializer.configuration.right rescue nil
+      drop_sample_schema RR::Initializer.configuration.left rescue nil
+      drop_sample_schema RR::Initializer.configuration.right rescue nil
     end
   end
 end
