@@ -80,7 +80,7 @@ namespace :db do
     end
     
     desc "Rebuilds the test databases & schemas"
-    task :rebuild => [:drop_schema, :drop, :create, :create_schema]
+    task :rebuild => [:drop, :create, :create_schema]
     
     desc "Create the sample schemas"
     task :create_schema do
