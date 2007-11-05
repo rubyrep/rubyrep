@@ -56,7 +56,7 @@ def create_sample_schema(config)
     
     add_index :tags, :tag_id rescue nil
     
-    create_table :posts_tags do |t|
+    create_table :posts_tags, :id => false do |t|
       t.column :post_id, :integer
       t.column :tag_id, :integer
     end rescue nil
