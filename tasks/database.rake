@@ -60,6 +60,11 @@ def create_sample_schema(config)
       t.column :post_id, :integer
       t.column :tag_id, :integer
     end rescue nil
+    
+    ActiveRecord::Base.connection.execute(<<-end_sql)
+      ALTER TABLE posts_tags ADD CONSTRAINT posts_tags_pkey 
+	PRIMARY KEY (post_id, tag_id)
+    end_sql
 
     add_index :posts, :author_id rescue nil
   end
