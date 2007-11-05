@@ -42,7 +42,7 @@ module RR
     # config:: hash of connection parameters
     def db_connect(db_arm, config)
       @@active_record_holders[db_arm].establish_connection(config)
-      @connections[							db_arm] = @@active_record_holders[db_arm].connection
+      @connections[db_arm] = @@active_record_holders[db_arm].connection
     end
     private :db_connect
     
