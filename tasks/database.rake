@@ -70,6 +70,8 @@ def drop_sample_schema(config)
   ActiveRecord::Base.connection
   
   ActiveRecord::Schema.define do
+    drop_table :posts_tags
+    drop_table :tags
     drop_table :authors rescue nil
     drop_table :posts rescue nil
   end  
