@@ -49,6 +49,17 @@ def create_sample_schema(config)
       t.column :body, :text
       t.column :private, :boolean, :default => false
     end rescue nil
+    
+    create_table :tags do |t|
+      t.column :name, :string
+    end rescue nil
+    
+    add_index :tags, :tag_id rescue nil
+    
+    create_table :posts_tags do |t|
+      t.column :post_id, :integer
+      t.column :tag_id, :integer
+    end rescue nil
 
     add_index :posts, :author_id rescue nil
   end
@@ -80,7 +91,7 @@ namespace :db do
     end
     
     desc "Rebuilds the test databases & schemas"
-    task :rebuild => [:drop, :create, :create_schema]
+    task :rebuild => [:drop_schema, :drop, :create, :create_schema]
     
     desc "Create the sample schemas"
     task :create_schema do
