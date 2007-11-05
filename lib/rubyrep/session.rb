@@ -17,6 +17,7 @@ module RR
     # Deep copy of the original Configuration object
     attr_accessor :configuration
     
+    # Holds a hash of the dummy ActiveRecord classes
     @@active_record_holders = {:left => Left, :right => Right}
     
     # The "left" ActiveRecord database connection
