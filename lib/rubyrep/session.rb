@@ -1,5 +1,15 @@
 module RR
-  
+
+  # Dummy ActiveRecord descendants to keep the connection objects
+  # (Without it the ActiveRecord datase connection doesn't work)
+  class Left < ActiveRecord::Base
+  end
+
+  # Dummy ActiveRecord descendants to keep the connection objects
+  # (Without it the ActiveRecord datase connection doesn't work)
+  class Right < ActiveRecord::Base
+  end
+
   # This class represents a rubyrep session
   # Creating and holding expensive objective like e. g. database connections
   class Session
@@ -16,17 +26,17 @@ module RR
       # Keep the database configuration for future reference
       # Make a deep copy to isolate from future changes to the configuration
       self.configuration = Marshal.load(Marshal.dump(config))
-      
-      ActiveRecord::Base.establish_connection(configuration.left)
-      self.left = ActiveRecord::Base.connection
+
+      Left.establish_connection(configuration.left)
+      self.left = Left.connection
       
       # If both database configurations point to the same database
       # then don't create the database connection twice
       if configuration.left == configuration.right
 	self.right = self.left
       else
-	ActiveRecord::Base.establish_connection(configuration.right)
-	self.right = ActiveRecord::Base.connection
+	Right.establish_connection(configuration.right)
+	self.right = Right.connection
       end  
     end
   end
