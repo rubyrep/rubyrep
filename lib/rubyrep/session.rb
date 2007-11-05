@@ -44,6 +44,12 @@ module RR
     def db_connect(db_arm, config)
       @@active_record_holders[db_arm].establish_connection(config)
       @connections[db_arm] = @@active_record_holders[db_arm].connection
+      
+      unless ConnectionExtenders.extenders.include? config[:adapter].to_sym
+	raise "No ConnectionExtender available for :#{config[:adapter]}"
+      end
+      mod = ConnectionExtenders.extenders[config[:adapter].to_sym]
+      @connections[db_arm].extend mod
     end
     private :db_connect
     

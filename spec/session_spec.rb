@@ -49,5 +49,20 @@ describe Session do
     session.left.active?.should be_true
     session.left.active?.should be_true
   end
+  
+  it "initializer should include the connection extender into connection" do
+    session = Session.new
+    
+    session.left.kind_of?(ConnectionExtenders::PostgreSQLExtender).should be_true
+  end
+  
+  it "initializer should raise an Exception if no fitting connection extender is available" do
+    Left.should_receive(:establish_connection)
+    Left.should_receive(:connection)
+
+    Initializer.configuration.left[:adapter] = :dummy
+    
+    lambda {session = Session.new}.should raise_error(RuntimeError, /dummy/)
+  end
 end
 

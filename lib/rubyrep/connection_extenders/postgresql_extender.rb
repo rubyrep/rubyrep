@@ -1,9 +1,8 @@
 module RR
   module ConnectionExtenders
 
-    register :postgresql => "PostgreSQLExtender"
-
     module PostgreSQLExtender
+      RR::ConnectionExtenders.register :postgresql => self
     end
   end
 end
