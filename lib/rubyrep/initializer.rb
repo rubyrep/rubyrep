@@ -3,16 +3,18 @@ module RR
   # The Configuration class holds the default configuration options for Rubyrep.
   # Configuration values are changed with the Initializer::run method.
   class Configuration
-    # connection settings for the "left" database
+    # Connection settings for the "left" database.
+    # Takes a similar hash as ActiveRecord::Base.establish_connection.
     attr_accessor :left
 
-    # connection settings for the "right" database
+    # Connection settings for the "right" database
+    # Takes a similar hash as ActiveRecord::Base.establish_connection.
     attr_accessor :right
   end
 
   # The settings of the current deployment are passed to Rubyrep through the
   # Initializer::run method.
-  # The method yields a Configuration object for overwriting of the default
+  # This method yields a Configuration object for overwriting of the default
   # settings.
   # Accordingly a configuration file should look something like this:
   #

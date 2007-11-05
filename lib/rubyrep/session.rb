@@ -1,17 +1,17 @@
 module RR
 
-  # Dummy ActiveRecord descendants to keep the connection objects
-  # (Without it the ActiveRecord datase connection doesn't work)
+  # Dummy ActiveRecord descendant class to keep the connection objects.
+  # (Without it the ActiveRecord datase connection doesn't work.)
   class Left < ActiveRecord::Base
   end
 
-  # Dummy ActiveRecord descendants to keep the connection objects
-  # (Without it the ActiveRecord datase connection doesn't work)
+  # Dummy ActiveRecord descendant class to keep the connection objects.
+  # (Without it the ActiveRecord datase connection doesn't work.)
   class Right < ActiveRecord::Base
   end
 
-  # This class represents a rubyrep session
-  # Creating and holding expensive objective like e. g. database connections
+  # This class represents a rubyrep session.
+  # Creates and holds expensive objects like e. g. database connections.
   class Session
     
     # Deep copy of the original Configuration object
@@ -53,7 +53,7 @@ module RR
     end
     private :db_connect
     
-    # Creates a new rubyrep session based on the provided Configuration
+    # Creates a new rubyrep session with the provided Configuration
     def initialize(config = Initializer::configuration)
       @connections = {:left => nil, :right => nil}
       
