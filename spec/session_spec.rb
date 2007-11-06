@@ -17,6 +17,7 @@ describe Session do
     Right.should_receive(:establish_connection)
     Right.should_receive(:connection)    
   end
+  
   it "initialize should make a deep copy of the Configuration object" do
     mock_active_record
     
@@ -33,7 +34,25 @@ describe Session do
     
     session = Session.new
   end
-  
+    
+  it "'left=' should store a Connection object and 'left' should return it" do
+    mock_active_record
+    
+    session = Session.new
+    
+    session.left = :dummy
+    session.left.should == :dummy
+  end
+
+  it "'right=' should store a Connection object and 'right' should return it" do
+    mock_active_record
+    
+    session = Session.new
+    
+    session.right = :dummy
+    session.right.should == :dummy
+  end
+
   it "initialize shouldn't create the same database connection twice" do
     Left.should_receive(:establish_connection)
     Left.should_receive(:connection)

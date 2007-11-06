@@ -20,20 +20,22 @@ module RR
     # Holds a hash of the dummy ActiveRecord classes
     @@active_record_holders = {:left => Left, :right => Right}
     
-    # The "left" ActiveRecord database connection
+    # Returns the "left" ActiveRecord database connection
     def left
       @connections[:left]
     end
     
+    # Stores the "left" ActiveRecord database connection
     def left=(connection)
-      @connection[:left] = connection
+      @connections[:left] = connection
     end
     
-    # The "right" ActiveRecord database connection
+    # Returns the "right" ActiveRecord database connection
     def right
       @connections[:right]
     end
     
+    # Stores the "right" ActiveRecord database connection
     def right=(connection)
       @connections[:right] = connection
     end
