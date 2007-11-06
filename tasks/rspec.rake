@@ -26,3 +26,10 @@ Spec::Rake::SpecTask.new('spec_doc') do |t|
   t.spec_opts = ["--format", "specdoc"]
 end
 
+desc "Run the specs with RCov"
+Spec::Rake::SpecTask.new('spec_with_rcov') do |t|
+  t.spec_opts = ['--options', "spec/spec.opts"]
+  t.spec_files = FileList['spec/*_spec.rb']
+  t.rcov = true
+  t.rcov_opts = ['--exclude', 'tasks/,spec/,gems/\(?!rubyrep\)']
+end
