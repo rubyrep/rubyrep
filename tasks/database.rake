@@ -59,11 +59,22 @@ def create_sample_schema(config)
     create_table :posts_tags, :id => false do |t|
       t.column :post_id, :integer
       t.column :tag_id, :integer
-    end rescue nil
+    end rescue nil 
     
-    ActiveRecord::Base.connection.execute(<<-end_sql)
+    ActiveRecord::Base.connection.execute(<<-end_sql) rescue nil
       ALTER TABLE posts_tags ADD CONSTRAINT posts_tags_pkey 
 	PRIMARY KEY (post_id, tag_id)
+    end_sql
+
+    create_table :posts_tags_with_inverted_primary_key_index, :id => false do |t|
+      t.column :post_id, :integer
+      t.column :tag_id, :integer
+    end rescue nil 
+    
+    ActiveRecord::Base.connection.execute(<<-end_sql) rescue nil
+      ALTER TABLE posts_tags_with_inverted_primary_key_index 
+        ADD CONSTRAINT posts_tags_with_inverted_primary_key_index_pkey 
+	PRIMARY KEY (tag_id, post_id)
     end_sql
 
     add_index :posts, :author_id rescue nil
@@ -75,8 +86,9 @@ def drop_sample_schema(config)
   ActiveRecord::Base.connection
   
   ActiveRecord::Schema.define do
-    drop_table :posts_tags
-    drop_table :tags
+    drop_table :posts_tags_with_inverted_primary_key_index rescue nil
+    drop_table :posts_tags rescue nil
+    drop_table :tags rescue nil
     drop_table :authors rescue nil
     drop_table :posts rescue nil
   end  
