@@ -86,6 +86,8 @@ def create_sample_schema(config)
   end
 end
 
+# Removes all tables from the sample scheme
+# config: Hash of configuration values for the desired database connection
 def drop_sample_schema(config)
   ActiveRecord::Base.establish_connection(config)
   ActiveRecord::Base.connection
@@ -98,6 +100,57 @@ def drop_sample_schema(config)
     drop_table :authors rescue nil
     drop_table :posts rescue nil
   end  
+end
+
+# The standard ActiveRecord#create method ignores primary key attributes.
+# This module provides a create method that allows manual setting of primary key values.
+module CreateWithKey
+  def self.included(base)
+    base.extend(ClassMethods)
+  end  
+  
+  module ClassMethods
+    # The standard "create" method ignores primary key attributes
+    # This method set's _all_ attributes as provided
+    def create_with_key attributes
+      o = new
+      attributes.each do |key, value|
+	o[key] = value
+      end
+      o.save
+    end
+  end
+end
+
+class Authors < ActiveRecord::Base
+  include CreateWithKey
+end
+
+# Deletes all records and creates the records being same in left and right DB
+def delete_all_and_create_shared_sample_data(connection)
+  Authors.connection = connection
+  Authors.delete_all
+  Authors.create_with_key :id => 1, :name => 'Alice - exists in both databases'
+end
+
+# Reinitializes the sample schema with the sample data
+def create_sample_data
+  session = RR::Session.new
+  
+  # Create records existing in both databases
+  [session.left, session.right].each do |connection|
+    delete_all_and_create_shared_sample_data connection
+  end
+
+  # Create data in left table
+  Authors.connection = session.left
+  Authors.create_with_key :id => 2, :name => 'Bob - left database version'
+  Authors.create_with_key :id => 3, :name => 'Charlie - exists in left database only'
+  
+  # Create data in right table
+  Authors.connection = session.right
+  Authors.create_with_key :id => 2, :name => 'Bob - right database version'
+  Authors.create_with_key :id => 4, :name => 'Dave - exists in right database only'
 end
 
 namespace :db do
@@ -116,12 +169,17 @@ namespace :db do
     end
     
     desc "Rebuilds the test databases & schemas"
-    task :rebuild => [:drop_schema, :drop, :create, :create_schema]
+    task :rebuild => [:drop_schema, :drop, :create, :create_schema, :populate]
     
     desc "Create the sample schemas"
     task :create_schema do
       create_sample_schema RR::Initializer.configuration.left rescue nil
       create_sample_schema RR::Initializer.configuration.right rescue nil
+    end
+    
+    desc "Writes the sample data"
+    task :populate do
+      create_sample_data
     end
 
     desc "Drops the sample schemas"
