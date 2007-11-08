@@ -77,6 +77,11 @@ def create_sample_schema(config)
 	PRIMARY KEY (tag_id, post_id)
     end_sql
 
+    create_table :posts_tags_without_primary_key, :id => false do |t|
+      t.column :post_id, :integer
+      t.column :tag_id, :integer
+    end rescue nil 
+    
     add_index :posts, :author_id rescue nil
   end
 end
@@ -86,6 +91,7 @@ def drop_sample_schema(config)
   ActiveRecord::Base.connection
   
   ActiveRecord::Schema.define do
+    drop_table :posts_tags_without_primary_key
     drop_table :posts_tags_with_inverted_primary_key_index rescue nil
     drop_table :posts_tags rescue nil
     drop_table :tags rescue nil
