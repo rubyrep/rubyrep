@@ -91,7 +91,7 @@ def drop_sample_schema(config)
   ActiveRecord::Base.connection
   
   ActiveRecord::Schema.define do
-    drop_table :posts_tags_without_primary_key
+    drop_table :posts_tags_without_primary_key rescue nil
     drop_table :posts_tags_with_inverted_primary_key_index rescue nil
     drop_table :posts_tags rescue nil
     drop_table :tags rescue nil
