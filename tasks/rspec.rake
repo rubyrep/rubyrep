@@ -10,7 +10,7 @@ rescue LoadError
   puts <<-EOS
 To use rspec for testing you must install rspec gem:
     gem install rspec
-EOS
+  EOS
   exit(0)
 end
 
@@ -20,16 +20,18 @@ Spec::Rake::SpecTask.new do |t|
   t.spec_files = FileList['spec/*_spec.rb']
 end
 
-desc "Generate specdocs for examples for inclusion in RDoc"
-Spec::Rake::SpecTask.new('spec_doc') do |t|
-  t.spec_files = FileList['spec/*_spec.rb']
-  t.spec_opts = ["--format", "specdoc"]
-end
+namespace :spec do
+  desc "Generate specdocs for examples for inclusion in RDoc"
+  Spec::Rake::SpecTask.new('doc') do |t|
+    t.spec_files = FileList['spec/*_spec.rb']
+    t.spec_opts = ["--format", "specdoc"]
+  end
 
-desc "Run the specs with RCov"
-Spec::Rake::SpecTask.new('spec_with_rcov') do |t|
-  t.spec_opts = ['--options', "spec/spec.opts"]
-  t.spec_files = FileList['spec/*_spec.rb']
-  t.rcov = true
-  t.rcov_opts = ['--exclude', 'tasks/,spec/,gems/\(?!rubyrep\)']
+  desc "Run the specs with RCov"
+  Spec::Rake::SpecTask.new('rcov') do |t|
+    t.spec_opts = ['--options', "spec/spec.opts"]
+    t.spec_files = FileList['spec/*_spec.rb']
+    t.rcov = true
+    t.rcov_opts = ['--exclude', 'tasks/,spec/,gems/\(?!rubyrep\)']
+  end
 end
