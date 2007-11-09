@@ -37,52 +37,37 @@ def create_sample_schema(config)
   ActiveRecord::Base.connection
   
   ActiveRecord::Schema.define do
-    create_table :authors do |t|
+    create_table :scanner_records do |t|
       t.column :name, :string, :null => false
     end rescue nil
 
-    add_index :authors, :name, :unique rescue nil
+    add_index :scanner_records, :name, :unique rescue nil
 
-    create_table :posts do |t|
-      t.column :author_id, :integer, :null => false
-      t.column :subject, :string
-      t.column :body, :text
-      t.column :private, :boolean, :default => false
-    end rescue nil
-    
-    create_table :tags do |t|
-      t.column :name, :string
-    end rescue nil
-    
-    add_index :tags, :tag_id rescue nil
-    
-    create_table :posts_tags, :id => false do |t|
-      t.column :post_id, :integer
-      t.column :tag_id, :integer
+    create_table :extender_combined_key, :id => false do |t|
+      t.column :first_id, :integer
+      t.column :second_id, :integer
     end rescue nil 
     
     ActiveRecord::Base.connection.execute(<<-end_sql) rescue nil
-      ALTER TABLE posts_tags ADD CONSTRAINT posts_tags_pkey 
-	PRIMARY KEY (post_id, tag_id)
+      ALTER TABLE extender_combined_key ADD CONSTRAINT extender_combined_key_pkey 
+	PRIMARY KEY (first_id, second_id)
     end_sql
 
-    create_table :posts_tags_with_inverted_primary_key_index, :id => false do |t|
-      t.column :post_id, :integer
-      t.column :tag_id, :integer
+    create_table :extender_inverted_combined_key, :id => false do |t|
+      t.column :first_id, :integer
+      t.column :second_id, :integer
     end rescue nil 
     
     ActiveRecord::Base.connection.execute(<<-end_sql) rescue nil
-      ALTER TABLE posts_tags_with_inverted_primary_key_index 
-        ADD CONSTRAINT posts_tags_with_inverted_primary_key_index_pkey 
-	PRIMARY KEY (tag_id, post_id)
+      ALTER TABLE extender_inverted_combined_key 
+        ADD CONSTRAINT extender_inverted_combined_key_pkey 
+	PRIMARY KEY (second_id, first_id)
     end_sql
 
-    create_table :posts_tags_without_primary_key, :id => false do |t|
-      t.column :post_id, :integer
-      t.column :tag_id, :integer
+    create_table :extender_without_key, :id => false do |t|
+      t.column :first_id, :integer
+      t.column :second_id, :integer
     end rescue nil 
-    
-    add_index :posts, :author_id rescue nil
   end
 end
 
@@ -93,12 +78,10 @@ def drop_sample_schema(config)
   ActiveRecord::Base.connection
   
   ActiveRecord::Schema.define do
-    drop_table :posts_tags_without_primary_key rescue nil
-    drop_table :posts_tags_with_inverted_primary_key_index rescue nil
-    drop_table :posts_tags rescue nil
-    drop_table :tags rescue nil
-    drop_table :authors rescue nil
-    drop_table :posts rescue nil
+    drop_table :extender_without_key rescue nil
+    drop_table :extender_inverted_combined_key rescue nil
+    drop_table :extender_combined_key rescue nil
+    drop_table :scanner rescue nil
   end  
 end
 
@@ -122,15 +105,15 @@ module CreateWithKey
   end
 end
 
-class Authors < ActiveRecord::Base
+class ScannerRecords < ActiveRecord::Base
   include CreateWithKey
 end
 
 # Deletes all records and creates the records being same in left and right DB
 def delete_all_and_create_shared_sample_data(connection)
-  Authors.connection = connection
-  Authors.delete_all
-  Authors.create_with_key :id => 1, :name => 'Alice - exists in both databases'
+  ScannerRecords.connection = connection
+  ScannerRecords.delete_all
+  ScannerRecords.create_with_key :id => 1, :name => 'Alice - exists in both databases'
 end
 
 # Reinitializes the sample schema with the sample data
@@ -143,14 +126,14 @@ def create_sample_data
   end
 
   # Create data in left table
-  Authors.connection = session.left
-  Authors.create_with_key :id => 2, :name => 'Bob - left database version'
-  Authors.create_with_key :id => 3, :name => 'Charlie - exists in left database only'
+  ScannerRecords.connection = session.left
+  ScannerRecords.create_with_key :id => 2, :name => 'Bob - left database version'
+  ScannerRecords.create_with_key :id => 3, :name => 'Charlie - exists in left database only'
   
   # Create data in right table
-  Authors.connection = session.right
-  Authors.create_with_key :id => 2, :name => 'Bob - right database version'
-  Authors.create_with_key :id => 4, :name => 'Dave - exists in right database only'
+  ScannerRecords.connection = session.right
+  ScannerRecords.create_with_key :id => 2, :name => 'Bob - right database version'
+  ScannerRecords.create_with_key :id => 4, :name => 'Dave - exists in right database only'
 end
 
 namespace :db do

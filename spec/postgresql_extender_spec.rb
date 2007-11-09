@@ -11,15 +11,15 @@ describe ConnectionExtenders::PostgreSQLExtender do
 
   it "primary_key_names should return primary key names ordered as per primary key index" do
     session = Session.new
-    session.left.primary_key_names('posts_tags').should == ['post_id', 'tag_id']
+    session.left.primary_key_names('extender_combined_key').should == ['first_id', 'second_id']
     
-    session.left.primary_key_names('posts_tags_with_inverted_primary_key_index') \
-      .should == ['tag_id', 'post_id']
+    session.left.primary_key_names('extender_inverted_combined_key') \
+      .should == ['second_id', 'first_id']
   end
   
   it "primary_key_names should return an empty array for tables without any primary key" do
     session = Session.new
-    session.left.primary_key_names('posts_tags_without_primary_key') \
+    session.left.primary_key_names('extender_without_key') \
       .should == []
   end
   
