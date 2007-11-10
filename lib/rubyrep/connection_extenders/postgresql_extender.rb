@@ -11,7 +11,7 @@ class PGresult
   
   # Returns the row as a column => value hash and moves the cursor to the next row.
   def next_row
-    raise("No more rows.") unless next?
+    raise("no more rows available") unless next?
     row = {}
     @fields ||= self.fields
     @fields.each_with_index do |field, field_index| 

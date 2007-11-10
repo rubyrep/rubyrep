@@ -41,4 +41,10 @@ describe ConnectionExtenders::PostgreSQLExtender do
     result.next?.should be_true
     result.next_row.should == {'id' => "1", 'name' => 'Alice'}
   end
+  
+  it "select_cursor next_row should raise if there are no records" do
+    session = Session.new
+    result = session.left.select_cursor "select * from extender_no_record"
+    lambda {result.next_row}.should raise_error(RuntimeError, 'no more rows available')  
+  end
 end
