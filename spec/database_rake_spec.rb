@@ -25,5 +25,17 @@ describe "database.rake" do
     
     create_database :adapter => "unsupported_adapter"
   end
+  
+  it "drop_database should drop a PostgreSQL database" do
+    should_receive("`").with("dropdb \"dummy\"")
+    
+    drop_database :adapter => "postgresql", :database => "dummy"
+  end
+  
+  it "drop_database should complain about unsupported adapters" do
+    should_receive(:puts).with("adapter unsupported_adapter not supported")
+
+    drop_database :adapter => "unsupported_adapter"
+  end
 end
 

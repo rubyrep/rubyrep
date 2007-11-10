@@ -26,7 +26,7 @@ def drop_database(config)
   when 'postgresql'
     `dropdb "#{config[:database]}"`
   else
-    puts "database #{config[:database]} already exists"
+    puts "adapter #{config[:adapter]} not supported"
   end
 end
 
@@ -68,6 +68,14 @@ def create_sample_schema(config)
       t.column :first_id, :integer
       t.column :second_id, :integer
     end rescue nil 
+    
+    create_table :extender_one_record do |t|
+      t.column :name, :string
+    end rescue nil
+    
+    create_table :extender_no_record do |t|
+      t.column :name, :string
+    end rescue nil
   end
 end
 
@@ -78,6 +86,8 @@ def drop_sample_schema(config)
   ActiveRecord::Base.connection
   
   ActiveRecord::Schema.define do
+    drop_table :extender_no_record rescue nil
+    drop_table :extender_one_record rescue nil
     drop_table :extender_without_key rescue nil
     drop_table :extender_inverted_combined_key rescue nil
     drop_table :extender_combined_key rescue nil
@@ -109,11 +119,20 @@ class ScannerRecords < ActiveRecord::Base
   include CreateWithKey
 end
 
+class ExtenderOneRecord < ActiveRecord::Base
+  set_table_name "extender_one_record"
+  include CreateWithKey
+end
+
 # Deletes all records and creates the records being same in left and right DB
 def delete_all_and_create_shared_sample_data(connection)
   ScannerRecords.connection = connection
   ScannerRecords.delete_all
   ScannerRecords.create_with_key :id => 1, :name => 'Alice - exists in both databases'
+  
+  ExtenderOneRecord.connection = connection
+  ExtenderOneRecord.delete_all
+  ExtenderOneRecord.create_with_key :id => 1, :name => 'Alice'
 end
 
 # Reinitializes the sample schema with the sample data

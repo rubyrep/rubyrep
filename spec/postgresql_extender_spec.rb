@@ -28,4 +28,17 @@ describe ConnectionExtenders::PostgreSQLExtender do
     lambda {session.left.primary_key_names('non_existing_table')} \
       .should raise_error(RuntimeError, 'table does not exist')
   end
+  
+  it "select_cursor should handle zero result queries" do
+    session = Session.new
+    result = session.left.select_cursor "select * from extender_no_record"
+    result.next?.should be_false
+  end
+  
+  it "select_cursor should allow iterating through records" do
+    session = Session.new
+    result = session.left.select_cursor "select * from extender_one_record"
+    result.next?.should be_true
+    result.next_row.should == {'id' => "1", 'name' => 'Alice'}
+  end
 end
