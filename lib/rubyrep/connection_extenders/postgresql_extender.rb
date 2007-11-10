@@ -50,7 +50,6 @@ module RR
 	execute sql, name
       end
       
-      def select2(sql, name = nil) select(sql,name) end
       # Returns an ordered list of primary key column names of the given table
       def primary_key_names(table)
 	row = self.select_one(<<-end_sql)
