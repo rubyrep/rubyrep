@@ -22,7 +22,7 @@ end
 
 namespace :spec do
   desc "Generate specdocs for examples for inclusion in RDoc"
-  Spec::Rake::SpecTask.new('doc') do |t|
+  Spec::Rake::SpecTask.new('docs') do |t|
     t.spec_files = FileList['spec/*_spec.rb']
     t.spec_opts = ["--format", "specdoc"]
   end
