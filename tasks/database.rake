@@ -76,6 +76,12 @@ def create_sample_schema(config)
     create_table :extender_no_record do |t|
       t.column :name, :string
     end rescue nil
+    
+    create_table :extender_type_check do |t|
+      t.column :decimal, :decimal
+      t.column :timestamp, :timestamp
+      t.column :byteea, :binary
+    end rescue nil
   end
 end
 
@@ -86,6 +92,7 @@ def drop_sample_schema(config)
   ActiveRecord::Base.connection
   
   ActiveRecord::Schema.define do
+    drop_table :extender_type_check rescue nil
     drop_table :extender_no_record rescue nil
     drop_table :extender_one_record rescue nil
     drop_table :extender_without_key rescue nil
@@ -124,6 +131,11 @@ class ExtenderOneRecord < ActiveRecord::Base
   include CreateWithKey
 end
 
+class ExtenderTypeCheck <ActiveRecord::Base
+  set_table_name "extender_type_check"
+  include CreateWithKey
+end
+
 # Deletes all records and creates the records being same in left and right DB
 def delete_all_and_create_shared_sample_data(connection)
   ScannerRecords.connection = connection
@@ -133,6 +145,14 @@ def delete_all_and_create_shared_sample_data(connection)
   ExtenderOneRecord.connection = connection
   ExtenderOneRecord.delete_all
   ExtenderOneRecord.create_with_key :id => 1, :name => 'Alice'
+  
+  ExtenderTypeCheck.connection = connection
+  ExtenderTypeCheck.delete_all
+  ExtenderTypeCheck.create_with_key(
+    :id => 1, 
+    :decimal => 1.234,
+    :timestamp => Time.local(2007,"nov",10,20,15,1),
+    :byteea => "dummy")
 end
 
 # Reinitializes the sample schema with the sample data
