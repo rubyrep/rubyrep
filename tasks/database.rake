@@ -43,6 +43,10 @@ def create_sample_schema(config)
 
     add_index :scanner_records, :name, :unique rescue nil
 
+    create_table :scanner_left_records_only do |t|
+      t.column :name, :string, :null => false
+    end rescue nil
+
     # also used in Scanner rspec
     create_table :extender_combined_key, :id => false do |t|
       t.column :first_id, :integer
@@ -100,6 +104,7 @@ def drop_sample_schema(config)
     drop_table :extender_without_key rescue nil
     drop_table :extender_inverted_combined_key rescue nil
     drop_table :extender_combined_key rescue nil
+    drop_table :scanner_left_records_only rescue nil
     drop_table :scanner rescue nil
   end  
 end
@@ -125,6 +130,11 @@ module CreateWithKey
 end
 
 class ScannerRecords < ActiveRecord::Base
+  include CreateWithKey
+end
+
+class ScannerLeftRecordsOnly < ActiveRecord::Base
+  set_table_name "scanner_left_records_only"
   include CreateWithKey
 end
 
@@ -170,11 +180,17 @@ def create_sample_data
   ScannerRecords.connection = session.left
   ScannerRecords.create_with_key :id => 2, :name => 'Bob - left database version'
   ScannerRecords.create_with_key :id => 3, :name => 'Charlie - exists in left database only'
+  ScannerRecords.create_with_key :id => 5, :name => 'Eve - exists in left database only'
   
   # Create data in right table
   ScannerRecords.connection = session.right
   ScannerRecords.create_with_key :id => 2, :name => 'Bob - right database version'
   ScannerRecords.create_with_key :id => 4, :name => 'Dave - exists in right database only'
+  ScannerRecords.create_with_key :id => 6, :name => 'Fred - exists in right database only'
+
+  ScannerLeftRecordsOnly.connection = session.left
+  ScannerLeftRecordsOnly.create_with_key :id => 1, :name => 'Alice'
+  ScannerLeftRecordsOnly.create_with_key :id => 2, :name => 'Bob'
 end
 
 namespace :db do
