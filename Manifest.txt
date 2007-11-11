@@ -10,6 +10,7 @@ lib/rubyrep.rb
 lib/rubyrep/connection_extenders/postgresql_extender.rb
 lib/rubyrep/connection_extenders/registration.rb
 lib/rubyrep/initializer.rb
+lib/rubyrep/scanner.rb
 lib/rubyrep/session.rb
 lib/rubyrep/version.rb
 log/debug.log
@@ -20,7 +21,9 @@ setup.rb
 spec/connection_extenders_spec.rb
 spec/database_rake_spec.rb
 spec/initializer_spec.rb
+spec/postgresql_extender_spec.rb
 spec/rubyrep_spec.rb
+spec/scanner_spec.rb
 spec/session_spec.rb
 spec/spec.opts
 spec/spec_helper.rb
