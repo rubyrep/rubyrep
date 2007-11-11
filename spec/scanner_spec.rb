@@ -13,13 +13,13 @@ describe Scanner do
   it "construct_query should create the query for scanning the table" do
     session = Session.new
     scanner = Scanner.new session, 'scanner_records'
-    scanner.construct_query.should == 'select id, name from scanner_records order by id'
+    scanner.construct_query('scanner_records').should == 'select id, name from scanner_records order by id'
   end
 
   it "construct_query should handle combined primary keys correctly" do
     session = Session.new
     scanner = Scanner.new session, 'extender_combined_key'
-    scanner.construct_query.should == 'select first_id, second_id from extender_combined_key order by first_id, second_id'
+    scanner.construct_query('extender_combined_key').should == 'select first_id, second_id from extender_combined_key order by first_id, second_id'
   end
 
   it "initialize should raise exception if table doesn't have primary keys" do
