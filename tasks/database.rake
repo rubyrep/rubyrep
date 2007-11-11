@@ -43,6 +43,7 @@ def create_sample_schema(config)
 
     add_index :scanner_records, :name, :unique rescue nil
 
+    # also used in Scanner rspec
     create_table :extender_combined_key, :id => false do |t|
       t.column :first_id, :integer
       t.column :second_id, :integer
@@ -64,6 +65,7 @@ def create_sample_schema(config)
 	PRIMARY KEY (second_id, first_id)
     end_sql
 
+    # also used in Scanner rspec
     create_table :extender_without_key, :id => false do |t|
       t.column :first_id, :integer
       t.column :second_id, :integer

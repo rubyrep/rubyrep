@@ -1,14 +1,14 @@
 require File.dirname(__FILE__) + '/spec_helper.rb'
 require 'yaml'
 
-CONFIG_FILE = File.dirname(__FILE__) + '/../config/test_config.rb'
+config_file = File.dirname(__FILE__) + '/../config/test_config.rb'
 
 include RR
 
 describe Session do
   before(:each) do
     Initializer.reset
-    load CONFIG_FILE
+    load config_file
   end
 
   def mock_active_record
