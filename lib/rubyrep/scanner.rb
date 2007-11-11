@@ -1,4 +1,12 @@
 module RR
+
+  # Scans two tables for differences.
+  # Doesn't have any reporting functionality by itself. 
+  # Instead Scanner#run yields all the differences for the caller to do with as it pleases.
+  # Usage:
+  #   1. Create a new Scanner object and hand it all necessary information
+  #   2. Call Scanner#run to do the actual comparison
+  #   3. The block handed to Scanner#run receives all differences
   class Scanner
 
     attr_accessor :session, :left_table, :right_table
