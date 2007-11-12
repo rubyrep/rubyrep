@@ -107,6 +107,8 @@ def drop_sample_schema(config)
     drop_table :scanner_left_records_only rescue nil
     drop_table :scanner rescue nil
   end  
+
+  ActiveRecord::Base.connection.disconnect!
 end
 
 # The standard ActiveRecord#create method ignores primary key attributes.
