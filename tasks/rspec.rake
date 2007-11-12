@@ -34,4 +34,15 @@ namespace :spec do
     t.rcov = true
     t.rcov_opts = ['--exclude', 'tasks/,spec/,gems/\(?!rubyrep\)']
   end
+  
+  begin
+    require 'ruby-prof/task'
+    RubyProf::ProfileTask.new do |t|
+      t.test_files = FileList['spec/*_spec.rb']
+      t.output_dir = 'profile'
+      t.printer = :flat
+      t.min_percent = 1
+    end
+  rescue LoadError
+  end
 end
