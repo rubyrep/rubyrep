@@ -10,6 +10,7 @@ task :statsvn do
   checkout_path = File.dirname(__FILE__)
   svnstats_dir = File.dirname(__FILE__) + '/statsvn'
 
+  system 'svn update'
   cmd = "svn log -v --xml >#{log_path}"
   system cmd
   cmd = "java -jar #{jar_path} -output-dir #{svnstats_dir} -exclude 'setup.rb:website/**' #{log_path} #{checkout_path}"
