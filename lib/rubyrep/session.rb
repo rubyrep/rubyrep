@@ -48,7 +48,7 @@ module RR
       @connections[db_arm] = @@active_record_holders[db_arm].connection
       
       unless ConnectionExtenders.extenders.include? config[:adapter].to_sym
-	raise "No ConnectionExtender available for :#{config[:adapter]}"
+        raise "No ConnectionExtender available for :#{config[:adapter]}"
       end
       mod = ConnectionExtenders.extenders[config[:adapter].to_sym]
       @connections[db_arm].extend mod
@@ -68,9 +68,9 @@ module RR
       # If both database configurations point to the same database
       # then don't create the database connection twice
       if configuration.left == configuration.right
-	self.right = self.left
+        self.right = self.left
       else
-	db_connect :right, configuration.right
+        db_connect :right, configuration.right
       end  
     end
   end

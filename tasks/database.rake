@@ -55,7 +55,7 @@ def create_sample_schema(config)
     
     ActiveRecord::Base.connection.execute(<<-end_sql) rescue nil
       ALTER TABLE extender_combined_key ADD CONSTRAINT extender_combined_key_pkey 
-	PRIMARY KEY (first_id, second_id)
+        PRIMARY KEY (first_id, second_id)
     end_sql
 
     create_table :extender_inverted_combined_key, :id => false do |t|
@@ -66,7 +66,7 @@ def create_sample_schema(config)
     ActiveRecord::Base.connection.execute(<<-end_sql) rescue nil
       ALTER TABLE extender_inverted_combined_key 
         ADD CONSTRAINT extender_inverted_combined_key_pkey 
-	PRIMARY KEY (second_id, first_id)
+        PRIMARY KEY (second_id, first_id)
     end_sql
 
     # also used in Scanner rspec
@@ -124,7 +124,7 @@ module CreateWithKey
     def create_with_key attributes
       o = new
       attributes.each do |key, value|
-	o[key] = value
+        o[key] = value
       end
       o.save
     end

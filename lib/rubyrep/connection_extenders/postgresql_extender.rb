@@ -51,7 +51,7 @@ module RR
       RR::ConnectionExtenders.register :postgresql => self
       
       def self.included(mod)
-	# calling mod.send or mod.class.send didn't work 
+        # calling mod.send or mod.class.send didn't work 
         # (at least during spec runs I got some rspec object / class back insead)
         ActiveRecord::ConnectionAdapters::PostgreSQLAdapter.send :public, :cast_to_time, :unescape_bytea
       end
@@ -61,33 +61,33 @@ module RR
       #   * next? - returns true if there are more rows to read
       #   * next_row - returns the row as a column => value hash and moves the cursor to the next row
       def select_cursor(sql, name = nil)
-	result = execute sql, name
-	result.connection = self
-	result
+        result = execute sql, name
+        result.connection = self
+        result
       end
       
       # Returns an ordered list of primary key column names of the given table
       def primary_key_names(table)
-	row = self.select_one(<<-end_sql)
-	  SELECT relname
-	  FROM pg_class
-	  WHERE relname = '#{table}'
+        row = self.select_one(<<-end_sql)
+          SELECT relname
+          FROM pg_class
+          WHERE relname = '#{table}'
         end_sql
         if row.nil?
-	raise "table does not exist"
+        raise "table does not exist"
       end
-	
+        
       row = self.select_one(<<-end_sql)
-	  SELECT cons.conkey 
-	  FROM pg_class           rel
-	  JOIN pg_constraint      cons ON (rel.oid = cons.conrelid)
-	  WHERE cons.contype = 'p' AND rel.relname = '#{table}'	  
+          SELECT cons.conkey 
+          FROM pg_class           rel
+          JOIN pg_constraint      cons ON (rel.oid = cons.conrelid)
+          WHERE cons.contype = 'p' AND rel.relname = '#{table}'          
       end_sql
       if row.nil?
       return []
     end
     column_parray = row['conkey']
-	
+        
     # Change a Postgres Array of attribute numbers 
     # (returned in String form, e. g.: "{1,2}") into an array of Integers
     column_ids = column_parray.sub(/^\{(.*)\}$/,'\1').split(',').map {|a| a.to_i}

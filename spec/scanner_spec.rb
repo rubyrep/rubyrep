@@ -59,7 +59,7 @@ describe Scanner do
     # so 'right-sided' data are already implicitely tested here
     diff.should == [
       [:conflict, [{'id' => '2', 'name' => 'Bob - left database version'},
-	  {'id' => '2', 'name' => 'Bob - right database version'}]],
+          {'id' => '2', 'name' => 'Bob - right database version'}]],
       [:left, {'id' => '3', 'name' => 'Charlie - exists in left database only'}],
       [:right, {'id' => '4', 'name' => 'Dave - exists in right database only'}],
       [:left, {'id' => '5', 'name' => 'Eve - exists in left database only'}],

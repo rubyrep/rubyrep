@@ -20,7 +20,7 @@ module RR
     #   * right_table: name of the table in the right database. If not given, same like left_table
     def initialize(session, left_table, right_table = nil)
       if session.left.primary_key_names(left_table).empty?
-	raise "Table #{left_table} doesn't have a primary key. Cannot scan."
+        raise "Table #{left_table} doesn't have a primary key. Cannot scan."
       end
       
       self.session, self.left_table, self.right_table = session, left_table, right_table
@@ -38,43 +38,43 @@ module RR
       right_cursor = session.right.select_cursor construct_query(right_table) 
       left_row = right_row = nil
       while left_cursor.next?
-	# if there is no current left row, load the next one
-	left_row ||= left_cursor.next_row
-	# if there is no current right row, _try_ to load the next one
-	right_row ||= right_cursor.next_row if right_cursor.next?
-	if right_row == nil
-	  # no more rows in right, all remaining left rows exist only there
-	  # yield the current unprocessed left row
-	  yield :left, left_row
-	  left_row = nil
-	  while left_cursor.next?
-	    # yield all remaining left rows
-	    yield :left, left_cursor.next_row
+        # if there is no current left row, load the next one
+        left_row ||= left_cursor.next_row
+        # if there is no current right row, _try_ to load the next one
+        right_row ||= right_cursor.next_row if right_cursor.next?
+        if right_row == nil
+          # no more rows in right, all remaining left rows exist only there
+          # yield the current unprocessed left row
+          yield :left, left_row
+          left_row = nil
+          while left_cursor.next?
+            # yield all remaining left rows
+            yield :left, left_cursor.next_row
           end
-	  break
+          break
         end
-	rank = rank_rows left_row, right_row
-	case rank
-	when -1
-	  yield :left, left_row
-	  left_row = nil
-	when 1
-	  yield :right, right_row
-	  right_row = nil
-	when 0
-	  if not left_row == right_row
-	    yield :conflict, [left_row, right_row]
+        rank = rank_rows left_row, right_row
+        case rank
+        when -1
+          yield :left, left_row
+          left_row = nil
+        when 1
+          yield :right, right_row
+          right_row = nil
+        when 0
+          if not left_row == right_row
+            yield :conflict, [left_row, right_row]
           end
-	  left_row = right_row = nil
-	end
-	# check for corresponding right rows
+          left_row = right_row = nil
+        end
+        # check for corresponding right rows
       end
       # if there are any unprocessed current right or left rows, yield them
       yield :left, left_row if left_row != nil
       yield :right, right_row if right_row != nil
       while right_cursor.next?
-	# all remaining rows in right table exist only there --> yield them
-	yield :right, right_cursor.next_row
+        # all remaining rows in right table exist only there --> yield them
+        yield :right, right_cursor.next_row
       end
     end
     
@@ -83,7 +83,7 @@ module RR
       rank = 0
       primary_key_names.any? do |key|
         rank = left_row[key] <=> right_row[key]
-	rank != 0
+        rank != 0
       end
       rank
     end
