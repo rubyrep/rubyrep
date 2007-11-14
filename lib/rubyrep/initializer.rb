@@ -7,9 +7,22 @@ module RR
     # Takes a similar hash as ActiveRecord::Base.establish_connection.
     attr_accessor :left
 
-    # Connection settings for the "right" database
+    # Connection settings for the "right" database.
     # Takes a similar hash as ActiveRecord::Base.establish_connection.
     attr_accessor :right
+    
+    # Connection settings for the "left" Rubyrep proxy.
+    # Takes a hash with the following elements
+    # :host:: Mandatory: host name / IP address on which the proxy is running
+    # :port:: Optional: port on which the proxy is running (default: DatabaseProxy::DEFAULT_PORT)
+    attr_accessor :left_proxy
+    
+    # Connection settings for the "right" Rubyrep proxy.
+    # See left_proxy for details.
+    attr_accessor :right_proxy
+    
+    # General options for the proxy operation mode.
+    attr_accessor :proxy_options
   end
 
   # The settings of the current deployment are passed to Rubyrep through the
