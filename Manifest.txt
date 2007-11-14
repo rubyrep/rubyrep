@@ -9,8 +9,8 @@ config/test_config.rb
 lib/rubyrep.rb
 lib/rubyrep/connection_extenders/postgresql_extender.rb
 lib/rubyrep/connection_extenders/registration.rb
+lib/rubyrep/direct_scanner.rb
 lib/rubyrep/initializer.rb
-lib/rubyrep/scanner.rb
 lib/rubyrep/session.rb
 lib/rubyrep/version.rb
 log/debug.log

@@ -7,7 +7,7 @@ require 'active_record'
 require 'initializer'
 require 'session'
 require 'connection_extenders/registration'
-require 'scanner'
+require 'direct_scanner'
 
 Dir["#{File.dirname(__FILE__)}/rubyrep/connection_extenders/*.rb"].each { |extender| require extender }
 
