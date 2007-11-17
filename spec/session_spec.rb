@@ -9,6 +9,7 @@ describe Session do
   before(:each) do
     Initializer.reset
     load config_file
+    Session.clear_config_cache
   end
 
   def mock_active_record
