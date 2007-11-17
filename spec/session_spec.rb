@@ -57,6 +57,7 @@ describe Session do
   it "initialize shouldn't create the same database connection twice" do
     Left.should_receive(:establish_connection)
     Left.should_receive(:connection)
+    Right.should_not_receive(:establish_connection)
 
     Initializer.configuration.right = Initializer.configuration.left.clone
     
