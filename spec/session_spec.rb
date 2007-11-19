@@ -85,5 +85,19 @@ describe Session do
     
     lambda {session = Session.new}.should raise_error(RuntimeError, /dummy/)
   end
+  
+  it "initializer should create (fake) proxy connections as per configuration" do
+    Initializer::run do |config|
+      config.left.merge!({
+        :proxy_host => '127.0.0.1',
+        :proxy_port => '9876'
+      })
+    end
+    DRbObject.should_receive(:new).with(nil,"druby://127.0.0.1:9876")
+    
+    session = Session.new
+
+    session.right.should be_an_instance_of(FakeDatabaseProxy)
+  end
 end
 

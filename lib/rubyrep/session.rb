@@ -1,3 +1,5 @@
+require 'drb'
+
 module RR
 
   # Dummy ActiveRecord descendant class to keep the connection objects.
@@ -20,41 +22,60 @@ module RR
     # Holds a hash of the dummy ActiveRecord classes
     @@active_record_holders = {:left => Left, :right => Right}
     
-    # Returns the "left" ActiveRecord database connection
+    # Returns the "left" ActiveRecord / proxy database connection
     def left
       @connections[:left]
     end
     
-    # Stores the "left" ActiveRecord database connection
+    # Stores the "left" ActiveRecord /proxy database connection
     def left=(connection)
       @connections[:left] = connection
     end
     
-    # Returns the "right" ActiveRecord database connection
+    # Returns the "right" ActiveRecord / proxy database connection
     def right
       @connections[:right]
     end
     
-    # Stores the "right" ActiveRecord database connection
+    # Stores the "right" ActiveRecord / proxy database connection
     def right=(connection)
       @connections[:right] = connection
     end
     
     # Does the actual work of establishing a database connection
     # db_arm:: should be either :left or :right
-    # config:: hash of connection parameters
-    def db_connect(db_arm, config)
-      @@active_record_holders[db_arm].establish_connection(config)
+    # arm_config:: hash of database connection parameters
+    def db_connect(db_arm, arm_config)
+      @@active_record_holders[db_arm].establish_connection(arm_config)
       @connections[db_arm] = @@active_record_holders[db_arm].connection
       
-      unless ConnectionExtenders.extenders.include? config[:adapter].to_sym
-        raise "No ConnectionExtender available for :#{config[:adapter]}"
+      unless ConnectionExtenders.extenders.include? arm_config[:adapter].to_sym
+        raise "No ConnectionExtender available for :#{arm_config[:adapter]}"
       end
-      mod = ConnectionExtenders.extenders[config[:adapter].to_sym]
+      mod = ConnectionExtenders.extenders[arm_config[:adapter].to_sym]
       @connections[db_arm].extend mod
     end
     private :db_connect
     
+    # Does the actual work of establishing a proxy connection
+    # db_arm:: should be either :left or :right
+    # arm_config:: hash of proxy connection parameters
+    def proxy_connect(db_arm, arm_config)
+      if arm_config.include? :proxy_host 
+        drb_url = "druby://#{arm_config[:proxy_host]}:#{arm_config[:proxy_port]}"
+        @connections[db_arm] = DRbObject.new nil, drb_url
+      else
+        @connections[db_arm] = FakeDatabaseProxy.new
+      end
+    end
+    private :proxy_connect
+    
+    # True if proxy connections are used
+    def proxied?
+      [configuration.left, configuration.right].any? \
+        {|arm_config| arm_config.include? :proxy_host}
+    end
+        
     # Creates a new rubyrep session with the provided Configuration
     def initialize(config = Initializer::configuration)
       @connections = {:left => nil, :right => nil}
@@ -63,14 +84,18 @@ module RR
       # Make a deep copy to isolate from future changes to the configuration
       self.configuration = Marshal.load(Marshal.dump(config))
 
-      db_connect :left, configuration.left
+      # Determine method of connection (either 'proxy_connect' or 'db_connect'
+      connection_method = proxied? ? :proxy_connect : :db_connect
+      
+      # Connect the left database
+      self.send connection_method, :left, configuration.left
       
       # If both database configurations point to the same database
       # then don't create the database connection twice
       if configuration.left == configuration.right
         self.right = self.left
       else
-        db_connect :right, configuration.right
+        self.send connection_method, :right, configuration.right
       end  
     end
   end
