@@ -19,9 +19,6 @@ module RR
     # Deep copy of the original Configuration object
     attr_accessor :configuration
     
-    # Holds a hash of the dummy ActiveRecord classes
-    @@active_record_holders = {:left => Left, :right => Right}
-    
     # Returns the "left" ActiveRecord / proxy database connection
     def left
       @connections[:left]
@@ -46,14 +43,7 @@ module RR
     # db_arm:: should be either :left or :right
     # arm_config:: hash of database connection parameters
     def db_connect(db_arm, arm_config)
-      @@active_record_holders[db_arm].establish_connection(arm_config)
-      @connections[db_arm] = @@active_record_holders[db_arm].connection
-      
-      unless ConnectionExtenders.extenders.include? arm_config[:adapter].to_sym
-        raise "No ConnectionExtender available for :#{arm_config[:adapter]}"
-      end
-      mod = ConnectionExtenders.extenders[arm_config[:adapter].to_sym]
-      @connections[db_arm].extend mod
+      @connections[db_arm] = ConnectionExtenders.db_connect arm_config
     end
     private :db_connect
     

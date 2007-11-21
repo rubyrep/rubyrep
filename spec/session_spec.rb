@@ -9,18 +9,20 @@ describe Session do
   before(:each) do
     Initializer.reset
     load config_file
+
+    # Disable the (spec only) session caching during the session testing
     Session.clear_config_cache
   end
-
-  def mock_active_record
-    Left.should_receive(:establish_connection)
-    Left.should_receive(:connection)
-    Right.should_receive(:establish_connection)
-    Right.should_receive(:connection)    
+  
+  # if number_of_calls is :once, mock ActiveRecord for 1 call
+  # if number_of_calls is :twice, mock ActiveRecord for 2 calls
+  def mock_active_record(number_of_calls)
+    ConnectionExtenders::DummyActiveRecord.should_receive(:establish_connection).send number_of_calls
+    ConnectionExtenders::DummyActiveRecord.should_receive(:connection).send number_of_calls
   end
   
   it "initialize should make a deep copy of the Configuration object" do
-    mock_active_record
+    mock_active_record :twice
     
     session = Session.new
     session.configuration.left.should == Initializer.configuration.left
@@ -31,13 +33,13 @@ describe Session do
   end
   
   it "initialize should establish the database connections" do
-    mock_active_record
+    mock_active_record :twice
     
     session = Session.new
   end
     
   it "'left=' should store a Connection object and 'left' should return it" do
-    mock_active_record
+    mock_active_record :twice
     
     session = Session.new
     
@@ -46,7 +48,7 @@ describe Session do
   end
 
   it "'right=' should store a Connection object and 'right' should return it" do
-    mock_active_record
+    mock_active_record :twice
     
     session = Session.new
     
@@ -55,9 +57,7 @@ describe Session do
   end
 
   it "initialize shouldn't create the same database connection twice" do
-    Left.should_receive(:establish_connection)
-    Left.should_receive(:connection)
-    Right.should_not_receive(:establish_connection)
+    mock_active_record :once
 
     Initializer.configuration.right = Initializer.configuration.left.clone
     
@@ -78,8 +78,7 @@ describe Session do
   end
   
   it "initializer should raise an Exception if no fitting connection extender is available" do
-    Left.should_receive(:establish_connection)
-    Left.should_receive(:connection)
+    mock_active_record :once
 
     Initializer.configuration.left[:adapter] = :dummy
     
