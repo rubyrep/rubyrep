@@ -32,7 +32,10 @@ namespace :spec do
     t.spec_opts = ['--options', "spec/spec.opts"]
     t.spec_files = FileList['spec/*_spec.rb']
     t.rcov = true
-    t.rcov_opts = ['--exclude', 'tasks/,spec/,gems/\(?!rubyrep\)']
+    t.rcov_opts = [
+      '--exclude', 'tasks/,spec/,gems/\(?!rubyrep\)',
+      '--xrefs'
+    ]
   end
   
   begin
