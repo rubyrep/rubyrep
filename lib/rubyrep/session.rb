@@ -2,16 +2,6 @@ require 'drb'
 
 module RR
 
-  # Dummy ActiveRecord descendant class to keep the connection objects.
-  # (Without it the ActiveRecord datase connection doesn't work.)
-  class Left < ActiveRecord::Base
-  end
-
-  # Dummy ActiveRecord descendant class to keep the connection objects.
-  # (Without it the ActiveRecord datase connection doesn't work.)
-  class Right < ActiveRecord::Base
-  end
-
   # This class represents a rubyrep session.
   # Creates and holds expensive objects like e. g. database connections.
   class Session
