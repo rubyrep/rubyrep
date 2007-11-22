@@ -96,7 +96,7 @@ describe Session do
     
     session = Session.new
 
-    session.right.should be_an_instance_of(FakeDatabaseProxy)
+    session.right.should be_an_instance_of(DatabaseProxy)
   end
 end
 

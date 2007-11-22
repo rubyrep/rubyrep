@@ -45,7 +45,7 @@ module RR
         drb_url = "druby://#{arm_config[:proxy_host]}:#{arm_config[:proxy_port]}"
         @connections[db_arm] = DRbObject.new nil, drb_url
       else
-        @connections[db_arm] = FakeDatabaseProxy.new
+        @connections[db_arm] = DatabaseProxy.new
       end
     end
     private :proxy_connect
