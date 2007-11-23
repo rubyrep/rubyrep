@@ -34,47 +34,54 @@ module RR
     #   * type: describes the difference, either :left (row only in left table), :right (row only in right table) or :conflict
     #   * row: for :left or :right cases a hash describing the row; for :conflict an array of left and right row
     def run(&blck)
-      left_cursor = session.left.select_cursor construct_query(left_table)
-      right_cursor = session.right.select_cursor construct_query(right_table) 
-      left_row = right_row = nil
-      while left_cursor.next?
-        # if there is no current left row, load the next one
-        left_row ||= left_cursor.next_row
-        # if there is no current right row, _try_ to load the next one
-        right_row ||= right_cursor.next_row if right_cursor.next?
-        if right_row == nil
-          # no more rows in right, all remaining left rows exist only there
-          # yield the current unprocessed left row
-          yield :left, left_row
-          left_row = nil
-          while left_cursor.next?
-            # yield all remaining left rows
-            yield :left, left_cursor.next_row
+      left_cursor = right_cursor = nil
+      begin
+        left_cursor = session.left.select_cursor construct_query(left_table)
+        right_cursor = session.right.select_cursor construct_query(right_table) 
+        left_row = right_row = nil
+        while left_cursor.next?
+          # if there is no current left row, load the next one
+          left_row ||= left_cursor.next_row
+          # if there is no current right row, _try_ to load the next one
+          right_row ||= right_cursor.next_row if right_cursor.next?
+          if right_row == nil
+            # no more rows in right, all remaining left rows exist only there
+            # yield the current unprocessed left row
+            yield :left, left_row
+            left_row = nil
+            while left_cursor.next?
+              # yield all remaining left rows
+              yield :left, left_cursor.next_row
+            end
+            break
           end
-          break
-        end
-        rank = rank_rows left_row, right_row
-        case rank
-        when -1
-          yield :left, left_row
-          left_row = nil
-        when 1
-          yield :right, right_row
-          right_row = nil
-        when 0
-          if not left_row == right_row
-            yield :conflict, [left_row, right_row]
+          rank = rank_rows left_row, right_row
+          case rank
+          when -1
+            yield :left, left_row
+            left_row = nil
+          when 1
+            yield :right, right_row
+            right_row = nil
+          when 0
+            if not left_row == right_row
+              yield :conflict, [left_row, right_row]
+            end
+            left_row = right_row = nil
           end
-          left_row = right_row = nil
+          # check for corresponding right rows
         end
-        # check for corresponding right rows
-      end
-      # if there are any unprocessed current right or left rows, yield them
-      yield :left, left_row if left_row != nil
-      yield :right, right_row if right_row != nil
-      while right_cursor.next?
-        # all remaining rows in right table exist only there --> yield them
-        yield :right, right_cursor.next_row
+        # if there are any unprocessed current right or left rows, yield them
+        yield :left, left_row if left_row != nil
+        yield :right, right_row if right_row != nil
+        while right_cursor.next?
+          # all remaining rows in right table exist only there --> yield them
+          yield :right, right_cursor.next_row
+        end
+      ensure
+        [left_cursor, right_cursor].each do |cursor|
+          cursor.clear if cursor
+        end
       end
     end
     
