@@ -35,7 +35,6 @@ module RR
     def db_connect(db_arm, arm_config)
       @connections[db_arm] = ConnectionExtenders.db_connect arm_config
     end
-    private :db_connect
     
     # Does the actual work of establishing a proxy connection
     # db_arm:: should be either :left or :right
@@ -50,7 +49,6 @@ module RR
         @connections[db_arm] = DatabaseProxy.new
       end
     end
-    private :proxy_connect
     
     # True if proxy connections are used
     def proxied?
