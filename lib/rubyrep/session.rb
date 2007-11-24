@@ -29,6 +29,9 @@ module RR
       @connections[:right] = connection
     end
     
+    # Hash to hold under either :left or :right the according Drb / direct DatabaseProxy
+    attr_accessor :proxies
+    
     # Does the actual work of establishing a database connection
     # db_arm:: should be either :left or :right
     # arm_config:: hash of database connection parameters
@@ -42,12 +45,13 @@ module RR
     def proxy_connect(db_arm, arm_config)
       if arm_config.include? :proxy_host 
         drb_url = "druby://#{arm_config[:proxy_host]}:#{arm_config[:proxy_port]}"
-        @connections[db_arm] = DRbObject.new nil, drb_url
+        @proxies[db_arm] = DRbObject.new nil, drb_url
       else
-        # If one connection goes through a proxy, so has the next one.
+        # If one connection goes through a proxy, so has the other one.
         # So if necessary, create a "fake" proxy
-        @connections[db_arm] = DatabaseProxy.new
+        @proxies[db_arm] = DatabaseProxy.new
       end
+      @connections[db_arm] = @proxies[db_arm].create_session arm_config
     end
     
     # True if proxy connections are used
@@ -59,6 +63,7 @@ module RR
     # Creates a new rubyrep session with the provided Configuration
     def initialize(config = Initializer::configuration)
       @connections = {:left => nil, :right => nil}
+      @proxies = {:left => nil, :right => nil}
       
       # Keep the database configuration for future reference
       # Make a deep copy to isolate from future changes to the configuration
