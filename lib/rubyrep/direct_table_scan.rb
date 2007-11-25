@@ -2,19 +2,19 @@ module RR
 
   # Scans two tables for differences.
   # Doesn't have any reporting functionality by itself. 
-  # Instead DirectScanner#run yields all the differences for the caller to do with as it pleases.
+  # Instead DirectTableScan#run yields all the differences for the caller to do with as it pleases.
   # Usage:
-  #   1. Create a new DirectScanner object and hand it all necessary information
-  #   2. Call DirectScanner#run to do the actual comparison
-  #   3. The block handed to DirectScanner#run receives all differences
-  class DirectScanner
+  #   1. Create a new DirectTableScan object and hand it all necessary information
+  #   2. Call DirectTableScan#run to do the actual comparison
+  #   3. The block handed to DirectTableScan#run receives all differences
+  class DirectTableScan
 
     attr_accessor :session, :left_table, :right_table
 
     # Cached array of primary key names
     attr_accessor :primary_key_names
 
-    # Creates a new DirectScanner instance
+    # Creates a new DirectTableScan instance
     #   * session: a Session object representing the current database session
     #   * left_table: name of the table in the left database
     #   * right_table: name of the table in the right database. If not given, same like left_table

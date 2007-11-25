@@ -4,7 +4,7 @@ config_file = File.dirname(__FILE__) + '/../config/test_config.rb'
 
 include RR
 
-describe DirectScanner do
+describe DirectTableScan do
   before(:each) do
     Initializer.reset
     load config_file
@@ -12,37 +12,37 @@ describe DirectScanner do
 
   it "construct_query should create the query for scanning the table" do
     session = Session.new
-    scanner = DirectScanner.new session, 'scanner_records'
+    scanner = DirectTableScan.new session, 'scanner_records'
     scanner.construct_query('scanner_records').should == 'select id, name from scanner_records order by id'
   end
 
   it "construct_query should handle combined primary keys correctly" do
     session = Session.new
-    scanner = DirectScanner.new session, 'extender_combined_key'
+    scanner = DirectTableScan.new session, 'extender_combined_key'
     scanner.construct_query('extender_combined_key').should == 'select first_id, second_id from extender_combined_key order by first_id, second_id'
   end
 
   it "initialize should raise exception if table doesn't have primary keys" do
     session = Session.new
-    lambda {DirectScanner.new session, 'extender_without_key'} \
+    lambda {DirectTableScan.new session, 'extender_without_key'} \
       .should raise_error(RuntimeError, "Table extender_without_key doesn't have a primary key. Cannot scan.")
   end
 
   it "initialize should cache the primary keys of the given table" do
     session = Session.new
-    scanner = DirectScanner.new session, 'scanner_records'
+    scanner = DirectTableScan.new session, 'scanner_records'
     scanner.primary_key_names.should == ['id']
   end
 
   it "initialize should use the name of the left table as overwritable default for right table" do
     session = Session.new
-    DirectScanner.new(session, 'scanner_records').right_table.should == 'scanner_records'
-    DirectScanner.new(session, 'scanner_records', 'dummy').right_table.should == 'dummy'
+    DirectTableScan.new(session, 'scanner_records').right_table.should == 'scanner_records'
+    DirectTableScan.new(session, 'scanner_records', 'dummy').right_table.should == 'dummy'
   end
 
   it "rank_rows should calculate the correct rank of rows based on their primary keys" do
     session = Session.new
-    scanner = DirectScanner.new session, 'extender_combined_key'
+    scanner = DirectTableScan.new session, 'extender_combined_key'
     scanner.rank_rows({'first_id' => 1, 'second_id' => 1}, {'first_id' => 1, 'second_id' => 1}).should == 0
     scanner.rank_rows({'first_id' => 1, 'second_id' => 1}, {'first_id' => 1, 'second_id' => 2}).should == -1
     scanner.rank_rows({'first_id' => 2, 'second_id' => 1}, {'first_id' => 1, 'second_id' => 1}).should == 1
@@ -50,7 +50,7 @@ describe DirectScanner do
 
   it "run should compare all the records in the table" do
     session = Session.new
-    scanner = DirectScanner.new session, 'scanner_records'
+    scanner = DirectTableScan.new session, 'scanner_records'
     diff = []
     scanner.run do |type, row|
       diff.push [type, row]
@@ -70,7 +70,7 @@ describe DirectScanner do
   it "run should handle one-sided data" do
     # separate test case for left-sided data; right-sided data are already covered in the general test
     session = Session.new
-    scanner = DirectScanner.new session, 'scanner_left_records_only'
+    scanner = DirectTableScan.new session, 'scanner_left_records_only'
     diff = []
     scanner.run do |type, row|
       diff.push [type, row]
