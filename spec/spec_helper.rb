@@ -30,3 +30,12 @@ module RR
 
   end
 end
+
+def proxify!
+  Initializer::run do |config|
+    config.left.merge!({
+      :proxy_host => '127.0.0.1',
+      :proxy_port => '9876'
+    })
+  end
+end
