@@ -29,6 +29,17 @@ module RR
       session.destroy
       session_register.delete session
     end
+    
+    # Returns 'pong'. Used to verify that a working proxy is running.
+    def ping
+      'pong'
+    end
+    
+    # Terminates this proxy
+    def terminate!
+      # AL: The only way I could find to kill the main thread from a sub thread
+      Thread.main.raise SystemExit
+    end
   end
 end
 

@@ -36,4 +36,16 @@ describe DatabaseProxy do
 
     proxy.session_register.include?(session).should == false
   end
+  
+  it "ping should respond with 'pong'" do
+    proxy = DatabaseProxy.new
+    proxy.ping.should == 'pong' 
+  end
+  
+  it "terminate should exit the proxy" do
+    proxy = DatabaseProxy.new
+    Thread.main.should_receive(:raise).with(SystemExit)
+    
+    proxy.terminate!
+  end
 end
