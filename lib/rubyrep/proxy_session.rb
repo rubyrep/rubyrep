@@ -23,5 +23,10 @@ module RR
     def destroy
       self.connection.disconnect!
     end
+    
+    # Returns an array of primary key names for the given table
+    def primary_key_names(table)
+      self.connection.primary_key_names table
+    end
   end
 end

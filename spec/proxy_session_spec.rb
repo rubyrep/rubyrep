@@ -21,4 +21,10 @@ describe ProxySession do
 
     session.connection.active?.should == false
   end
+  
+  it "primary_key_names should return the primary keys of the given table" do
+    session = ProxySession.new Initializer.configuration.left
+    
+    session.primary_key_names('scanner_records').should == ['id']
+  end
 end
