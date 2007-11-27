@@ -49,6 +49,11 @@ module RR
       @@configuration
     end
 
+    # Allows direct overwriting of the Configuration
+    def self.configuration=(configuration)
+      @@configuration = configuration
+    end
+
     # Yields the current Configuration object to enable overwriting of
     # configuration values.
     # Refer to the Initializer class documentation for a usage example.

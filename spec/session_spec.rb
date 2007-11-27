@@ -89,7 +89,7 @@ describe Session do
     proxify!
     dummy_proxy = Object.new
     dummy_proxy.should_receive(:create_session).and_return(:dummy_proxy_session)
-    DRbObject.should_receive(:new).with(nil,"druby://127.0.0.1:9876").and_return(dummy_proxy)
+    DRbObject.should_receive(:new).with(nil,"druby://localhost:9876").and_return(dummy_proxy)
     
     session = Session.new
     

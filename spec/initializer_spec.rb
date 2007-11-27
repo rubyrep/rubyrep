@@ -31,6 +31,12 @@ describe Initializer do
     Initializer::configuration.left.should == :dummy
   end
   
+  it "configuration= should set a new configuration" do
+    make_dummy_configuration_change
+    Initializer::configuration = :dummy_config
+    Initializer::configuration.should == :dummy_config
+  end
+  
   it "reset should clear the configuration" do
     make_dummy_configuration_change
     Initializer::reset

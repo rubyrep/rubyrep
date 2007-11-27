@@ -11,11 +11,6 @@ require 'drb'
 $LOAD_PATH.unshift File.join(File.dirname(__FILE__), "..", "lib")
 require 'rubyrep'
 
-SPEC_PROXY_CONFIG = {
-  :proxy_host => '127.0.0.1',
-  :proxy_port => '9876'
-}
-
 module RR
   class Session
     
@@ -38,16 +33,39 @@ module RR
   end
 end
 
+# Caches the proxied database configuration
+$proxied_config = nil
+
+# Retrieves the proxied database config as specified in config/proxied_test_config.rb
+def get_proxied_config
+  unless $proxied_config
+    # load the proxied config but ensure that the original configuration is restored
+    old_config = RR::Initializer.configuration
+    RR::Initializer.reset
+    $proxied_config = nil
+    begin
+      load File.dirname(__FILE__) + '/../config/proxied_test_config.rb'
+      $proxied_config = RR::Initializer.configuration
+    ensure
+      RR::Initializer.configuration = old_config
+    end
+  end
+  $proxied_config
+end
+
 # Set to true if the proxy as per SPEC_PROXY_CONFIG is running 
 $proxy_confirmed_running = false
 
-# Stars a proxy as per SPEC_PROXY_CONFIG (but only if not yet running).
+# Starts a proxy as per left proxy settings defined in config/proxied_test_config.rb.
+# Only starts the proxy though if none is running yet at the according host / port.
 # If it starts a proxy child process, it also prepares automatic termination
 # after the spec run is finished.
 def ensure_proxy
   # only execute the network verification once per spec run
   unless $proxy_confirmed_running
-    drb_url = "druby://#{SPEC_PROXY_CONFIG[:proxy_host]}:#{SPEC_PROXY_CONFIG[:proxy_port]}"
+    proxied_config = get_proxied_config
+  
+    drb_url = "druby://#{proxied_config.left[:proxy_host]}:#{proxied_config.left[:proxy_port]}"
     # try to connect to the proxy
     begin
       proxy = DRbObject.new nil, drb_url
@@ -56,7 +74,7 @@ def ensure_proxy
     rescue DRb::DRbConnError => e
       # Proxy not yet running ==> start it
       rrproxy_path = File.join(File.dirname(__FILE__), "..", "bin", "rrproxy.rb")
-      cmd = "ruby #{rrproxy_path} -h #{SPEC_PROXY_CONFIG[:proxy_host]} -p #{SPEC_PROXY_CONFIG[:proxy_port]}"
+      cmd = "ruby #{rrproxy_path} -h #{proxied_config.left[:proxy_host]} -p #{proxied_config.left[:proxy_port]}"
       Thread.new {system cmd}
       
       maximum_startup_time = 5 # maximum time in seconds for the proxy to start
@@ -76,7 +94,7 @@ def ensure_proxy
         time += waiting_time
       end
       if ping_response == 'pong'
-        puts "Proxy started (took #{time} seconds)"
+        #puts "Proxy started (took #{time} seconds)"
         # Ensure that the started proxy is terminated with the completion of the spec run.
         at_exit do
           proxy = DRbObject.new nil, drb_url
@@ -92,9 +110,8 @@ def ensure_proxy
   end
 end
 
-# Adds proxy options to the left database configuration
+# Get the proxied database configuration
 def proxify!
-  Initializer::run do |config|
-    config.left.merge!(SPEC_PROXY_CONFIG)
-  end
+  RR::Initializer.reset
+  RR::Initializer.configuration = get_proxied_config
 end
