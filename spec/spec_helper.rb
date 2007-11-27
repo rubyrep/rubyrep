@@ -87,6 +87,7 @@ def ensure_proxy
         begin
           proxy = DRbObject.new nil, drb_url
           ping_response = proxy.ping
+          break
         rescue DRb::DRbConnError => e
           # do nothing (just try again)
         end
