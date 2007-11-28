@@ -53,6 +53,22 @@ def get_proxied_config
   $proxied_config
 end
 
+# If true, start proxy as external process (more realistic test but also slower).
+# Otherwise start in the current process as thread.
+START_PROXY_AS_EXTERNAL_PROCESS = false
+
+# Starts a proxy under the given host and post
+def start_proxy(host, port)
+  if START_PROXY_AS_EXTERNAL_PROCESS
+    rrproxy_path = File.join(File.dirname(__FILE__), "..", "bin", "rrproxy.rb")
+    cmd = "ruby #{rrproxy_path} -h #{host} -p #{port}"
+    Thread.new {system cmd}    
+  else
+    url = "druby://#{host}:#{port}"
+    DRb.start_service(url, DatabaseProxy.new)    
+  end
+end
+
 # Set to true if the proxy as per SPEC_PROXY_CONFIG is running 
 $proxy_confirmed_running = false
 
@@ -73,9 +89,7 @@ def ensure_proxy
       $proxy_confirmed_running = true
     rescue DRb::DRbConnError => e
       # Proxy not yet running ==> start it
-      rrproxy_path = File.join(File.dirname(__FILE__), "..", "bin", "rrproxy.rb")
-      cmd = "ruby #{rrproxy_path} -h #{proxied_config.left[:proxy_host]} -p #{proxied_config.left[:proxy_port]}"
-      Thread.new {system cmd}
+      start_proxy proxied_config.left[:proxy_host], proxied_config.left[:proxy_port]
       
       maximum_startup_time = 5 # maximum time in seconds for the proxy to start
       waiting_time = 0.1 # time to wait between connection attempts
