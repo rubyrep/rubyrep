@@ -55,11 +55,11 @@ end
 
 # If true, start proxy as external process (more realistic test but also slower).
 # Otherwise start in the current process as thread.
-START_PROXY_AS_EXTERNAL_PROCESS = false
+$start_proxy_as_external_process ||= false
 
 # Starts a proxy under the given host and post
 def start_proxy(host, port)
-  if START_PROXY_AS_EXTERNAL_PROCESS
+  if $start_proxy_as_external_process
     rrproxy_path = File.join(File.dirname(__FILE__), "..", "bin", "rrproxy.rb")
     cmd = "ruby #{rrproxy_path} -h #{host} -p #{port}"
     Thread.new {system cmd}    
