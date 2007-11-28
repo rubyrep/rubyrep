@@ -19,7 +19,8 @@ module RR
     #   * left_table: name of the table in the left database
     #   * right_table: name of the table in the right database. If not given, same like left_table
     def initialize(session, left_table, right_table = nil)
-      
+      raise "#{self.class.name} only works with proxied sessions" unless session.proxied?
+
       if session.left.primary_key_names(left_table).empty?
         raise "Table #{left_table} doesn't have a primary key. Cannot scan."
       end
