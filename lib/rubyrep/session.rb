@@ -34,15 +34,17 @@ module RR
     
     # Does the actual work of establishing a database connection
     # db_arm:: should be either :left or :right
-    # arm_config:: hash of database connection parameters
-    def db_connect(db_arm, arm_config)
+    # config:: the rubyrep Configuration
+    def db_connect(db_arm, config)
+      arm_config = config.send db_arm
       @connections[db_arm] = ConnectionExtenders.db_connect arm_config
     end
     
     # Does the actual work of establishing a proxy connection
     # db_arm:: should be either :left or :right
-    # arm_config:: hash of proxy connection parameters
-    def proxy_connect(db_arm, arm_config)
+    # config:: the rubyrep Configuration
+    def proxy_connect(db_arm, config)
+      arm_config = config.send db_arm
       if arm_config.include? :proxy_host 
         drb_url = "druby://#{arm_config[:proxy_host]}:#{arm_config[:proxy_port]}"
         @proxies[db_arm] = DRbObject.new nil, drb_url
@@ -51,7 +53,7 @@ module RR
         # So if necessary, create a "fake" proxy
         @proxies[db_arm] = DatabaseProxy.new
       end
-      @connections[db_arm] = @proxies[db_arm].create_session arm_config
+      @connections[db_arm] = @proxies[db_arm].create_session arm_config, config.proxy_options
     end
     
     # True if proxy connections are used
@@ -72,15 +74,15 @@ module RR
       # Determine method of connection (either 'proxy_connect' or 'db_connect'
       connection_method = proxied? ? :proxy_connect : :db_connect
       
-      # Connect the left database
-      self.send connection_method, :left, configuration.left
+      # Connect the left database / proxy
+      self.send connection_method, :left, configuration
       
       # If both database configurations point to the same database
       # then don't create the database connection twice
       if configuration.left == configuration.right
         self.right = self.left
       else
-        self.send connection_method, :right, configuration.right
+        self.send connection_method, :right, configuration
       end  
     end
   end

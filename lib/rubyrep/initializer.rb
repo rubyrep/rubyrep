@@ -23,6 +23,14 @@ module RR
     
     # General options for the proxy operation mode.
     attr_accessor :proxy_options
+    
+    # initialize attributes with empty hashes
+    def initialize
+      [:left, :right, :left_proxy, :right_proxy, :proxy_options].each do |hash_attr|
+        eval "self.#{hash_attr}= {}"
+      end
+    end
+    
   end
 
   # The settings of the current deployment are passed to Rubyrep through the

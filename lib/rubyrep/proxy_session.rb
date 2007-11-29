@@ -14,9 +14,13 @@ module RR
     # The database connection
     attr_accessor :connection
     
-    # Create a session on the proxy side according to provided configuration hash
-    def initialize(config)
+    # hash of proxy options
+    attr_accessor :proxy_options
+    
+    # Create a session on the proxy side according to provided configuration hash and proxy_options hash
+    def initialize(config, proxy_options)
       self.connection = ConnectionExtenders.db_connect config
+      self.proxy_options = proxy_options
     end
     
     # Destroys the session

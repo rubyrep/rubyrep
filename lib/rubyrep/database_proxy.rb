@@ -17,9 +17,9 @@ module RR
       self.session_register = {}
     end
     
-    # Create a ProxySession according to provided configuration Hash
-    def create_session(config)
-      session = ProxySession.new config
+    # Create a ProxySession according to provided configuration Hash and proxy_optios Hash
+    def create_session(config, proxy_options)
+      session = ProxySession.new config, proxy_options
       self.session_register[session] = session
       session
     end

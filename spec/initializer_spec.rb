@@ -40,7 +40,7 @@ describe Initializer do
   it "reset should clear the configuration" do
     make_dummy_configuration_change
     Initializer::reset
-    Initializer::configuration.left.should be_nil
+    Initializer::configuration.left.should {}
   end
 end
 

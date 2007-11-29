@@ -17,7 +17,7 @@ describe DatabaseProxy do
 
   def create_proxy_and_session
     proxy = DatabaseProxy.new
-    session = proxy.create_session Initializer.configuration.left
+    session = proxy.create_session Initializer.configuration.left, {}
     return proxy, session
   end
 
