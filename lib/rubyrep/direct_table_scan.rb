@@ -8,6 +8,7 @@ module RR
   #   2. Call DirectTableScan#run to do the actual comparison
   #   3. The block handed to DirectTableScan#run receives all differences
   class DirectTableScan
+    include TableScanHelper
 
     attr_accessor :session, :left_table, :right_table
 
@@ -85,16 +86,6 @@ module RR
       end
     end
     
-    # Compare the primary keys of left_row and right_row to determine their rank
-    def rank_rows(left_row, right_row)
-      rank = 0
-      primary_key_names.any? do |key|
-        rank = left_row[key] <=> right_row[key]
-        rank != 0
-      end
-      rank
-    end
-
     # Generates the SQL query to iterate through the given target table.
     # Note: The column & order part of the query are always generated based on left_table.
     def construct_query(target_table)

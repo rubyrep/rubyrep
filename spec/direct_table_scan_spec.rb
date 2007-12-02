@@ -40,14 +40,6 @@ describe DirectTableScan do
     DirectTableScan.new(session, 'scanner_records', 'dummy').right_table.should == 'dummy'
   end
 
-  it "rank_rows should calculate the correct rank of rows based on their primary keys" do
-    session = Session.new
-    scanner = DirectTableScan.new session, 'extender_combined_key'
-    scanner.rank_rows({'first_id' => 1, 'second_id' => 1}, {'first_id' => 1, 'second_id' => 1}).should == 0
-    scanner.rank_rows({'first_id' => 1, 'second_id' => 1}, {'first_id' => 1, 'second_id' => 2}).should == -1
-    scanner.rank_rows({'first_id' => 2, 'second_id' => 1}, {'first_id' => 1, 'second_id' => 1}).should == 1
-  end
-
   it "run should compare all the records in the table" do
     session = Session.new
     scanner = DirectTableScan.new session, 'scanner_records'
