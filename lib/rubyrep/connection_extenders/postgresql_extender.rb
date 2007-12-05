@@ -28,10 +28,10 @@ class PGresult
       # totally haywire
       case self.type(field_index)
       when ActiveRecord::ConnectionAdapters::PostgreSQLAdapter::BYTEA_COLUMN_TYPE_OID
-        value = connection.unescape_bytea(value)
+        value = connection.public_unescape_bytea(value)
       when ActiveRecord::ConnectionAdapters::PostgreSQLAdapter::TIMESTAMPTZOID, 
           ActiveRecord::ConnectionAdapters::PostgreSQLAdapter::TIMESTAMPOID
-        value = connection.cast_to_time(value)
+        value = connection.public_cast_to_time(value)
       when ActiveRecord::ConnectionAdapters::PostgreSQLAdapter::NUMERIC_COLUMN_TYPE_OID
         value = value.to_d if value.respond_to?(:to_d)
       end
@@ -49,12 +49,20 @@ module RR
     # Provides various PostgreSQL specific functionality required by Rubyrep.
     module PostgreSQLExtender
       RR::ConnectionExtenders.register :postgresql => self
+
+# Commented as didn't make ActiveRecord cast_to_time and unescape_bytea reliably public      
+#      def self.included(mod)
+#        # calling mod.send or mod.class.send didn't work 
+#        # (at least during spec runs I got some rspec object / class back insead)
+#        ActiveRecord::ConnectionAdapters::PostgreSQLAdapter.send :public, :cast_to_time, :unescape_bytea
+#      end
       
-      def self.included(mod)
-        # calling mod.send or mod.class.send didn't work 
-        # (at least during spec runs I got some rspec object / class back insead)
-        ActiveRecord::ConnectionAdapters::PostgreSQLAdapter.send :public, :cast_to_time, :unescape_bytea
-      end
+      # A stupid way to make unescape_byteea public, unfortunately using self.included together with public method didn't work reliably
+      def public_unescape_bytea(value); unescape_bytea(value); end
+
+      # A stupid way to make cast_to_time public, unfortunately using self.included together with public method didn't work reliably
+      def public_cast_to_time(value); cast_to_time(value); end
+      
       # Executes the given sql query with the otional name written in the 
       # ActiveRecord log file.
       # Returns the results as a Cursor object supporting

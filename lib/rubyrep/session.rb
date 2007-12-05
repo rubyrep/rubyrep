@@ -53,7 +53,7 @@ module RR
         # So if necessary, create a "fake" proxy
         @proxies[db_arm] = DatabaseProxy.new
       end
-      @connections[db_arm] = @proxies[db_arm].create_session arm_config, config.proxy_options
+      @connections[db_arm] = @proxies[db_arm].create_session arm_config
     end
     
     # True if proxy connections are used

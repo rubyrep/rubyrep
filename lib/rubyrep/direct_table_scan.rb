@@ -7,28 +7,23 @@ module RR
   #   1. Create a new DirectTableScan object and hand it all necessary information
   #   2. Call DirectTableScan#run to do the actual comparison
   #   3. The block handed to DirectTableScan#run receives all differences
-  class DirectTableScan
+  class DirectTableScan < TableScan
     include TableScanHelper
 
-    attr_accessor :session, :left_table, :right_table
-
-    # Cached array of primary key names
-    attr_accessor :primary_key_names
+    # The TypeCastingCursor for the left table
+    attr_accessor :left_caster
+    
+    # The TypeCastingCursor for the right table
+    attr_accessor :right_caster
 
     # Creates a new DirectTableScan instance
     #   * session: a Session object representing the current database session
     #   * left_table: name of the table in the left database
     #   * right_table: name of the table in the right database. If not given, same like left_table
     def initialize(session, left_table, right_table = nil)
-      if session.left.primary_key_names(left_table).empty?
-        raise "Table #{left_table} doesn't have a primary key. Cannot scan."
-      end
-      
-      self.session, self.left_table, self.right_table = session, left_table, right_table
-      self.right_table ||= self.left_table
-      self.primary_key_names = session.left.primary_key_names left_table
+      super
     end
-
+    
     # Runs the table scan.
     # Calls the block for every found difference.
     # Differences are yielded with 2 parameters
@@ -37,8 +32,8 @@ module RR
     def run(&blck)
       left_cursor = right_cursor = nil
       begin
-        left_cursor = session.left.select_cursor construct_query(left_table)
-        right_cursor = session.right.select_cursor construct_query(right_table) 
+        left_cursor = TypeCastingCursor.new(session.left, left_table, session.left.select_cursor(construct_query(left_table)))
+        right_cursor = TypeCastingCursor.new(session.right, right_table, session.right.select_cursor(construct_query(right_table))) 
         left_row = right_row = nil
         while left_cursor.next?
           # if there is no current left row, load the next one

@@ -1,10 +1,16 @@
 $LOAD_PATH.unshift File.dirname(__FILE__) + '/..'
 
+require 'drb'
+
 require 'rubyrep'
 
 module RR
   # The proxy to a remote database connection
   class DatabaseProxy
+    
+    # Ensure that the proxy object always stays on server side and only remote
+    # references are returned to the client.
+    include DRbUndumped 
     
     # Default tcp port to listen on
     DEFAULT_PORT = 9876
@@ -18,8 +24,8 @@ module RR
     end
     
     # Create a ProxySession according to provided configuration Hash and proxy_optios Hash
-    def create_session(config, proxy_options)
-      session = ProxySession.new config, proxy_options
+    def create_session(config)
+      session = ProxySession.new config
       self.session_register[session] = session
       session
     end

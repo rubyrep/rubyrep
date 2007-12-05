@@ -7,4 +7,8 @@ RR::Initializer::run do |config|
     :proxy_host  => 'localhost',   
     :proxy_port => '9876',   
   })
+
+  config.proxy_options = {
+    :block_size => 2
+  }
 end

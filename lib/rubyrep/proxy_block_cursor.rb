@@ -1,0 +1,98 @@
+$LOAD_PATH.unshift File.dirname(__FILE__) + '/..'
+
+require 'digest/sha1'
+
+require 'rubyrep'
+
+module RR
+  
+  # This class is used to scan a table in blocks.
+  # Calculates the checksums of the scanned blocks.
+  class ProxyBlockCursor < ProxyCursor
+    
+    include TableScanHelper
+    
+    # The current Digest
+    attr_accessor :digest
+    
+    # nil if the last run of the checksum method left no unprocessed row.
+    # Otherwise the left over row of that checksum run
+    attr_accessor :last_row
+
+    # Creates a new cursor
+    #   * session: the current proxy session
+    #   * table: table_name
+    def initialize(session, table)
+      super
+    end
+    
+    # Returns true if the current cursor has unprocessed rows
+    def next?
+      last_row != nil or cursor.next?
+    end
+    
+    # Returns the cursor's next row
+    def next_row
+      if self.last_row
+        row, self.last_row = self.last_row, nil
+      else
+        row = cursor.next_row
+      end
+      row
+    end
+    
+    # Updates the current checksum based on the provided row hash
+    def update_checksum(row)
+      self.digest << Marshal.dump(row)
+    end
+    
+    # Reinitializes the checksum
+    def reset_checksum
+      self.digest = Digest::SHA1.new
+    end
+    
+    # Returns the current checksum
+    def current_checksum
+      self.digest.hexdigest
+    end
+    
+    # Calculates the checksum from the current row up to the row specified by options.
+    # options is a hash including either 
+    #   * :block_size: The number of rows to scan.
+    #   * :max_row: A row hash of primary key columns specifying the maximum record to scan.
+    # Returns the last row read and the checksum.
+    def checksum(options = {})
+      reset_checksum
+      return_row = row = nil
+
+      if options.include? :block_size
+        block_size = options[:block_size]
+        raise ":block_size must be greater than 0" unless block_size > 0
+        row_index = 0
+        while row_index < block_size and next?
+          row = next_row
+          update_checksum(row)
+          row_index += 1
+        end
+        return_row = row
+      elsif options.include? :max_row
+        max_row = options[:max_row]
+        while next?
+          row = next_row
+          rank = rank_rows row, max_row
+          if rank > 0 
+            # row > max_row ==> save the current row and break off
+            self.last_row = row
+            break
+          end
+          update_checksum(row)
+          return_row, row = row, nil
+        end  
+      else
+        raise "options must include either :block_size or :max_row"
+      end
+      return_keys = return_row.reject {|key, | not primary_key_names.include? key} if return_row
+      return return_keys, current_checksum
+    end
+  end
+end

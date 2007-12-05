@@ -7,37 +7,77 @@ rescue LoadError
 end
 
 require 'drb'
+require 'digest/sha1'
 
 $LOAD_PATH.unshift File.join(File.dirname(__FILE__), "..", "lib")
 require 'rubyrep'
 
-module RR
-  class Session
+
+module RR::ConnectionExtenders
+  
+  class << self
+    alias_method :db_connect_without_cache, :db_connect unless method_defined?(:db_connect_without_cache)
     
-    # Disable the Session caching during the next session creation
-    def self.clear_config_cache
-      @@old_config = nil
-    end
+    @@use_db_connection_cache = true
     
-    # Speed up spec runs by only creating new Sessions if the configuration changed.
-    def self.new(config = Initializer::configuration)
-      @@old_config ||= nil
-      if Marshal.dump(@@old_config) != Marshal.dump(config)
-        @@old_config = config
-        @@old_session = super config
+    # For faster spec runs, overwrite db_connect to use connection caching 
+    def db_connect(config)
+      config_dump = Marshal.dump config.reject {|key, | [:proxy_host, :proxy_port].include? key}
+      config_checksum = Digest::SHA1.hexdigest(config_dump)
+      @@db_connection_cache ||= {}
+      cached_db_connection = @@db_connection_cache[config_checksum]
+      if @@use_db_connection_cache and cached_db_connection and cached_db_connection.active?
+        cached_db_connection
       else
-        @@old_session
+        db_connection = db_connect_without_cache config
+        @@db_connection_cache[config_checksum] = db_connection
+        db_connection
       end
     end
-
+    
+    # If status == true: enable the cache. If status == false: don' use cache
+    # Returns the old connection caching status
+    def use_db_connection_cache(status)
+      old_status, @@use_db_connection_cache = @@use_db_connection_cache, status
+      old_status
+    end
   end
+end
+
+# Creates a mock ProxySession with the given
+#   * mock_table: name of the mock table
+#   * primary_key_names: array of mock primary column names
+#   * column_names: array of mock column names, if nil: doesn't mock this function
+def create_mock_session(mock_table, primary_key_names, column_names = nil)
+  session = mock("ProxySession")
+  if primary_key_names
+    session.should_receive(:primary_key_names) \
+      .with(mock_table) \
+      .and_return(primary_key_names)
+  end
+  if column_names
+    session.should_receive(:column_names) \
+      .with(mock_table) \
+      .and_return(column_names)
+  end
+  session.should_receive(:quote_value) \
+    .any_number_of_times \
+    .with(an_instance_of(String), an_instance_of(String), anything) \
+    .and_return {| value, column, value| value}
+      
+  session
+end
+ 
+# Returns a deep copy of the provided object.
+def deep_copy(object)
+  Marshal.restore(Marshal.dump(object))
 end
 
 # Caches the proxied database configuration
 $proxied_config = nil
 
 # Retrieves the proxied database config as specified in config/proxied_test_config.rb
-def get_proxied_config
+def proxied_config
   unless $proxied_config
     # load the proxied config but ensure that the original configuration is restored
     old_config = RR::Initializer.configuration
@@ -51,6 +91,23 @@ def get_proxied_config
     end
   end
   $proxied_config
+end
+
+# Retrieves the standard (non-proxied) database config as specified in config/test_config.rb
+def standard_config
+  unless $standard_config
+    # load the proxied config but ensure that the original configuration is restored
+    old_config = RR::Initializer.configuration
+    RR::Initializer.reset
+    $standard_config = nil
+    begin
+      load File.dirname(__FILE__) + '/../config/test_config.rb'
+      $standard_config = RR::Initializer.configuration
+    ensure
+      RR::Initializer.configuration = old_config
+    end
+  end
+  $standard_config
 end
 
 # If true, start proxy as external process (more realistic test but also slower).
@@ -79,8 +136,6 @@ $proxy_confirmed_running = false
 def ensure_proxy
   # only execute the network verification once per spec run
   unless $proxy_confirmed_running
-    proxied_config = get_proxied_config
-  
     drb_url = "druby://#{proxied_config.left[:proxy_host]}:#{proxied_config.left[:proxy_port]}"
     # try to connect to the proxy
     begin
@@ -123,10 +178,4 @@ def ensure_proxy
     # if we got till here, then a proxy is running or was successfully started
     $proxy_confirmed_running = true
   end
-end
-
-# Get the proxied database configuration
-def proxify!
-  RR::Initializer.reset
-  RR::Initializer.configuration = get_proxied_config
 end

@@ -1,17 +1,16 @@
 require File.dirname(__FILE__) + '/spec_helper.rb'
 require 'yaml'
 
-config_file = File.dirname(__FILE__) + '/../config/test_config.rb'
-
 include RR
 
 describe Session do
   before(:each) do
-    Initializer.reset
-    load config_file
-
-    # Disable the (spec only) session caching during the session testing
-    Session.clear_config_cache
+    Initializer.configuration = standard_config
+    @@old_cache_status = ConnectionExtenders.use_db_connection_cache(false)
+  end
+  
+  after(:each) do
+    ConnectionExtenders.use_db_connection_cache(@@old_cache_status)
   end
   
   # if number_of_calls is :once, mock ActiveRecord for 1 call
@@ -28,8 +27,8 @@ describe Session do
     session.configuration.left.should == Initializer.configuration.left
     session.configuration.right.should == Initializer.configuration.right
     
-    Initializer.configuration.left[:dummy] = :dummy_value
-    session.configuration.left.has_key?(:dummy).should be_false
+    session.configuration.left[:adapter].object_id.should_not \
+      == Initializer.configuration.left[:adapter].object_id
   end
   
   it "initialize should establish the database connections" do
@@ -59,6 +58,7 @@ describe Session do
   it "initialize shouldn't create the same database connection twice" do
     mock_active_record :once
 
+    Initializer.configuration = deep_copy(Initializer.configuration)
     Initializer.configuration.right = Initializer.configuration.left.clone
     
     session = Session.new
@@ -80,18 +80,19 @@ describe Session do
   it "initializer should raise an Exception if no fitting connection extender is available" do
     mock_active_record :once
 
-    Initializer.configuration.left[:adapter] = :dummy
+    config = deep_copy(Initializer.configuration)
     
-    lambda {session = Session.new}.should raise_error(RuntimeError, /dummy/)
+    config.left[:adapter] = :dummy
+    
+    lambda {session = Session.new config}.should raise_error(RuntimeError, /dummy/)
   end
   
   it "initializer should create (fake) proxy connections as per configuration" do
-    proxify!
     dummy_proxy = Object.new
     dummy_proxy.should_receive(:create_session).and_return(:dummy_proxy_session)
     DRbObject.should_receive(:new).with(nil,"druby://localhost:9876").and_return(dummy_proxy)
     
-    session = Session.new
+    session = Session.new proxied_config
     
     session.proxies[:left].should == dummy_proxy
     session.proxies[:right].should be_an_instance_of(DatabaseProxy)

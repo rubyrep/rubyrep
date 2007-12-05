@@ -5,8 +5,7 @@ include RR
 
 describe ConnectionExtenders::PostgreSQLExtender do
   before(:each) do
-    Initializer.reset
-    load File.dirname(__FILE__) + '/../config/test_config.rb'
+    Initializer.configuration = standard_config
   end
 
   it "primary_key_names should return primary key names ordered as per primary key index" do

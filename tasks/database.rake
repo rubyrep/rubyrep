@@ -37,6 +37,16 @@ def create_sample_schema(config)
   ActiveRecord::Base.connection
   
   ActiveRecord::Schema.define do
+    create_table :scanner_text_key, :id => false do |t|
+      t.column :text_id, :string
+      t.column :name, :string
+    end rescue nil
+    
+    ActiveRecord::Base.connection.execute(<<-end_sql) rescue nil
+      ALTER TABLE scanner_text_key ADD CONSTRAINT scanner_text_key_pkey 
+        PRIMARY KEY (text_id)
+    end_sql
+
     create_table :scanner_records do |t|
       t.column :name, :string, :null => false
     end rescue nil
@@ -47,7 +57,6 @@ def create_sample_schema(config)
       t.column :name, :string, :null => false
     end rescue nil
 
-    # also used in DirectTableScan rspec
     create_table :extender_combined_key, :id => false do |t|
       t.column :first_id, :integer
       t.column :second_id, :integer
@@ -69,7 +78,6 @@ def create_sample_schema(config)
         PRIMARY KEY (second_id, first_id)
     end_sql
 
-    # also used in DirectTableScan rspec
     create_table :extender_without_key, :id => false do |t|
       t.column :first_id, :integer
       t.column :second_id, :integer
@@ -106,6 +114,7 @@ def drop_sample_schema(config)
     drop_table :extender_combined_key rescue nil
     drop_table :scanner_left_records_only rescue nil
     drop_table :scanner rescue nil
+    drop_table :scanner_text_key rescue nil
   end  
 
   ActiveRecord::Base.connection.disconnect!

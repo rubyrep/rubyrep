@@ -1,13 +1,10 @@
 require File.dirname(__FILE__) + '/spec_helper.rb'
 
-config_file = File.dirname(__FILE__) + '/../config/test_config.rb'
-
 include RR
 
 describe DatabaseProxy do
   before(:each) do
-    Initializer.reset
-    load config_file
+    Initializer.configuration = standard_config
   end
 
   it "initialize should create an empty session regiser" do
@@ -17,7 +14,7 @@ describe DatabaseProxy do
 
   def create_proxy_and_session
     proxy = DatabaseProxy.new
-    session = proxy.create_session Initializer.configuration.left, {}
+    session = proxy.create_session Initializer.configuration.left
     return proxy, session
   end
 
