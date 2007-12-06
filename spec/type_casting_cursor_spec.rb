@@ -16,7 +16,7 @@ describe TypeCastingCursor do
   
   it "next_row should return the casted row, next? and clear should be delegated to the original cursor" do
     session = Session.new
-    org_cursor = session.left.select_cursor("select * from extender_type_check where id = 1")
+    org_cursor = session.left.select_cursor("select id, decimal, timestamp, byteea from extender_type_check where id = 1")
     
     cursor = TypeCastingCursor.new session.left, 'extender_type_check', org_cursor
     cursor.next?.should be_true

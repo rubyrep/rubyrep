@@ -49,13 +49,23 @@ describe ConnectionExtenders::PostgreSQLExtender do
   
   it "select_cursor next_row should handle uncommon datatypes correctly" do
     session = Session.new
-    result = session.left.select_cursor "select * from extender_type_check"
+    result = session.left.select_cursor "select id, decimal, timestamp, byteea from extender_type_check"
     row = result.next_row
     row['timestamp'] = Time.parse row['timestamp']
     row.should == {
-    'id' => "1", 
-    'decimal' => BigDecimal.new("1.234"),
-    'timestamp' => Time.local(2007,"nov",10,20,15,1),
-    'byteea' => "dummy"}
+      'id' => "1", 
+      'decimal' => BigDecimal.new("1.234"),
+      'timestamp' => Time.local(2007,"nov",10,20,15,1),
+      'byteea' => "dummy"}
+  end
+
+  it "select_cursor next_row should handle multi byte characters correctly" do
+    session = Session.new
+    result = session.left.select_cursor "select id, multi_byte from extender_type_check"
+    row = result.next_row
+    row.should == {
+      'id' => "1", 
+      'multi_byte' => "よろしくお願(ねが)いします yoroshiku onegai shimasu: I humbly ask for your favor."
+    }
   end
 end

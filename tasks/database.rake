@@ -95,6 +95,7 @@ def create_sample_schema(config)
       t.column :decimal, :decimal
       t.column :timestamp, :timestamp
       t.column :byteea, :binary
+      t.column :multi_byte, :string
     end rescue nil
   end
 end
@@ -175,7 +176,9 @@ def delete_all_and_create_shared_sample_data(connection)
     :id => 1, 
     :decimal => 1.234,
     :timestamp => Time.local(2007,"nov",10,20,15,1),
-    :byteea => "dummy")
+    :byteea => "dummy",
+    :multi_byte => "よろしくお願(ねが)いします yoroshiku onegai shimasu: I humbly ask for your favor."
+  )
 end
 
 # Reinitializes the sample schema with the sample data
