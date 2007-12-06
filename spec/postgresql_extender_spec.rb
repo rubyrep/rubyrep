@@ -68,4 +68,15 @@ describe ConnectionExtenders::PostgreSQLExtender do
       'multi_byte' => "よろしくお願(ねが)いします yoroshiku onegai shimasu: I humbly ask for your favor."
     }
   end
+  
+  it "select_cursor next_row should handle binary data correctly" do
+    session = Session.new
+    result = session.left.select_cursor "select id, binary_test from extender_type_check"
+    row = result.next_row
+    row.should == {
+      'id' => "1", 
+      'binary_test' => Marshal.dump(['bla',:dummy,1,2,3])
+    }   
+    Marshal.restore(row['binary_test']).should == ['bla',:dummy,1,2,3]
+  end
 end
