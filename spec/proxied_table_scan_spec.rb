@@ -101,6 +101,19 @@ describe ProxiedTableScan do
     ]
   end
 
+  it "run should only call compare single rows if there are different block checksums" do
+    config = deep_copy(proxied_config)
+    config.right = config.left
+    session = Session.new config
+    scan = ProxiedTableScan.new session, 'scanner_records'
+    scan.should_not_receive(:compare_blocks)
+    diff = []
+    scan.run do |type, row|
+      diff.push [type,row]      
+    end
+    diff.should == []
+  end
+  
   it "run should compare all the records in the table" do
     session = Session.new
     scan = ProxiedTableScan.new session, 'scanner_records'
