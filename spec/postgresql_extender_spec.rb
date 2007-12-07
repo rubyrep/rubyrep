@@ -79,4 +79,12 @@ describe ConnectionExtenders::PostgreSQLExtender do
     }   
     Marshal.restore(row['binary_test']).should == ['bla',:dummy,1,2,3]
   end
+  
+  it "cursors returned by select_cursor should support clear" do
+    session = Session.new
+    result = session.left.select_cursor "select * from extender_one_record"
+    result.next?.should be_true
+    result.should respond_to(:clear)
+    result.clear
+  end
 end
