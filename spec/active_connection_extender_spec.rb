@@ -3,7 +3,7 @@ require 'yaml'
 
 include RR
 
-describe ConnectionExtenders::PostgreSQLExtender do
+describe "Active Connection Extender" do
   before(:each) do
     Initializer.configuration = standard_config
   end
