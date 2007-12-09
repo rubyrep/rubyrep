@@ -68,13 +68,17 @@ describe ProxyCursor do
   it "construct_query should quote column values" do
     session = ProxySession.new Initializer.configuration.left
     
-    ProxyCursor.new(session, 'scanner_text_key').construct_query(
-      {'text_id' => 'start_value'}, 
-      {'text_id' => 'end_value'}) \
+    cursor = ProxyCursor.new(session, 'scanner_text_key')
+    cursor.construct_query({'text_id' => 'a'},{'text_id' => 'b'}) \
       .should == "\
         select text_id, name from scanner_text_key \
-        where (text_id) >= ('start_value') and (text_id) <= ('end_value') \
-        order by text_id".strip!.squeeze!(' ')  
+        where (text_id) >= (E'a') and (text_id) <= (E'b') \
+        order by text_id".strip!.squeeze!(' ')
+    # additional check that the 'E' inserted through the quoting actually works
+    results = cursor.prepare_fetch({'text_id' => 'a'},{'text_id' => 'b'})
+    results.next_row.should == {'text_id' => 'a', 'name' => 'Alice'}
+    results.next_row.should == {'text_id' => 'b', 'name' => 'Bob'}
+    results.next?.should be_false
   end
   
   it "start_query should initiate the query and wrap it for type casting" do

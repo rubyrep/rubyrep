@@ -54,7 +54,7 @@ describe ConnectionExtenders::PostgreSQLExtender do
     row['timestamp'] = Time.parse row['timestamp']
     row.should == {
       'id' => "1", 
-      'decimal' => BigDecimal.new("1.234"),
+      'decimal' => "1.234",
       'timestamp' => Time.local(2007,"nov",10,20,15,1),
       'byteea' => "dummy"}
   end
@@ -69,15 +69,23 @@ describe ConnectionExtenders::PostgreSQLExtender do
     }
   end
   
-  it "select_cursor next_row should handle binary data correctly" do
+  it "should write binary data correctly" do
     session = Session.new
-    result = session.left.select_cursor "select id, binary_test from extender_type_check"
-    row = result.next_row
-    row.should == {
-      'id' => "1", 
-      'binary_test' => Marshal.dump(['bla',:dummy,1,2,3])
-    }   
-    Marshal.restore(row['binary_test']).should == ['bla',:dummy,1,2,3]
+
+    org_data = Marshal.dump(['bla',:dummy,1,2,3])
+    result_data = nil
+    begin
+      session.left.begin_db_transaction
+      sql = "insert into extender_type_check(id, binary_test) values(2, '#{org_data}')"
+      session.left.execute sql
+
+      org_cursor = session.left.select_cursor("select id, binary_test from extender_type_check where id = 2")
+      cursor = TypeCastingCursor.new session.left, 'extender_type_check', org_cursor
+      result_data = cursor.next_row['binary_test']
+    ensure
+      session.left.rollback_db_transaction
+    end
+    result_data.should == org_data
   end
   
   it "cursors returned by select_cursor should support clear" do

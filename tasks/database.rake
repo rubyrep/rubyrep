@@ -156,9 +156,21 @@ class ExtenderOneRecord < ActiveRecord::Base
   include CreateWithKey
 end
 
-class ExtenderTypeCheck <ActiveRecord::Base
+class ExtenderTypeCheck < ActiveRecord::Base
   set_table_name "extender_type_check"
   include CreateWithKey
+end
+
+# Inserts the row as per specified :column_name => value hash in the specified database and table
+# Used to create data in tables where the standard ActiveRecord approach doesn't work
+# (E. g. tables with primary keys in text format)
+def create_row(connection, table, row)
+  sql = "insert into #{table}("
+  sql << row.keys.join(', ')
+  sql << ") values('"
+  sql << row.values.join("', '")
+  sql << "')"
+  connection.execute sql
 end
 
 # Deletes all records and creates the records being same in left and right DB
@@ -181,6 +193,13 @@ def delete_all_and_create_shared_sample_data(connection)
     :multi_byte => "よろしくお願(ねが)いします yoroshiku onegai shimasu: I humbly ask for your favor.",
     :binary_test => Marshal.dump(['bla',:dummy,1,2,3])
   )
+
+  # The primary key of this table is in text format - ActiveRecord cannot be
+  # used to create the example data.
+  [ {:text_id => 'a', :name => 'Alice'},
+    {:text_id => 'b', :name => 'Bob'},
+    {:text_id => 'c', :name => 'Charlie'}
+  ].each { |row| create_row connection, 'scanner_text_key', row}
 end
 
 # Reinitializes the sample schema with the sample data

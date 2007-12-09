@@ -19,23 +19,6 @@ class PGresult
     @fields.each_with_index do |field, field_index| 
       value = self.getvalue @current_row_num, field_index
       
-      # Arndt Lehmann 2007-11-10: 
-      # I don't fully understand this type conversion section.
-      # However for compatibility reasons copied this time conversion part over
-      # from PostgreSQLAdapter#select.
-      # Would be better if this section would actually be verified.
-      # For now I just copied and created according spec to ensure it doesn't go
-      # totally haywire
-      case self.type(field_index)
-      when ActiveRecord::ConnectionAdapters::PostgreSQLAdapter::BYTEA_COLUMN_TYPE_OID
-        value = connection.public_unescape_bytea(value)
-      when ActiveRecord::ConnectionAdapters::PostgreSQLAdapter::TIMESTAMPTZOID, 
-          ActiveRecord::ConnectionAdapters::PostgreSQLAdapter::TIMESTAMPOID
-        value = connection.public_cast_to_time(value)
-      when ActiveRecord::ConnectionAdapters::PostgreSQLAdapter::NUMERIC_COLUMN_TYPE_OID
-        value = value.to_d if value.respond_to?(:to_d)
-      end
-      
       row[@fields[field_index]] = value
     end
     @current_row_num += 1
@@ -50,24 +33,12 @@ module RR
     module PostgreSQLExtender
       RR::ConnectionExtenders.register :postgresql => self
 
-# Commented as didn't make ActiveRecord cast_to_time and unescape_bytea reliably public      
-#      def self.included(mod)
-#        # calling mod.send or mod.class.send didn't work 
-#        # (at least during spec runs I got some rspec object / class back insead)
-#        ActiveRecord::ConnectionAdapters::PostgreSQLAdapter.send :public, :cast_to_time, :unescape_bytea
-#      end
-      
-      # A stupid way to make unescape_byteea public, unfortunately using self.included together with public method didn't work reliably
-      def public_unescape_bytea(value); unescape_bytea(value); end
-
-      # A stupid way to make cast_to_time public, unfortunately using self.included together with public method didn't work reliably
-      def public_cast_to_time(value); cast_to_time(value); end
-      
       # Executes the given sql query with the otional name written in the 
       # ActiveRecord log file.
       # Returns the results as a Cursor object supporting
       #   * next? - returns true if there are more rows to read
       #   * next_row - returns the row as a column => value hash and moves the cursor to the next row
+      #   * clear - clearing the cursor (making allocated memory available for GC)
       def select_cursor(sql, name = nil)
         result = execute sql, name
         result.connection = self
@@ -86,10 +57,10 @@ module RR
         end
         
         row = self.select_one(<<-end_sql)
-            SELECT cons.conkey 
-            FROM pg_class           rel
-            JOIN pg_constraint      cons ON (rel.oid = cons.conrelid)
-            WHERE cons.contype = 'p' AND rel.relname = '#{table}'          
+          SELECT cons.conkey 
+          FROM pg_class           rel
+          JOIN pg_constraint      cons ON (rel.oid = cons.conrelid)
+          WHERE cons.contype = 'p' AND rel.relname = '#{table}'          
         end_sql
         if row.nil?
           return []
@@ -102,11 +73,11 @@ module RR
 
         columns = {}
         rows = self.select_all(<<-end_sql)
-          SELECT attnum, attname 
-          FROM pg_class           rel
-          JOIN pg_constraint      cons ON (rel.oid = cons.conrelid)
-          JOIN pg_attribute       attr ON (rel.oid = attr.attrelid and attr.attnum = any (cons.conkey))
-          WHERE cons.contype = 'p' AND rel.relname = '#{table}'
+              SELECT attnum, attname 
+              FROM pg_class           rel
+              JOIN pg_constraint      cons ON (rel.oid = cons.conrelid)
+              JOIN pg_attribute       attr ON (rel.oid = attr.attrelid and attr.attnum = any (cons.conkey))
+              WHERE cons.contype = 'p' AND rel.relname = '#{table}'
         end_sql
         sorted_columns = []
         if not rows.nil?
