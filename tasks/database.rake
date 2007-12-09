@@ -94,7 +94,6 @@ def create_sample_schema(config)
     create_table :extender_type_check do |t|
       t.column :decimal, :decimal
       t.column :timestamp, :timestamp
-      t.column :byteea, :binary
       t.column :multi_byte, :string
       t.column :binary_test, :binary
     end rescue nil
@@ -189,7 +188,6 @@ def delete_all_and_create_shared_sample_data(connection)
     :id => 1, 
     :decimal => 1.234,
     :timestamp => Time.local(2007,"nov",10,20,15,1),
-    :byteea => "dummy",
     :multi_byte => "よろしくお願(ねが)いします yoroshiku onegai shimasu: I humbly ask for your favor.",
     :binary_test => Marshal.dump(['bla',:dummy,1,2,3])
   )

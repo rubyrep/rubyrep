@@ -14,21 +14,28 @@ describe TypeCastingCursor do
     cursor.org_cursor.should == :dummy_org_cursor
   end
   
-  it "next_row should return the casted row, next? and clear should be delegated to the original cursor" do
+  it "next_row should delegate next? and clear to the original cursor" do
     session = Session.new
-    org_cursor = session.left.select_cursor("select id, decimal, timestamp, byteea, binary_test from extender_type_check where id = 1")
+    org_cursor = session.left.select_cursor("select id from extender_type_check where id = 1")
     
     cursor = TypeCastingCursor.new session.left, 'extender_type_check', org_cursor
     cursor.next?.should be_true
     row = cursor.next_row
     cursor.next?.should be_false
     cursor.clear
+  end
+  
+  it "next_row should cast rows - including uncommon data types - correctly" do
+    session = Session.new
+    org_cursor = session.left.select_cursor("select id, decimal, timestamp, binary_test from extender_type_check where id = 1")
+    cursor = TypeCastingCursor.new session.left, 'extender_type_check', org_cursor
+
+    row = cursor.next_row
     
-    # verify that the row values has been converted to the correct type
+    # verify that the row fields have been converted to the correct types
     row['id'].should be_an_instance_of(Fixnum)
     row['timestamp'].should be_an_instance_of(Time)
     row['decimal'].should be_an_instance_of(BigDecimal)
-    row['byteea'].should be_an_instance_of(String)
     row['binary_test'].should be_an_instance_of(String)
     
     # verify that the row values were converted correctly
@@ -36,7 +43,6 @@ describe TypeCastingCursor do
       'id' => 1, 
       'decimal' => BigDecimal.new("1.234"),
       'timestamp' => Time.local(2007,"nov",10,20,15,1),
-      'byteea' => "dummy",
       'binary_test' => Marshal.dump(['bla',:dummy,1,2,3])
     }
   end
