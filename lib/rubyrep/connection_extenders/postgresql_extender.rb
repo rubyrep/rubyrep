@@ -1,9 +1,6 @@
 # A cursor to iterate over the records returned by select_cursor.
 # Only one row is kept in memory at a time.
 class PGresult
-  # Keep the database connection for access to the PostgreSQL adapter type conversion functions.
-  attr_accessor :connection
-  
   # Returns true if there are more rows to read.
   def next?
     @current_row_num ||= 0
@@ -41,7 +38,6 @@ module RR
       #   * clear - clearing the cursor (making allocated memory available for GC)
       def select_cursor(sql, name = nil)
         result = execute sql, name
-        result.connection = self
         result
       end
       
