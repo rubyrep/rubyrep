@@ -1,18 +1,4 @@
-RR::Initializer::run do |config|
-  config.left = {
-    :adapter  => 'postgresql',   
-    :database => 'rr_left',   
-    :username => 'postgres',   
-    :password => 'password',   
-    :host     => 'localhost'
-  }
+database = :mysql
+# $start_proxy_as_external_process = true
 
-  config.right = {
-    :adapter  => 'postgresql',   
-    :database => 'rr_right',   
-    :username => 'postgres',   
-    :password => 'password',   
-    :host     => 'localhost'
-  }
-
-end
+load File.dirname(__FILE__) + "/#{database}_config.rb"

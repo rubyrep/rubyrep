@@ -12,6 +12,17 @@ def create_database(config)
     case config[:adapter]
     when 'postgresql'
       `createdb "#{config[:database]}" -E utf8`
+    when 'mysql'
+      @charset   = ENV['CHARSET']   || 'utf8'
+      @collation = ENV['COLLATION'] || 'utf8_general_ci'
+      begin
+        ActiveRecord::Base.establish_connection(config.merge({'database' => nil}))
+        ActiveRecord::Base.connection.create_database(config[:database], {:charset => @charset, :collation => @collation})
+        ActiveRecord::Base.establish_connection(config)
+      rescue
+        $stderr.puts $!
+        $stderr.puts "Couldn't create database for #{config.inspect}"
+      end
     else
       puts "adapter #{config[:adapter]} not supported"
     end
@@ -25,6 +36,9 @@ def drop_database(config)
   case config[:adapter]
   when 'postgresql'
     `dropdb "#{config[:database]}"`
+  when 'mysql'
+    ActiveRecord::Base.establish_connection(config.merge({'database' => nil}))
+    ActiveRecord::Base.connection.drop_database config[:database]
   else
     puts "adapter #{config[:adapter]} not supported"
   end
