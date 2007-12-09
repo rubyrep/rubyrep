@@ -74,7 +74,10 @@ describe Session do
   it "initializer should include the connection extender into connection" do
     session = Session.new
     
-    session.left.kind_of?(ConnectionExtenders::PostgreSQLExtender).should be_true
+    # get the ConnectionExtender module for the active database adapter
+    extender = ConnectionExtenders.extenders[session.configuration.left[:adapter].to_sym]
+    
+    session.left.kind_of?(extender).should be_true
   end
   
   it "initializer should raise an Exception if no fitting connection extender is available" do

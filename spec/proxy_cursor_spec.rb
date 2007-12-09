@@ -70,11 +70,8 @@ describe ProxyCursor do
     
     cursor = ProxyCursor.new(session, 'scanner_text_key')
     cursor.construct_query({'text_id' => 'a'},{'text_id' => 'b'}) \
-      .should == "\
-        select text_id, name from scanner_text_key \
-        where (text_id) >= (E'a') and (text_id) <= (E'b') \
-        order by text_id".strip!.squeeze!(' ')
-    # additional check that the 'E' inserted through the quoting actually works
+      .should match(/'a'.*'b'/)
+    # additional check that the quoted query actually works
     results = cursor.prepare_fetch({'text_id' => 'a'},{'text_id' => 'b'})
     results.next_row.should == {'text_id' => 'a', 'name' => 'Alice'}
     results.next_row.should == {'text_id' => 'b', 'name' => 'Bob'}

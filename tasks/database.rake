@@ -106,7 +106,7 @@ def create_sample_schema(config)
     end rescue nil
     
     create_table :extender_type_check do |t|
-      t.column :decimal, :decimal
+      t.column :decimal_test, :decimal, :precision => 10, :scale => 5
       t.column :timestamp, :timestamp
       t.column :multi_byte, :string
       t.column :binary_test, :binary
@@ -200,7 +200,7 @@ def delete_all_and_create_shared_sample_data(connection)
   ExtenderTypeCheck.delete_all
   ExtenderTypeCheck.create_with_key(
     :id => 1, 
-    :decimal => 1.234,
+    :decimal_test => 1.234,
     :timestamp => Time.local(2007,"nov",10,20,15,1),
     :multi_byte => "よろしくお願(ねが)いします yoroshiku onegai shimasu: I humbly ask for your favor.",
     :binary_test => Marshal.dump(['bla',:dummy,1,2,3])

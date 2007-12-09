@@ -3,7 +3,7 @@ require 'yaml'
 
 include RR
 
-describe "Active Connection Extender" do
+describe "ConnectionExtender" do
   before(:each) do
     Initializer.configuration = standard_config
   end
