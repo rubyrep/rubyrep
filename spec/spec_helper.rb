@@ -76,38 +76,32 @@ end
 # Caches the proxied database configuration
 $proxied_config = nil
 
-# Retrieves the proxied database config as specified in config/proxied_test_config.rb
-def proxied_config
-  unless $proxied_config
+# Reads the database configuration from the config folder for the specified config key
+# E.g. if config is :postgres, tries to read the config from 'postgres_config.rb'
+def read_config(config)
+  $config_cache ||= {}
+  unless $config_cache[config]
     # load the proxied config but ensure that the original configuration is restored
     old_config = RR::Initializer.configuration
     RR::Initializer.reset
-    $proxied_config = nil
     begin
-      load File.dirname(__FILE__) + '/../config/proxied_test_config.rb'
-      $proxied_config = RR::Initializer.configuration
+      load File.dirname(__FILE__) + "/../config/#{config}_config.rb"
+      $config_cache[config] = RR::Initializer.configuration
     ensure
       RR::Initializer.configuration = old_config
     end
   end
-  $proxied_config
+  $config_cache[config]
+end
+
+# Retrieves the proxied database config as specified in config/proxied_test_config.rb
+def proxied_config
+  read_config :proxied_test
 end
 
 # Retrieves the standard (non-proxied) database config as specified in config/test_config.rb
 def standard_config
-  unless $standard_config
-    # load the proxied config but ensure that the original configuration is restored
-    old_config = RR::Initializer.configuration
-    RR::Initializer.reset
-    $standard_config = nil
-    begin
-      load File.dirname(__FILE__) + '/../config/test_config.rb'
-      $standard_config = RR::Initializer.configuration
-    ensure
-      RR::Initializer.configuration = old_config
-    end
-  end
-  $standard_config
+  read_config :test
 end
 
 # If true, start proxy as external process (more realistic test but also slower).
