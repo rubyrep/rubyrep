@@ -77,9 +77,6 @@ def deep_copy(object)
   Marshal.restore(Marshal.dump(object))
 end
 
-# Caches the proxied database configuration
-$proxied_config = nil
-
 # Reads the database configuration from the config folder for the specified config key
 # E.g. if config is :postgres, tries to read the config from 'postgres_config.rb'
 def read_config(config)
