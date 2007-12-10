@@ -15,7 +15,11 @@ extenders.each do |extender_key, extender_class|
     end
 
     begin
-      Session.new read_config(extender_key)
+      if read_config(extender_key).left[:adapter] != standard_config.left[:adapter]
+        # If the current adapter is *not* the adapter for the standard tests
+        # then only run the extender spec if the database connection is available
+        Session.new read_config(extender_key)
+      end
       it_should_behave_like "ConnectionExtender"
     rescue Exception => e
       at_exit do
