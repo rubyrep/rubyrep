@@ -10,7 +10,11 @@ require 'drb'
 require 'digest/sha1'
 
 $LOAD_PATH.unshift File.join(File.dirname(__FILE__), "..", "lib")
+$LOAD_PATH.unshift File.dirname(__FILE__)
+
 require 'rubyrep'
+require 'connection_extender_interface_spec'
+
 
 
 module RR::ConnectionExtenders

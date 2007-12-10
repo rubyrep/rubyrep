@@ -2,7 +2,7 @@ require File.dirname(__FILE__) + '/spec_helper.rb'
 
 include RR
 
-describe ConnectionExtenders do
+describe ConnectionExtenders, "Registration" do
   before(:each) do
   end
 

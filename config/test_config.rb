@@ -1,4 +1,4 @@
-database = :postgres
+database = :mysql
 # $start_proxy_as_external_process = true
 
 load File.dirname(__FILE__) + "/#{database}_config.rb"

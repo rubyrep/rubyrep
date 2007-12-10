@@ -3,9 +3,9 @@ require 'yaml'
 
 include RR
 
-describe "ConnectionExtender" do
+# All ConnectionExtenders need to pass this spec
+describe "ConnectionExtender", :shared => true do
   before(:each) do
-    Initializer.configuration = standard_config
   end
 
   it "primary_key_names should return primary key names ordered as per primary key index" do
