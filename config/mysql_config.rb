@@ -5,7 +5,7 @@ RR::Initializer::run do |config|
     :username => 'root',   
     :password => '',   
     :host     => 'localhost',
-    :socket   => '/var/run/mysqld/mysqld.sock'
+    :port     => 3306
   }
 
   config.right = {
@@ -14,7 +14,7 @@ RR::Initializer::run do |config|
     :username => 'root',   
     :password => '',   
     :host     => 'localhost',
-    :socket   => '/var/run/mysqld/mysqld.sock'
+    :port     => 3306
   }
 
 end

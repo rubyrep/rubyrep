@@ -33,16 +33,36 @@ module RR
     # To go around this, we delete ActiveRecord's memory of the existing database connection
     # as soon as it is created.
     def self.db_connect(config)
-      DummyActiveRecord.establish_connection(config)
+      if RUBY_PLATFORM =~ /java/
+        adapter = config[:adapter]
+        
+        # As recommended in the activerecord-jdbc-adapter use the jdbc versions
+        # of the Adapters. E. g. instead of "postgresql", "jdbcpostgresql".
+        # However the activerecord-jdbcmysql-adapter (version 0.6) failed the 
+        # multi-lingual test. So for mysql I am not rewriting the adapter name so
+        # that I am using the activerecord built-in adapter (which passes the test)
+        adapter = 'jdbc' + adapter unless adapter =~ /^jdbc/ or adapter == 'mysql'
+
+        DummyActiveRecord.establish_connection(config.merge(:adapter => adapter))
+      else
+        DummyActiveRecord.establish_connection(config)
+      end
       connection = DummyActiveRecord.connection
 
       # Delete the database connection from ActiveRecords's 'memory'
       ActiveRecord::Base.active_connections.delete DummyActiveRecord.name
       
-      unless ConnectionExtenders.extenders.include? config[:adapter].to_sym
+      extender = ""
+      if RUBY_PLATFORM =~ /java/ and config[:adapter] != 'mysql'
+        # Also here: the standard mysql extender works perfectly fine under jruby.
+        # So use it. For all other cases (under jruby) use the JDBC extender.
+        extender = :jdbc
+      elsif ConnectionExtenders.extenders.include? config[:adapter].to_sym
+        extender = config[:adapter].to_sym
+      else
         raise "No ConnectionExtender available for :#{config[:adapter]}"
       end
-      mod = ConnectionExtenders.extenders[config[:adapter].to_sym]
+      mod = ConnectionExtenders.extenders[extender]
       connection.extend mod
       connection
     end

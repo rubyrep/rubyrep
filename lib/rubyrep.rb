@@ -19,7 +19,10 @@ require 'database_proxy'
 require 'proxy_runner'
 require 'proxy_session'
 
-Dir["#{File.dirname(__FILE__)}/rubyrep/connection_extenders/*.rb"].each { |extender| require extender }
+Dir["#{File.dirname(__FILE__)}/rubyrep/connection_extenders/*.rb"].each do |extender| 
+  # jdbc_extender.rb is only loaded if we are running on jruby
+  require extender unless extender =~ /jdbc/ and not RUBY_PLATFORM =~ /java/
+end
 
 module RR
   

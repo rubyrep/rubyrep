@@ -17,6 +17,7 @@ module MysqlResultExtender
     row
   end
   
+  # Releases the database resources hold by this cursor
   def clear
     free
   end
@@ -25,7 +26,7 @@ end
 module RR
   module ConnectionExtenders
 
-    # Provides various PostgreSQL specific functionality required by Rubyrep.
+    # Provides various MySQL specific functionality required by Rubyrep.
     module MysqlExtender
       RR::ConnectionExtenders.register :mysql => self
 

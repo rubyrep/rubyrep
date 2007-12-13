@@ -3,22 +3,20 @@ require 'yaml'
 
 include RR
 
-extenders = {
-  :mysql => ConnectionExtenders::MysqlExtender,
-  :postgres => ConnectionExtenders::PostgreSQLExtender
-}
+extenders = [:mysql, :postgres]
 
-extenders.each do |extender_key, extender_class|
-  describe extender_class do
+extenders.each do |extender|
+  describe "#{extender.to_s.capitalize} Extender" do
     before(:each) do
-      Initializer.configuration = read_config(extender_key)
+      Initializer.configuration = read_config(extender)
     end
 
     begin
-      if read_config(extender_key).left[:adapter] != standard_config.left[:adapter]
+      if read_config(extender).left[:adapter] != standard_config.left[:adapter]
         # If the current adapter is *not* the adapter for the standard tests
+        # (meaning the adapter which is used to run all other tests)
         # then only run the extender spec if the database connection is available
-        Session.new read_config(extender_key)
+        Session.new read_config(extender)
       end
       it_should_behave_like "ConnectionExtender"
     rescue Exception => e

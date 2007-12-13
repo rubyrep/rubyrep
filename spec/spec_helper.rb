@@ -113,7 +113,8 @@ $start_proxy_as_external_process ||= false
 def start_proxy(host, port)
   if $start_proxy_as_external_process
     rrproxy_path = File.join(File.dirname(__FILE__), "..", "bin", "rrproxy.rb")
-    cmd = "ruby #{rrproxy_path} -h #{host} -p #{port}"
+    ruby = RUBY_PLATFORM =~ /java/ ? 'jruby' : 'ruby'
+    cmd = "#{ruby} #{rrproxy_path} -h #{host} -p #{port}"
     Thread.new {system cmd}    
   else
     url = "druby://#{host}:#{port}"
@@ -164,7 +165,7 @@ def ensure_proxy
         at_exit do
           proxy = DRbObject.new nil, drb_url
           proxy.terminate! rescue DRb::DRbConnError
-        end
+        end if $start_proxy_as_external_process
       else
         raise "Could not start proxy"
       end

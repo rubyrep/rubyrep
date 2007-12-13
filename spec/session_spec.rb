@@ -74,20 +74,22 @@ describe Session do
   it "initializer should include the connection extender into connection" do
     session = Session.new
     
-    # get the ConnectionExtender module for the active database adapter
-    extender = ConnectionExtenders.extenders[session.configuration.left[:adapter].to_sym]
-    
-    session.left.kind_of?(extender).should be_true
+    session.left.should respond_to(:select_cursor)
   end
   
   it "initializer should raise an Exception if no fitting connection extender is available" do
-    mock_active_record :once
+    # If unknown connection adapters are encountered in jruby, then we
+    # automatically use JdbcExtender.
+    # Means that this test only makes sense if not running on jruby
+    if not RUBY_PLATFORM =~ /java/
+      mock_active_record :once
 
-    config = deep_copy(Initializer.configuration)
-    
-    config.left[:adapter] = :dummy
-    
-    lambda {session = Session.new config}.should raise_error(RuntimeError, /dummy/)
+      config = deep_copy(Initializer.configuration)
+
+      config.left[:adapter] = 'dummy'
+
+      lambda {session = Session.new config}.should raise_error(RuntimeError, /dummy/)
+    end
   end
   
   it "initializer should create (fake) proxy connections as per configuration" do
