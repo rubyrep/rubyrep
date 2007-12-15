@@ -59,6 +59,15 @@ namespace :spec do
     end
   end
   
+  JRUBY_HOME = '/home/alehmann/usr/jruby-1.1b1'
+  desc "Run the specs for all supported databases and ruby platforms" 
+  task :all_rubies do
+    puts "Running spec:all_dbs in standard ruby"
+    system "rake spec:all_dbs"
+    puts "Running spec:all_dbs in jruby"
+    system "export PATH=#{JRUBY_HOME}/bin:$PATH; rake spec:all_dbs"
+  end
+  
   begin
     require 'ruby-prof/task'
     RubyProf::ProfileTask.new do |t|
