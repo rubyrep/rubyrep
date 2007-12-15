@@ -45,6 +45,11 @@ module RR::ConnectionExtenders
       old_status, @@use_db_connection_cache = @@use_db_connection_cache, status
       old_status
     end
+    
+    # Free up all cached connections
+    def clear_db_connection_cache
+      @@db_connection_cache = {}
+    end
   end
 end
 
@@ -108,6 +113,11 @@ def read_config(config)
     end
   end
   $config_cache[config]
+end
+
+# Removes all cached database configurations
+def clear_config_cache
+  $config_cache = {}
 end
 
 # Retrieves the proxied database config as specified in config/proxied_test_config.rb
