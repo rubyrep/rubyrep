@@ -16,8 +16,16 @@ describe Session do
   # if number_of_calls is :once, mock ActiveRecord for 1 call
   # if number_of_calls is :twice, mock ActiveRecord for 2 calls
   def mock_active_record(number_of_calls)
-    ConnectionExtenders::DummyActiveRecord.should_receive(:establish_connection).send number_of_calls
-    ConnectionExtenders::DummyActiveRecord.should_receive(:connection).send number_of_calls
+    ConnectionExtenders::DummyActiveRecord.should_receive(:establish_connection).send(number_of_calls) \
+      .and_return {|config| $used_config = config}
+    
+    dummy_connection = Object.new
+    # We have a spec testing behaviour for non-existing extenders.
+    # So extend might not be called in all cases
+    dummy_connection.should_receive(:extend).any_number_of_times
+    
+    ConnectionExtenders::DummyActiveRecord.should_receive(:connection).send(number_of_calls) \
+      .and_return {dummy_connection}
   end
   
   it "initialize should make a deep copy of the Configuration object" do
@@ -62,6 +70,40 @@ describe Session do
     Initializer.configuration.right = Initializer.configuration.left.clone
     
     session = Session.new
+  end
+  
+  it "initialize should use jdbc configuration adapter and extender under jruby" do
+    fake_ruby_platform 'java' do
+      mock_active_record :twice
+      used_extender = nil
+      ConnectionExtenders.extenders.should_receive('[]'.to_sym).twice \
+        .and_return {|extender| used_extender = extender }
+
+      Initializer.configuration = deep_copy(Initializer.configuration)
+      Initializer.configuration.right[:adapter] = 'dummyadapter'
+      
+      session = Session.new
+      
+      $used_config[:adapter].should == "jdbcdummyadapter"
+      used_extender.should == :jdbc
+    end
+  end
+  
+  it "initialize should not use jdbc configuration adapter and extender under jruby for mysql connections" do
+    fake_ruby_platform 'java' do
+      mock_active_record :twice
+      used_extender = nil
+      ConnectionExtenders.extenders.should_receive('[]'.to_sym).twice \
+        .and_return {|extender| used_extender = extender }
+
+      Initializer.configuration = deep_copy(Initializer.configuration)
+      Initializer.configuration.right[:adapter] = 'mysql'
+      
+      session = Session.new
+      
+      $used_config[:adapter].should == "mysql"
+      used_extender.should == :mysql
+    end
   end
   
   it "connections created by initializer should be alive" do

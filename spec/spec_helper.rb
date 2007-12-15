@@ -77,6 +77,21 @@ def deep_copy(object)
   Marshal.restore(Marshal.dump(object))
 end
 
+# Allows the temporary faking of RUBY_PLATFORM to the given value
+# Needs to be called with a block. While the block is executed, RUBY_PLATFORM
+# is set to the given fake value
+def fake_ruby_platform(fake_ruby_platform)
+  old_ruby_platform = RUBY_PLATFORM
+  old_verbose, $VERBOSE = $VERBOSE, nil
+  Object.const_set 'RUBY_PLATFORM', fake_ruby_platform
+  $VERBOSE = old_verbose
+  yield
+ensure
+  $VERBOSE = nil
+  Object.const_set 'RUBY_PLATFORM', old_ruby_platform
+  $VERBOSE = old_verbose
+end
+
 # Reads the database configuration from the config folder for the specified config key
 # E.g. if config is :postgres, tries to read the config from 'postgres_config.rb'
 def read_config(config)
