@@ -1,6 +1,8 @@
 $LOAD_PATH.unshift File.dirname(__FILE__) + "../lib/rubyrep"
 require 'rake'
 require 'rubyrep'
+
+require File.dirname(__FILE__) + '/task_helper.rb'
 require File.dirname(__FILE__) + '/../config/test_config'
 
 # Creates the databases in the given Configuration object
@@ -133,26 +135,6 @@ def drop_sample_schema(config)
   end  
 
   ActiveRecord::Base.connection.disconnect!
-end
-
-# The standard ActiveRecord#create method ignores primary key attributes.
-# This module provides a create method that allows manual setting of primary key values.
-module CreateWithKey
-  def self.included(base)
-    base.extend(ClassMethods)
-  end  
-  
-  module ClassMethods
-    # The standard "create" method ignores primary key attributes
-    # This method set's _all_ attributes as provided
-    def create_with_key attributes
-      o = new
-      attributes.each do |key, value|
-        o[key] = value
-      end
-      o.save
-    end
-  end
 end
 
 class ScannerRecords < ActiveRecord::Base

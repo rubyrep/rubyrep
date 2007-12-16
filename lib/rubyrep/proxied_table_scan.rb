@@ -31,7 +31,7 @@ module RR
       left_cursor = session.left.create_cursor ProxyRowCursor, left_table, from, to
       right_cursor = session.right.create_cursor ProxyRowCursor, right_table, from, to
       left_keys = right_keys = nil
-      while left_cursor.next?
+      while left_keys or right_keys or left_cursor.next? or right_cursor.next?
         # if there is no current left row, load the next one
         if !left_keys and left_cursor.next?
           left_keys, left_checksum = left_cursor.next_row_keys_and_checksum 
@@ -52,17 +52,6 @@ module RR
           next
         end
 
-        if right_keys == nil
-          # no more rows in right, all remaining left rows exist only there
-          # yield the current unprocessed left row
-          yield :left, left_cursor.current_row
-          left_keys = nil
-          while left_cursor.next?
-            # yield all remaining left rows
-            yield :left, left_cursor.next_row
-          end
-          break
-        end
         rank = rank_rows left_keys, right_keys
         case rank
         when -1
@@ -77,13 +66,6 @@ module RR
           end
           left_keys = right_keys = nil
         end
-      end
-      # if there are any unprocessed current right or left rows, yield them
-      yield :left, left_cursor.current_row if left_keys != nil
-      yield :right, right_cursor.current_row if right_keys != nil
-      while right_cursor.next?
-        # all remaining rows in right table exist only there --> yield them
-        yield :right, right_cursor.next_row
       end
     ensure
       session.left.destroy_cursor left_cursor if left_cursor

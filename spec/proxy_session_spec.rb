@@ -88,4 +88,11 @@ describe ProxySession do
     session.primary_key_names('scanner_records').should == ['id']
   end
   
+  it "select_one should call select_one of the proxied database connection" do
+    session = ProxySession.new standard_config.left
+    session.connection.should_receive(:select_one).with('dummy_query', 'dummy_name').and_return('dummy_result')
+    
+    session.select_one('dummy_query','dummy_name').should == 'dummy_result'
+  end
+  
 end

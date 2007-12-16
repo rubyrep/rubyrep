@@ -23,6 +23,11 @@ module RR
     # 2-level Hash of table_name => column_name => Column objects
     attr_accessor :table_columns
     
+    # Simply calls the select_one function of the proxied database connection
+    def select_one(sql, name = nil)
+      self.connection.select_one(sql, name)
+    end
+    
     # Returns a Hash of currently registerred cursors
     def cursors
       @cursors ||= {}

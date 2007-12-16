@@ -1,7 +1,11 @@
 require 'config/requirements'
 require 'config/hoe' # setup Hoe + all gem configuration
 
+require 'lib/rubyrep'
+require 'tasks/task_helper'
+
 Dir['tasks/**/*.rake'].each { |rake| load rake }
+load 'sims/big_scan/big_scan.rake'
 
 desc "Creates the SVN statistics"
 task :statsvn do
