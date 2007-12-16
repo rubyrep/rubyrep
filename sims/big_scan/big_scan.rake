@@ -120,5 +120,16 @@ namespace :sims do
     task :run do
       Spec::Runner::CommandLine.run ['--options', "spec/spec.opts", "./sims/big_scan/big_scan_spec.rb"], STDERR, STDOUT, false  
     end
+    
+    begin
+      require 'ruby-prof/task'
+      RubyProf::ProfileTask.new do |t|
+        t.test_files = FileList["./sims/big_scan/big_scan_spec.rb"]
+        t.output_dir = 'profile'
+        t.printer = :flat
+        t.min_percent = 1
+      end
+    rescue LoadError
+    end
   end
 end
