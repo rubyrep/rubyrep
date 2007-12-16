@@ -44,7 +44,7 @@ def drop_database(config)
   end
 end
 
-# Creates the sample schema in the database specified by the give 
+# Creates the sample schema in the database specified by the given 
 # Configuration object
 def create_sample_schema(config)
   ActiveRecord::Base.establish_connection(config)
