@@ -6,18 +6,17 @@ describe "database.rake" do
   end
 
   it "create_database should create a non-existing database" do
-    ActiveRecord::Base.should_receive(:establish_connection).and_raise("something")
+    RR::ConnectionExtenders.should_receive(:db_connect).and_raise("something")
     should_receive("`").with("createdb \"dummy\" -E utf8")
     
     create_database :adapter => "postgresql", :database => "dummy"
   end
   
   it "create_database should not try to create existing databases" do
-    ActiveRecord::Base.should_receive(:establish_connection)
-    ActiveRecord::Base.should_receive(:connection)
+    RR::ConnectionExtenders.should_receive(:db_connect)
     should_receive(:puts).with("database existing_db already exists")
     
-    create_database :database => "existing_db"
+    create_database :adapter => 'postgresql', :database => "existing_db"
   end
 
   it "create_database should complain about unsupported adapters" do

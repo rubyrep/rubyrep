@@ -8,8 +8,7 @@ require File.dirname(__FILE__) + '/../config/test_config'
 # Creates the databases in the given Configuration object
 def create_database(config)
   begin
-    ActiveRecord::Base.establish_connection(config)
-    ActiveRecord::Base.connection
+    RR::ConnectionExtenders.db_connect(config)
   rescue
     case config[:adapter]
     when 'postgresql'
@@ -18,9 +17,9 @@ def create_database(config)
       @charset   = ENV['CHARSET']   || 'utf8'
       @collation = ENV['COLLATION'] || 'utf8_general_ci'
       begin
-        ActiveRecord::Base.establish_connection(config.merge({'database' => nil}))
-        ActiveRecord::Base.connection.create_database(config[:database], {:charset => @charset, :collation => @collation})
-        ActiveRecord::Base.establish_connection(config)
+        connection = RR::ConnectionExtenders.db_connect(config.merge({'database' => nil}))
+        connection.create_database(config[:database], {:charset => @charset, :collation => @collation})
+        RR::ConnectionExtenders.db_connect(config)
       rescue
         $stderr.puts $!
         $stderr.puts "Couldn't create database for #{config.inspect}"
@@ -39,8 +38,8 @@ def drop_database(config)
   when 'postgresql'
     `dropdb "#{config[:database]}"`
   when 'mysql'
-    ActiveRecord::Base.establish_connection(config.merge({'database' => nil}))
-    ActiveRecord::Base.connection.drop_database config[:database]
+    connection = RR::ConnectionExtenders.db_connect(config.merge({'database' => nil}))
+    connection.drop_database config[:database]
   else
     puts "adapter #{config[:adapter]} not supported"
   end
@@ -49,8 +48,8 @@ end
 # Creates the sample schema in the database specified by the given 
 # Configuration object
 def create_sample_schema(config)
-  ActiveRecord::Base.establish_connection(config)
-  ActiveRecord::Base.connection
+  connection = RR::ConnectionExtenders.db_connect(config)
+  ActiveRecord::Base.connection = connection
   
   ActiveRecord::Schema.define do
     create_table :scanner_text_key, :id => false do |t|
@@ -119,8 +118,8 @@ end
 # Removes all tables from the sample scheme
 # config: Hash of configuration values for the desired database connection
 def drop_sample_schema(config)
-  ActiveRecord::Base.establish_connection(config)
-  ActiveRecord::Base.connection
+  connection = RR::ConnectionExtenders.db_connect(config)
+  ActiveRecord::Base.connection = connection
   
   ActiveRecord::Schema.define do
     drop_table :extender_type_check rescue nil
