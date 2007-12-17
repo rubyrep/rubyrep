@@ -1,5 +1,5 @@
 require 'config/requirements'
-require 'config/hoe' # setup Hoe + all gem configuration
+require 'config/hoe' if Object.const_defined? 'Hoe' # setup Hoe + all gem configuration
 
 require 'lib/rubyrep'
 require 'tasks/task_helper'
