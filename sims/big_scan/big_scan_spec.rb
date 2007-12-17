@@ -1,6 +1,7 @@
 require 'benchmark'
 
 require File.dirname(__FILE__) + '/../../spec/spec_helper.rb'
+require File.dirname(__FILE__) + '/../sim_helper'
 
 include RR
 
@@ -24,9 +25,14 @@ describe "Big Scan" do
     
     received_result = {:conflict => 0, :left => 0, :right => 0}
     
+    progress_bar = ProgressBar.new expected_result.values.inject {|sum, n| sum + n }
+
     scan = ProxiedTableScan.new session, 'big_scan'
     benchmark = Benchmark.measure {
-      scan.run { |diff_type, row| received_result[diff_type] += 1 }
+      scan.run do |diff_type, row|
+        progress_bar.step
+        received_result[diff_type] += 1
+      end
     }
     puts "  time required: #{benchmark}"
     
@@ -47,9 +53,14 @@ describe "Big Scan" do
     
     received_result = {:conflict => 0, :left => 0, :right => 0}
     
+    progress_bar = ProgressBar.new expected_result.values.inject {|sum, n| sum + n }
+
     scan = DirectTableScan.new session, 'big_scan'
     benchmark = Benchmark.measure {
-      scan.run { |diff_type, | received_result[diff_type] += 1 }
+      scan.run do |diff_type, |
+        progress_bar.step
+        received_result[diff_type] += 1
+      end
     }
     puts "  time required: #{benchmark}"
     

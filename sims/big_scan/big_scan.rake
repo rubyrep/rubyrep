@@ -1,6 +1,8 @@
 require 'rake'
 require 'benchmark'
 
+require File.dirname(__FILE__) + '/../sim_helper'
+
 class LeftBigScan < ActiveRecord::Base
   set_table_name "big_scan"
   include CreateWithKey
@@ -64,13 +66,12 @@ def big_scan_populate_data(session)
   srand BIG_SCAN_SEED
 
   puts "Populating #{BIG_SCAN_RECORD_NUMBER} records"
-  puts "0%>#{'-' * (40 - '0%>'.length - '100%>'.length)}>100%"
+  progress_bar = ProgressBar.new BIG_SCAN_RECORD_NUMBER
   
   (1..BIG_SCAN_RECORD_NUMBER).each do |i|
     
-    # Printing progess bar
-    putc '.' if i % (BIG_SCAN_RECORD_NUMBER / 40) == 0 
-    $stdout.flush
+    # Updating progress bar
+    progress_bar.step
     
     attributes = random_attributes
     attributes['id'] = i
@@ -97,8 +98,6 @@ def big_scan_populate_data(session)
       RightBigScan.create_with_key attributes
     end
   end
-
-  puts
 end
 
 # Prepares the database for the big_scan test
