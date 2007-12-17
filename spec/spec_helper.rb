@@ -34,7 +34,7 @@ module RR::ConnectionExtenders
         cached_db_connection
       else
         db_connection = db_connect_without_cache config
-        @@db_connection_cache[config_checksum] = db_connection
+        @@db_connection_cache[config_checksum] = db_connection if @@use_db_connection_cache
         db_connection
       end
     end
