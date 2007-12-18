@@ -11,7 +11,6 @@ describe "Big Scan" do
 
   # Runs a scan of the big_scan table using the provided Scanner class
   def run_scan(table_scan_class)
-    puts "\nScanning table big_scan using #{table_scan_class.name}"
     session = Session.new
     expected_result = {}
     expected_result[:conflict] = session.left.select_one( \
@@ -21,9 +20,14 @@ describe "Big Scan" do
     expected_result[:right] = session.right.select_one( \
         "select count(id) as count from big_scan where diff_type = 'right'")['count'].to_i
     
+    number_records = session.left.select_one( \
+        "select count(id) as count from big_scan")['count'].to_i \
+      + expected_result[:right]
+    number_differences = expected_result.values.inject {|sum, n| sum + n }
     received_result = {:conflict => 0, :left => 0, :right => 0}
-    
-    progress_bar = ProgressBar.new expected_result.values.inject {|sum, n| sum + n }
+      
+    puts "\nScanning table big_scan (#{number_differences} differences in #{number_records} records) using #{table_scan_class.name}"
+    progress_bar = ProgressBar.new number_differences
 
     scan = table_scan_class.new session, 'big_scan'
     benchmark = Benchmark.measure {
