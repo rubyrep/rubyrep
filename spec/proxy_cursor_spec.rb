@@ -27,7 +27,7 @@ describe ProxyCursor do
   it "construct_query should handle queries with only a from condition" do
     session = create_mock_session 'dummy_table', ['dummy_key'], ['dummy_key', 'dummy_column']
     
-    ProxyCursor.new(session, 'dummy_table').construct_query({'dummy_key' => 1}) \
+    ProxyCursor.new(session, 'dummy_table').construct_query(:from => {'dummy_key' => 1}) \
       .should == "\
          select dummy_key, dummy_column from dummy_table \
          where (dummy_key) >= (1) order by dummy_key".strip!.squeeze!(' ')
@@ -36,7 +36,7 @@ describe ProxyCursor do
   it "construct_query should handle queries with only a to condition" do
     session = create_mock_session 'dummy_table', ['dummy_key'], ['dummy_key', 'dummy_column']
     
-    ProxyCursor.new(session, 'dummy_table').construct_query(nil, {'dummy_key' => 1}) \
+    ProxyCursor.new(session, 'dummy_table').construct_query(:to => {'dummy_key' => 1}) \
       .should == "\
          select dummy_key, dummy_column from dummy_table \
          where (dummy_key) <= (1) order by dummy_key".strip!.squeeze!(' ')
@@ -45,7 +45,7 @@ describe ProxyCursor do
   it "construct_query should handle queries with both from and to conditions" do
     session = create_mock_session 'dummy_table', ['dummy_key'], ['dummy_key', 'dummy_column']
     
-    ProxyCursor.new(session, 'dummy_table').construct_query({'dummy_key' => 0}, {'dummy_key' => 1}) \
+    ProxyCursor.new(session, 'dummy_table').construct_query(:from => {'dummy_key' => 0}, :to => {'dummy_key' => 1}) \
       .should == "\
         select dummy_key, dummy_column from dummy_table \
         where (dummy_key) >= (0) and (dummy_key) <= (1) order by dummy_key".strip!.squeeze!(' ')
@@ -57,8 +57,8 @@ describe ProxyCursor do
       ['dummy_key1', 'dummy_key2', 'dummy_column']
     
     ProxyCursor.new(session, 'dummy_table').construct_query(
-      {'dummy_key1' => 0, 'dummy_key2' => 1}, 
-      {'dummy_key1' => 2, 'dummy_key2' => 3}) \
+      :from => {'dummy_key1' => 0, 'dummy_key2' => 1}, 
+      :to => {'dummy_key1' => 2, 'dummy_key2' => 3}) \
       .should == "\
         select dummy_key1, dummy_key2, dummy_column from dummy_table \
         where (dummy_key1, dummy_key2) >= (0, 1) and (dummy_key1, dummy_key2) <= (2, 3) \
@@ -69,10 +69,10 @@ describe ProxyCursor do
     session = ProxySession.new Initializer.configuration.left
     
     cursor = ProxyCursor.new(session, 'scanner_text_key')
-    cursor.construct_query({'text_id' => 'a'},{'text_id' => 'b'}) \
+    cursor.construct_query(:from => {'text_id' => 'a'}, :to => {'text_id' => 'b'}) \
       .should match(/'a'.*'b'/)
     # additional check that the quoted query actually works
-    results = cursor.prepare_fetch({'text_id' => 'a'},{'text_id' => 'b'})
+    results = cursor.prepare_fetch(:from => {'text_id' => 'a'}, :to => {'text_id' => 'b'})
     results.next_row.should == {'text_id' => 'a', 'name' => 'Alice'}
     results.next_row.should == {'text_id' => 'b', 'name' => 'Bob'}
     results.next?.should be_false

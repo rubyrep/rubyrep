@@ -28,8 +28,8 @@ module RR
     # 'from' and 'to' each are hashes of :column_name => column_value pairs containing the primary key columns
     def compare_blocks(from, to)
       left_cursor = right_cursor = nil
-      left_cursor = session.left.create_cursor ProxyRowCursor, left_table, from, to
-      right_cursor = session.right.create_cursor ProxyRowCursor, right_table, from, to
+      left_cursor = session.left.create_cursor ProxyRowCursor, left_table, :from => from, :to => to
+      right_cursor = session.right.create_cursor ProxyRowCursor, right_table, :from => from, :to => to
       left_keys = right_keys = nil
       while left_keys or right_keys or left_cursor.next? or right_cursor.next?
         # if there is no current left row, load the next one

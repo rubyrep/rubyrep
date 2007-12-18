@@ -64,11 +64,13 @@ module RR
       connection.quote value, table_columns[table][column]
     end
     
-    # Create a cursor for the given table and from / to row hash boundaries
-    # klass should specify the Cursor class (e. g. ProxyBlockCursor or ProxyRowCursor)
-    def create_cursor(cursor_class, table, from = nil, to = nil)
+    # Create a cursor for the given table.
+    #   * +cursor_class+: should specify the Cursor class (e. g. ProxyBlockCursor or ProxyRowCursor).
+    #   * +table+: name of the table 
+    #   * +options+: An option hash that is used to construct the SQL query. See ProxyCursor#construct_query for details.
+    def create_cursor(cursor_class, table, options = {})
       cursor = cursor_class.new self, table
-      cursor.prepare_fetch from, to
+      cursor.prepare_fetch options
       save_cursor cursor
       cursor
     end

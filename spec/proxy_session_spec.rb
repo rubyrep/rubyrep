@@ -69,8 +69,8 @@ describe ProxySession do
     cursor = session.create_cursor(
       ProxyRowCursor, 
       'scanner_records',
-      {'id' => 2},
-      {'id' => 2}
+      :from => {'id' => 2},
+      :to => {'id' => 2}
     )
 
     cursor.should be_an_instance_of(ProxyRowCursor)
