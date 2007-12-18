@@ -35,9 +35,9 @@ BIG_SCAN_RECORD_NUMBER = 5000 # number of records to create for simulation
 BIG_SCAN_SEED = 123 # random number seed to make simulation repeatable
 
 # Percentage values for same, modified, left_only and right_only records in simulation
-BIG_SCAN_SAME = 80
-BIG_SCAN_MODIFIED = BIG_SCAN_SAME + 10
-BIG_SCAN_LEFT_ONLY = BIG_SCAN_MODIFIED + 4 # difference to 100% will be right_only records 
+BIG_SCAN_SAME = 95
+BIG_SCAN_MODIFIED = BIG_SCAN_SAME + 3
+BIG_SCAN_LEFT_ONLY = BIG_SCAN_MODIFIED + 1 # difference to 100% will be right_only records 
 
 def text_columns
   @@text_columns ||= LeftBigScan.column_names.select {|column_name| column_name =~ /^text/}
