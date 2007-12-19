@@ -31,11 +31,24 @@ describe ProxiedTableScan do
       .should == 2
   end
   
+  # Reads a row / checksum array as described under ProxyBlockCursor#row_checksums
+  # for the given database +connection+ and +table+
+  def get_row_checksums(connection, table)
+    cursor = ProxyBlockCursor.new connection, table
+    cursor.prepare_fetch
+    cursor.checksum :block_size => 1000
+    cursor.row_checksums
+  end
+  
   it "compare_blocks should compare all the records in the range" do
     session = Session.new
+
+    left_row_checksums = get_row_checksums session.left, 'scanner_records'
+    right_row_checksums = get_row_checksums session.right, 'scanner_records'
+
     scan = ProxiedTableScan.new session, 'scanner_records'
     diff = []
-    scan.compare_blocks({'id' => 1}, {'id' => 1000}) do |type, row|
+    scan.compare_blocks(left_row_checksums, right_row_checksums) do |type, row|
       diff.push [type, row]
     end
     # in this scenario the right table has the 'highest' data, 
@@ -51,26 +64,14 @@ describe ProxiedTableScan do
     ]    
   end
   
-  it "compare_blocks should exclude rows matching 'from' but include rows matching 'to' key" do
-    session = Session.new
-    scan = ProxiedTableScan.new session, 'scanner_records'
-    diff = []
-    scan.compare_blocks({'id' => 2}, {'id' => 5}) do |type, row|
-      diff.push [type, row]
-    end
-
-    diff.should == [
-      [:left, {'id' => 3, 'name' => 'Charlie - exists in left database only'}],
-      [:right, {'id' => 4, 'name' => 'Dave - exists in right database only'}],
-      [:left, {'id' => 5, 'name' => 'Eve - exists in left database only'}],
-    ]    
-  end
-  
   it "compare_blocks should destroy the created cursors" do
     session = Session.new
 
+    left_row_checksums = get_row_checksums session.left, 'scanner_records'
+    right_row_checksums = get_row_checksums session.right, 'scanner_records'
+
     scan = ProxiedTableScan.new session, 'scanner_records'
-    scan.compare_blocks({'id' => 2}, {'id' => 2}) { |type, row| }
+    scan.compare_blocks(left_row_checksums, right_row_checksums) { |type, row| }
     
     session.left.cursors.should == {}
     session.right.cursors.should == {}
@@ -81,7 +82,7 @@ describe ProxiedTableScan do
 
     scan = ProxiedTableScan.new session, 'scanner_records'
     diff = []
-    scan.compare_blocks({'id' => 999}, {'id' => 1000}) do |type, row|
+    scan.compare_blocks([], []) do |type, row|
       diff.push [type, row]
     end
     diff.should == []
@@ -90,9 +91,10 @@ describe ProxiedTableScan do
   it "compare_blocks should handle one-sided data" do
     # separate test case for left-sided data; right-sided data are already covered in the general test
     session = Session.new
+    left_row_checksums = get_row_checksums session.left, 'scanner_records'
     scan = ProxiedTableScan.new session, 'scanner_left_records_only'
     diff = []
-    scan.compare_blocks({'id' => 0}, {'id' => 2})  do |type, row|
+    scan.compare_blocks(left_row_checksums, [])  do |type, row|
       diff.push [type, row]
     end
     diff.should == [

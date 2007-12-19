@@ -46,25 +46,53 @@ module RR
     # +options+ is a hash that can contain any of the following:
     #   * +:from+: nil OR the hash of primary key => value pairs designating the start of the selection
     #   * +:to+: nil OR the hash of primary key => value pairs designating the end of the selection
+    #   * +:row_keys+: an array of primary key => value hashes specify the target rows.
     def construct_query(options = {})
       options.each_key do |key| 
-        raise "options must only include :from or :to" unless [:from, :to].include? key
+        raise "options must only include :from, :to or :row_keys" unless [:from, :to, :row_keys].include? key
       end
       query = "select #{session.column_names(table).join(', ')} from #{table}"
       query << " where" unless options.empty?
+      first_condition = true
       if options[:from]
-        query << ' (' << primary_key_names.join(', ') << ') >='
-        query << ' (' << primary_key_names.map {|key| quote_column_value(key, options[:from][key])}.join(', ') << ')'
+        first_condition = false
+        query << row_condition(options[:from], '>=')
       end
       if options[:to]
-        query << ' and' if options[:from]
-        query << ' (' << primary_key_names.join(', ') << ') <='
-        query << ' (' << primary_key_names.map {|key| quote_column_value(key, options[:to][key])}.join(', ') << ')'
+        query << ' and' unless first_condition
+        first_condition = false
+        query << row_condition(options[:to], '<=')
+      end
+      if options[:row_keys]
+        query << ' and' unless first_condition
+        if options[:row_keys].empty?
+          query << ' false'
+        else
+          query << ' (' << primary_key_names.join(', ') << ') in ('
+          first_key = true
+          options[:row_keys].each do |row|
+            query << ', ' unless first_key
+            first_key = false
+            query << '(' << primary_key_names.map {|key| quote_column_value(key, row[key])}.join(', ') << ')'
+          end
+          query << ')'
+        end
       end
       query << " order by #{primary_key_names.join(', ')}"
 
       query
     end
+    
+    # Generates an sql condition string based on
+    #   * +row+: a hash of primary key => value pairs designating the target row
+    #   * +condition+: the type of sql condition (something like '>=' or '=', etc.)
+    def row_condition(row, condition)
+      query_part = ""
+      query_part << ' (' << primary_key_names.join(', ') << ') ' << condition
+      query_part << ' (' << primary_key_names.map {|key| quote_column_value(key, row[key])}.join(', ') << ')'
+      query_part
+    end
+    private :row_condition
     
     # Releases all ressources
     def destroy

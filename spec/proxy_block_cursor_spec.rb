@@ -54,7 +54,13 @@ describe ProxyBlockCursor do
     @cursor.digest.should be_an_instance_of(Digest::SHA1) 
   end
   
-  it "update_checksum should update the existing digest" do
+  it "reset_checksum should empty the row_checksums array" do
+    @cursor.row_checksums = :dummy_content
+    @cursor.reset_checksum
+    @cursor.row_checksums.should == []
+  end
+  
+  it "update_checksum should update the existing digests" do
     dummy_row1 = {'dummy_id' => 'dummy_value1'}
     dummy_row2 = {'dummy_id' => 'dummy_value2'}
     
@@ -63,6 +69,10 @@ describe ProxyBlockCursor do
     @cursor.update_checksum dummy_row2
     
     @cursor.current_checksum.should == Digest::SHA1.hexdigest(Marshal.dump(dummy_row1) + Marshal.dump(dummy_row2))
+    @cursor.row_checksums.should == [
+      {:row_keys => dummy_row1, :checksum => Digest::SHA1.hexdigest(Marshal.dump(dummy_row1))},
+      {:row_keys => dummy_row2, :checksum => Digest::SHA1.hexdigest(Marshal.dump(dummy_row2))},
+    ]
   end
   
   it "current_checksum should return the current checksum" do

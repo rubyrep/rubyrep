@@ -18,6 +18,12 @@ module RR
     # nil if the last run of the checksum method left no unprocessed row.
     # Otherwise the left over row of that checksum run
     attr_accessor :last_row
+    
+    # Returns an array of checksums for each encounters row.
+    # Each array element is a Hash with the following elements:
+    #   * +:row_keys+: A primary key => value hash identifying the row
+    #   * +:checksum+: the checksum for this row
+    attr_accessor :row_checksums
 
     # Creates a new cursor
     #   * session: the current proxy session
@@ -41,13 +47,21 @@ module RR
       row
     end
     
-    # Updates the current checksum based on the provided row hash
+    # Updates the row checksum array and the current total checksum based on the provided row hash.
     def update_checksum(row)
-      self.digest << Marshal.dump(row)
+      dump = Marshal.dump(row)
+      
+      # updates row checksum array
+      row_keys = row.reject {|key, | not primary_key_names.include? key}
+      self.row_checksums << {:row_keys => row_keys, :checksum => Digest::SHA1.hexdigest(dump)}
+      
+      # update current total checksum
+      self.digest << dump
     end
     
-    # Reinitializes the checksum
+    # Reinitializes the row checksum array and the total checksum
     def reset_checksum
+      self.row_checksums = []
       self.digest = Digest::SHA1.new
     end
     

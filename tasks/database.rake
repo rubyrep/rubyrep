@@ -136,6 +136,11 @@ def drop_sample_schema(config)
   ActiveRecord::Base.connection.disconnect!
 end
 
+class ExtenderCombinedKey < ActiveRecord::Base
+  set_table_name "extender_combined_key"
+  include CreateWithKey  
+end
+
 class ScannerRecords < ActiveRecord::Base
   include CreateWithKey
 end
@@ -189,10 +194,19 @@ def delete_all_and_create_shared_sample_data(connection)
 
   # The primary key of this table is in text format - ActiveRecord cannot be
   # used to create the example data.
+  connection.execute "delete from scanner_text_key"
   [ {:text_id => 'a', :name => 'Alice'},
     {:text_id => 'b', :name => 'Bob'},
     {:text_id => 'c', :name => 'Charlie'}
   ].each { |row| create_row connection, 'scanner_text_key', row}
+
+  # ActiveRecord also doesn't handle tables with combined primary keys
+  connection.execute("delete from extender_combined_key")
+  [
+    {:first_id => 1, :second_id => 1},
+    {:first_id => 1, :second_id => 2},
+    {:first_id => 2, :second_id => 1}
+  ].each { |row| create_row connection, 'extender_combined_key', row}
 end
 
 # Reinitializes the sample schema with the sample data
@@ -217,6 +231,7 @@ def create_sample_data
   ScannerRecords.create_with_key :id => 6, :name => 'Fred - exists in right database only'
 
   ScannerLeftRecordsOnly.connection = session.left
+  ScannerLeftRecordsOnly.delete_all
   ScannerLeftRecordsOnly.create_with_key :id => 1, :name => 'Alice'
   ScannerLeftRecordsOnly.create_with_key :id => 2, :name => 'Bob'
 end
