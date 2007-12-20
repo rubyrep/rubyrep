@@ -103,7 +103,6 @@ end
 # Prepares the database for the big_scan test
 def big_scan_prepare
   session = RR::Session.new
-  #puts "TODO: schema creation skipped!"
   [:left, :right].each {|arm| big_scan_prepare_schema(session.send(arm))}
   puts "time required: " + Benchmark.measure {big_scan_populate_data session}.to_s
 end
