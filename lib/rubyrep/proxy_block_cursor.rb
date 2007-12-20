@@ -24,11 +24,21 @@ module RR
     #   * +:row_keys+: A primary key => value hash identifying the row
     #   * +:checksum+: the checksum for this row
     attr_accessor :row_checksums
-
+    
+    # The maximum total size (in bytes) up to which rows will be cached
+    attr_accessor :max_row_cache_size
+    
+    # A byte counter of many bytes of row data have already been cached
+    attr_accessor :current_row_cache_size
+    
+    # A hash of cached rows consisting of row checksum => row dump pairs.
+    attr_accessor :row_cache
+        
     # Creates a new cursor
     #   * session: the current proxy session
     #   * table: table_name
     def initialize(session, table)
+      self.max_row_cache_size = 1000000 # this size should be sufficient as long as table doesn't contain blobs
       super
     end
     
@@ -47,13 +57,30 @@ module RR
       row
     end
     
-    # Updates the row checksum array and the current total checksum based on the provided row hash.
+    # Returns a hash of row checksum => row dump pairs for the +checksums+ 
+    # in the provided array
+    def retrieve_row_cache(checksums)
+      row_dumps = {}
+      checksums.each do |checksum|
+        row_dumps[checksum] = row_cache[checksum] if row_cache.include? checksum
+      end      
+      row_dumps
+    end
+    
+    # Updates block / row checksums and row cache
     def update_checksum(row)
       dump = Marshal.dump(row)
       
       # updates row checksum array
       row_keys = row.reject {|key, | not primary_key_names.include? key}
-      self.row_checksums << {:row_keys => row_keys, :checksum => Digest::SHA1.hexdigest(dump)}
+      checksum = Digest::SHA1.hexdigest(dump)
+      self.row_checksums << {:row_keys => row_keys, :checksum => checksum}
+
+      # update the row cache (unless maximum cache size limit has already been reached)
+      if current_row_cache_size + dump.size < max_row_cache_size
+        self.current_row_cache_size += dump.size
+        row_cache[checksum] = dump
+      end
       
       # update current total checksum
       self.digest << dump
@@ -62,6 +89,8 @@ module RR
     # Reinitializes the row checksum array and the total checksum
     def reset_checksum
       self.row_checksums = []
+      self.current_row_cache_size = 0
+      self.row_cache = {}
       self.digest = Digest::SHA1.new
     end
     

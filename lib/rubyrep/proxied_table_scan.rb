@@ -25,61 +25,101 @@ module RR
     end
     
     # Compares the specified left and right rows.
-    # +left_row_checksums+ and +right_row_checksums+ each are arrays of row checksums
-    # as returned by ProxyBlockCursor#row_checksums
-    def compare_blocks(left_row_checksums, right_row_checksums)
+    # +left_cursor+ and +right_cursor+ represent the according ProxyBlockCursor objects.
+    def compare_blocks(left_block_cursor, right_block_cursor)
       left_cursor = right_cursor = nil
+      
+      left_row_checksums = left_block_cursor.row_checksums
+      right_row_checksums = right_block_cursor.row_checksums
 
-      # phase 1: identify the different rows and put store their primary keys
+      # phase 1: identify the different rows and store their primary keys
       left_diff_rows = []
+      left_diff_checksums = []
       right_diff_rows = []
-      left_index = right_index = 0
-      while left_index < left_row_checksums.size or right_index < right_row_checksums.size
-        left_keys = left_index < left_row_checksums.size ? left_row_checksums[left_index][:row_keys] : nil
-        right_keys = right_index < right_row_checksums.size ? right_row_checksums[right_index][:row_keys] : nil
+      right_diff_checksums = []
+      i = k = 0
+      while i < left_row_checksums.size or k < right_row_checksums.size
+        left_keys = i < left_row_checksums.size ? left_row_checksums[i][:row_keys] : nil
+        right_keys = k < right_row_checksums.size ? right_row_checksums[k][:row_keys] : nil
         rank = rank_rows left_keys, right_keys
         case rank
         when -1
           left_diff_rows << left_keys
-          left_index += 1
+          left_diff_checksums << left_row_checksums[i][:checksum]
+          i += 1
         when 1
           right_diff_rows << right_keys
-          right_index += 1
+          right_diff_checksums << right_row_checksums[k][:checksum]
+          k += 1
         when 0
-          if left_row_checksums[left_index][:checksum] != right_row_checksums[right_index][:checksum]
+          if left_row_checksums[i][:checksum] != right_row_checksums[k][:checksum]
             left_diff_rows << left_keys
+            left_diff_checksums << left_row_checksums[i][:checksum]
             right_diff_rows << right_keys
+            right_diff_checksums << right_row_checksums[k][:checksum]
           end
-          left_index += 1
-          right_index += 1
+          i += 1
+          k += 1
         end
+      end
+      
+      # retrieve possibly existing cached rows from the block cursors
+      left_row_cache = left_block_cursor.retrieve_row_cache left_diff_checksums
+      right_row_cache = right_block_cursor.retrieve_row_cache right_diff_checksums
+      
+      # builds arrays of row keys for rows that were not included in the hash
+      left_uncached_rows = []
+      left_diff_rows.each_with_index do |row, i|
+        left_uncached_rows << row unless left_row_cache[left_diff_checksums[i]]
+      end
+      right_uncached_rows = []
+      right_diff_rows.each_with_index do |row, i|
+        right_uncached_rows << row unless right_row_cache[right_diff_checksums[i]]
       end
 
       # phase 2: read all different rows and yield them
-      left_cursor = session.left.create_cursor ProxyRowCursor, left_table, :row_keys => left_diff_rows
-      right_cursor = session.right.create_cursor ProxyRowCursor, right_table, :row_keys => right_diff_rows
-      left_row = right_row = nil
-      while left_row or left_cursor.next? or right_row or right_cursor.next?
-        # if there is no current left row, load the next one
-        if !left_row and left_cursor.next?
-          left_row = left_cursor.next_row 
-        end
-        # if there is no current right row, _try_ to load the next one
-        if !right_row and right_cursor.next?
-          right_row = right_cursor.next_row
-        end
-
-        rank = rank_rows left_row, right_row
+      unless left_uncached_rows.empty?
+        left_cursor = session.left.create_cursor \
+          ProxyRowCursor, left_table, :row_keys => left_uncached_rows
+      end
+      unless right_uncached_rows.empty?
+        right_cursor = session.right.create_cursor \
+          ProxyRowCursor, right_table, :row_keys => right_uncached_rows  
+      end
+      i = k = 0
+      while i < left_diff_rows.size or k < right_diff_rows.size
+        rank = rank_rows left_diff_rows[i], right_diff_rows[k]
         case rank
         when -1
-          yield :left, left_row
-          left_row = nil
+          if left_row_cache.include? left_diff_checksums[i]
+            row = Marshal.load(left_row_cache[left_diff_checksums[i]])
+          else
+            row = left_cursor.next_row
+          end
+          yield :left, row
+          i += 1
         when 1
-          yield :right, right_row
-          right_row = nil
+          if right_row_cache.include? right_diff_checksums[k]
+            row = Marshal.load(right_row_cache[right_diff_checksums[k]])
+          else
+            row = right_cursor.next_row
+          end
+          yield :right, row
+          k += 1
         when 0
+          if left_row_cache.include? left_diff_checksums[i]
+            left_row = Marshal.load(left_row_cache[left_diff_checksums[i]])
+          else
+            left_row = left_cursor.next_row
+          end
+          if right_row_cache.include? right_diff_checksums[k]
+            right_row = Marshal.load(right_row_cache[right_diff_checksums[k]])
+          else
+            row = right_cursor.next_row
+          end
           yield :conflict, [left_row, right_row]
-          left_row = right_row = nil
+          i += 1
+          k += 1
         end
       end
     ensure
@@ -96,7 +136,6 @@ module RR
       left_cursor = right_cursor = nil
       left_cursor = session.left.create_cursor ProxyBlockCursor, self.left_table
       right_cursor = session.right.create_cursor ProxyBlockCursor, self.right_table
-      last_left_to = nil
       while left_cursor.next?
         left_to, left_checksum = left_cursor.checksum :block_size => block_size
 
@@ -104,11 +143,10 @@ module RR
         right_to, right_checksum = right_cursor.checksum :max_row => left_to 
 
         if left_checksum != right_checksum
-          compare_blocks left_cursor.row_checksums, right_cursor.row_checksums do |type, row|
+          compare_blocks left_cursor, right_cursor do |type, row|
             yield type, row
           end
         end
-        last_left_to = left_to
       end
       while right_cursor.next?
         yield :right, right_cursor.next_row

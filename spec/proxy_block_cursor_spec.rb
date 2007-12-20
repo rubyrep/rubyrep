@@ -54,10 +54,12 @@ describe ProxyBlockCursor do
     @cursor.digest.should be_an_instance_of(Digest::SHA1) 
   end
   
-  it "reset_checksum should empty the row_checksums array" do
-    @cursor.row_checksums = :dummy_content
+  it "reset_checksum should reset block variables" do
     @cursor.reset_checksum
     @cursor.row_checksums.should == []
+    @cursor.current_row_cache_size.should == 0
+    @cursor.row_cache.should == {}
+    
   end
   
   it "update_checksum should update the existing digests" do
@@ -73,6 +75,17 @@ describe ProxyBlockCursor do
       {:row_keys => dummy_row1, :checksum => Digest::SHA1.hexdigest(Marshal.dump(dummy_row1))},
       {:row_keys => dummy_row2, :checksum => Digest::SHA1.hexdigest(Marshal.dump(dummy_row2))},
     ]
+    
+    @cursor.row_cache.should == {
+      Digest::SHA1.hexdigest(Marshal.dump(dummy_row1)) => Marshal.dump(dummy_row1),
+      Digest::SHA1.hexdigest(Marshal.dump(dummy_row2)) => Marshal.dump(dummy_row2)
+    }
+  end
+  
+  it "retrieve_row_cache should retrieve the specified elements" do
+    @cursor.row_cache = {'dummy_checksum' => 'bla'}
+    @cursor.retrieve_row_cache(['non_cached_row_checksum', 'dummy_checksum']).should ==
+      {'dummy_checksum' => 'bla'}
   end
   
   it "current_checksum should return the current checksum" do
