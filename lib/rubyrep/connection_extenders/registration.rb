@@ -25,14 +25,15 @@ module RR
     class DummyActiveRecord < ActiveRecord::Base
     end
     
-    # Creates an ActiveRecord database connection according to the provided connection hash.
+    # Creates an ActiveRecord database connection according to the provided +config+ connection hash.
+    # Possible values of this parameter are described in ActiveRecord::Base#establish_connection.
     # The database connection is extended with the correct ConnectionExtenders module.
     # 
     # ActiveRecord only allows one database connection per class.
     # (It disconnects the existing database connection if a new connection is established.)
     # To go around this, we delete ActiveRecord's memory of the existing database connection
     # as soon as it is created.
-    def self.db_connect(config)
+    def self.db_connect_without_cache(config)
       if RUBY_PLATFORM =~ /java/
         adapter = config[:adapter]
         
@@ -65,6 +66,49 @@ module RR
       mod = ConnectionExtenders.extenders[extender]
       connection.extend mod
       connection
+    end
+    
+    @@use_cache = true
+    
+    # Returns the current cache status (+true+ if caching is used; +false+ otherwise).
+    def self.use_cache?; @@use_cache; end
+    
+    # Returns the connection cache hash.
+    def self.connection_cache; @@connection_cache; end
+    
+    # Sets a new connection cache
+    def self.connection_cache=(cache)
+      @@connection_cache = cache
+    end
+    
+    # Creates database connections by calling #db_connect_without_cache with the 
+    # provided +config+ configuration hash.
+    # A new database connection is created only if no according cached connection
+    # is available.
+    def self.db_connect(config)
+      config_dump = Marshal.dump config.reject {|key, | [:proxy_host, :proxy_port].include? key}
+      config_checksum = Digest::SHA1.hexdigest(config_dump)
+      @@connection_cache ||= {}
+      cached_db_connection = connection_cache[config_checksum]
+      if use_cache? and cached_db_connection and cached_db_connection.active?
+        cached_db_connection
+      else
+        db_connection = db_connect_without_cache config
+        connection_cache[config_checksum] = db_connection if @@use_cache
+        db_connection
+      end
+    end
+    
+    # If status == true: enable the cache. If status == false: don' use cache
+    # Returns the old connection caching status
+    def self.use_db_connection_cache(status)
+      old_status, @@use_cache = @@use_cache, status
+      old_status
+    end
+    
+    # Free up all cached connections
+    def self.clear_db_connection_cache
+      @@connection_cache = {}
     end
   end
 end

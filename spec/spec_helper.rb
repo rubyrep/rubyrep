@@ -16,43 +16,6 @@ require 'rubyrep'
 require 'connection_extender_interface_spec'
 
 
-
-module RR::ConnectionExtenders
-  
-  class << self
-    alias_method :db_connect_without_cache, :db_connect unless method_defined?(:db_connect_without_cache)
-    
-    @@use_db_connection_cache = true
-    
-    # For faster spec runs, overwrite db_connect to use connection caching 
-    def db_connect(config)
-      config_dump = Marshal.dump config.reject {|key, | [:proxy_host, :proxy_port].include? key}
-      config_checksum = Digest::SHA1.hexdigest(config_dump)
-      @@db_connection_cache ||= {}
-      cached_db_connection = @@db_connection_cache[config_checksum]
-      if @@use_db_connection_cache and cached_db_connection and cached_db_connection.active?
-        cached_db_connection
-      else
-        db_connection = db_connect_without_cache config
-        @@db_connection_cache[config_checksum] = db_connection if @@use_db_connection_cache
-        db_connection
-      end
-    end
-    
-    # If status == true: enable the cache. If status == false: don' use cache
-    # Returns the old connection caching status
-    def use_db_connection_cache(status)
-      old_status, @@use_db_connection_cache = @@use_db_connection_cache, status
-      old_status
-    end
-    
-    # Free up all cached connections
-    def clear_db_connection_cache
-      @@db_connection_cache = {}
-    end
-  end
-end
-
 # Creates a mock ProxySession with the given
 #   * mock_table: name of the mock table
 #   * primary_key_names: array of mock primary column names
