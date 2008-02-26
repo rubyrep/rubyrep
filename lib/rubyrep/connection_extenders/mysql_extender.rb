@@ -59,7 +59,7 @@ module RR
           order by ordinal_position
         end_sql
 
-        columns = rows.map {|row| row['column_name']}
+        columns = rows.map {|_row| _row['column_name']}
         columns
       end
 
