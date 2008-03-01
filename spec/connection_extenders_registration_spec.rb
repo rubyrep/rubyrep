@@ -29,6 +29,73 @@ describe ConnectionExtenders, "Registration" do
     ConnectionExtenders.extenders[:bla].should == :blub2
   end
   
+  it "initialize should establish the database connections" do
+    mock_active_record :once
+    
+    ConnectionExtenders.db_connect Initializer.configuration.left
+  end
+    
+  it "db_connect should use jdbc configuration adapter and extender under jruby" do
+    fake_ruby_platform 'java' do
+      mock_active_record :once
+      used_extender = nil
+      ConnectionExtenders.extenders.should_receive('[]'.to_sym).once \
+        .and_return {|extender| used_extender = extender }
+
+      configuration = deep_copy(Initializer.configuration)
+      configuration.left[:adapter] = 'dummyadapter'
+      
+      ConnectionExtenders.db_connect configuration.left
+      
+      $used_config[:adapter].should == "jdbcdummyadapter"
+      used_extender.should == :jdbc
+    end
+  end
+
+  it "db_connect should not use jdbc configuration adapter and extender under jruby for mysql connections" do
+    fake_ruby_platform 'java' do
+      mock_active_record :once
+      used_extender = nil
+      ConnectionExtenders.extenders.should_receive('[]'.to_sym).once \
+        .and_return {|extender| used_extender = extender }
+
+      configuration = deep_copy(Initializer.configuration)
+      configuration.left[:adapter] = 'mysql'
+      
+      ConnectionExtenders.db_connect configuration.left
+      
+      $used_config[:adapter].should == "mysql"
+      used_extender.should == :mysql
+    end
+  end
+
+  it "db_connect created connections should be alive" do
+    connection = ConnectionExtenders.db_connect Initializer.configuration.left
+    
+    connection.should be_active
+  end
+  
+  it "db_connect should include the connection extender into connection" do
+    connection = ConnectionExtenders.db_connect Initializer.configuration.left
+    
+    connection.should respond_to(:select_cursor)
+  end
+  
+  it "db_connect should raise an Exception if no fitting connection extender is available" do
+    # If unknown connection adapters are encountered in jruby, then we
+    # automatically use JdbcExtender.
+    # Means that this test only makes sense if not running on jruby
+    if not RUBY_PLATFORM =~ /java/
+      mock_active_record :once
+
+      config = deep_copy(Initializer.configuration)
+
+      config.left[:adapter] = 'dummy'
+
+      lambda {ConnectionExtenders.db_connect  config.left}.should raise_error(RuntimeError, /dummy/)
+    end
+  end
+  
   it "use_db_connection_cache should set the new cache status and return the old one" do
     ConnectionExtenders.use_db_connection_cache :first_status
     first_status = ConnectionExtenders.use_db_connection_cache :second_status
