@@ -16,6 +16,21 @@ require 'rubyrep'
 require 'connection_extender_interface_spec'
 
 
+# If number_of_calls is :once, mock ActiveRecord for 1 call.
+# If number_of_calls is :twice, mock ActiveRecord for 2 calls.
+def mock_active_record(number_of_calls)
+  ConnectionExtenders::DummyActiveRecord.should_receive(:establish_connection).send(number_of_calls) \
+    .and_return {|config| $used_config = config}
+    
+  dummy_connection = Object.new
+  # We have a spec testing behaviour for non-existing extenders.
+  # So extend might not be called in all cases
+  dummy_connection.should_receive(:extend).any_number_of_times
+    
+  ConnectionExtenders::DummyActiveRecord.should_receive(:connection).send(number_of_calls) \
+    .and_return {dummy_connection}
+end
+
 # Creates a mock ProxySession with the given
 #   * mock_table: name of the mock table
 #   * primary_key_names: array of mock primary column names
