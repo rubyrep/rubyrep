@@ -8,7 +8,7 @@ RR::Initializer::run do |config|
     :proxy_port => '9876',   
   })
 
-  config.proxy_options = {
+  config.proxy_options.merge!({
     :block_size => 2
-  }
+  })
 end

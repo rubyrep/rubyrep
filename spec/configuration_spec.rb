@@ -6,11 +6,15 @@ describe Configuration do
   before(:each) do
   end
 
-  it "initialize should create configuration variables with empty hashes" do
+  it "initialize should set #left and #right to empty hashes" do
     config = Configuration.new
-    [:left, :right, :left_proxy, :right_proxy, :proxy_options].each do |hash_attr|
+    [:left, :right].each do |hash_attr|
       config.send(hash_attr).should == {}
     end
-    
+  end
+  
+  it "initialize should set #proxy_options to default proxy options" do
+    config = Configuration.new
+    config.proxy_options.should == Configuration::DEFAULT_PROXY_OPTIONS
   end
 end
