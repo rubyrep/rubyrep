@@ -38,7 +38,8 @@ module RR
       cursors[cursor] = cursor
     end
     
-    # Create a session on the proxy side according to provided configuration hash and proxy_options hash
+    # Create a session on the proxy side according to provided configuration hash.
+    # +config+ is a hash as described by ActiveRecord::Base#establish_connection
     def initialize(config)
       self.connection = ConnectionExtenders.db_connect config
     end

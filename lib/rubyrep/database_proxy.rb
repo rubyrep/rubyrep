@@ -23,7 +23,8 @@ module RR
       self.session_register = {}
     end
     
-    # Create a ProxySession according to provided configuration Hash and proxy_optios Hash
+    # Create a ProxySession according to provided configuration Hash.
+    # +config+ is a hash as described by ActiveRecord::Base#establish_connection
     def create_session(config)
       session = ProxySession.new config
       self.session_register[session] = session
