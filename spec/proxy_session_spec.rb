@@ -4,69 +4,58 @@ include RR
 
 describe ProxySession do
   before(:each) do
-    Initializer.configuration = standard_config
+    Initializer.configuration = proxied_config
+    @session = ProxySession.new Initializer.configuration.left
   end
 
   it "initialize should connect to the database" do
-    session = ProxySession.new Initializer.configuration.left
-    session.connection.active?.should == true
+    @session.connection.active?.should == true
   end
   
   it "destroy should disconnect from the database" do
-    session = ProxySession.new Initializer.configuration.left
-    session.destroy
+    @session.destroy
 
-    session.connection.active?.should == false
+    @session.connection.active?.should == false
   end
   
   it "primary_key_names should return the primary keys of the given table" do
-    session = ProxySession.new Initializer.configuration.left
-    
-    session.primary_key_names('scanner_records').should == ['id']
+    @session.primary_key_names('scanner_records').should == ['id']
   end
   
   it "cursors should return the current cursor hash or an empty hash if nil" do
-    session = ProxySession.new Initializer.configuration.left
-    session.cursors.should == {}
-    session.cursors[:dummy_cursor] = :dummy_cursor
-    session.cursors.should == {:dummy_cursor => :dummy_cursor}    
+    @session.cursors.should == {}
+    @session.cursors[:dummy_cursor] = :dummy_cursor
+    @session.cursors.should == {:dummy_cursor => :dummy_cursor}    
   end
   
   it "save_cursor should register the provided cursor" do
-    session = ProxySession.new Initializer.configuration.left
-    session.save_cursor :dummy_cursor
+    @session.save_cursor :dummy_cursor
     
-    session.cursors[:dummy_cursor].should == :dummy_cursor
+    @session.cursors[:dummy_cursor].should == :dummy_cursor
   end
   
   it "destroy should destroy and unregister any stored cursors" do
-    session = ProxySession.new Initializer.configuration.left
-    
     cursor = mock("Cursor")
     cursor.should_receive(:destroy)
     
-    session.save_cursor cursor
-    session.destroy
+    @session.save_cursor cursor
+    @session.destroy
     
-    session.cursors.should == {}
+    @session.cursors.should == {}
   end
 
   it "destroy_cursor should destroy and unregister the provided cursor" do
-    session = ProxySession.new Initializer.configuration.left
-    
     cursor = mock("Cursor")
     cursor.should_receive(:destroy)
     
-    session.save_cursor cursor
-    session.destroy_cursor cursor
+    @session.save_cursor cursor
+    @session.destroy_cursor cursor
     
-    session.cursors.should == {}
+    @session.cursors.should == {}
   end
   
   it "create_cursor should create and register the cursor and initiate row fetching" do
-    session = ProxySession.new Initializer.configuration.left
-    
-    cursor = session.create_cursor(
+    cursor = @session.create_cursor(
       ProxyRowCursor, 
       'scanner_records',
       :from => {'id' => 2},
@@ -79,20 +68,16 @@ describe ProxySession do
   end
   
   it "column_names should return the column names of the specified table" do
-    session = ProxySession.new standard_config.left
-    session.column_names('scanner_records').should == ['id', 'name']
+    @session.column_names('scanner_records').should == ['id', 'name']
   end
   
   it "primary_key_names should return the names of the primary keys of the specified table" do
-    session = ProxySession.new standard_config.left
-    session.primary_key_names('scanner_records').should == ['id']
+    @session.primary_key_names('scanner_records').should == ['id']
   end
   
   it "select_one should call select_one of the proxied database connection" do
-    session = ProxySession.new standard_config.left
-    session.connection.should_receive(:select_one).with('dummy_query', 'dummy_name').and_return('dummy_result')
+    @session.connection.should_receive(:select_one).with('dummy_query', 'dummy_name').and_return('dummy_result')
     
-    session.select_one('dummy_query','dummy_name').should == 'dummy_result'
+    @session.select_one('dummy_query','dummy_name').should == 'dummy_result'
   end
-  
 end
