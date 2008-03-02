@@ -111,6 +111,7 @@ def create_sample_schema(config)
       t.column :timestamp, :timestamp
       t.column :multi_byte, :string
       t.column :binary_test, :binary
+      t.column :text_test, :text
     end rescue nil
   end
 end

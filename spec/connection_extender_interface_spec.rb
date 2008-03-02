@@ -57,7 +57,7 @@ describe "ConnectionExtender", :shared => true do
     }
   end
   
-  it "should write binary data correctly" do
+  it "should read and write binary data correctly" do
     session = Session.new
 
     org_data = Marshal.dump(['bla',:dummy,1,2,3])
@@ -70,6 +70,25 @@ describe "ConnectionExtender", :shared => true do
       org_cursor = session.left.select_cursor("select id, binary_test from extender_type_check where id = 2")
       cursor = TypeCastingCursor.new session.left, 'extender_type_check', org_cursor
       result_data = cursor.next_row['binary_test']
+    ensure
+      session.left.rollback_db_transaction
+    end
+    result_data.should == org_data
+  end
+  
+  it "should read and write text data correctly" do
+    session = Session.new
+
+    org_data = "よろしくお願(ねが)いします yoroshiku onegai shimasu: I humbly ask for your favor."
+    result_data = nil
+    begin
+      session.left.begin_db_transaction
+      sql = "insert into extender_type_check(id, text_test) values(2, '#{org_data}')"
+      session.left.execute sql
+
+      org_cursor = session.left.select_cursor("select id, text_test from extender_type_check where id = 2")
+      cursor = TypeCastingCursor.new session.left, 'extender_type_check', org_cursor
+      result_data = cursor.next_row['text_test']
     ensure
       session.left.rollback_db_transaction
     end
