@@ -21,7 +21,7 @@ extenders.each do |extender|
       it_should_behave_like "ConnectionExtender"
     rescue Exception => e
       at_exit do
-        puts "#{__FILE__}:#{__LINE__}: DB Connection failed with '#{e}' ==> #{extender_class} not tested"
+        puts "#{__FILE__}:#{__LINE__}: DB Connection failed with '#{e}' ==> #{extender.to_s.capitalize} not tested"
       end
     end
   end
