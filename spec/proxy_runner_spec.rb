@@ -2,7 +2,7 @@ require File.dirname(__FILE__) + '/spec_helper.rb'
 
 include RR
 
-describe "ProxyRunner" do
+describe ProxyRunner do
   before(:each) do
     DRb.stub!(:start_service)
     DRb.thread.stub!(:join)
