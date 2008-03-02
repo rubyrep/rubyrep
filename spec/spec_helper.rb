@@ -16,6 +16,24 @@ require 'rubyrep'
 require 'connection_extender_interface_spec'
 
 
+  # Used to temporary mock out the given +method+ (a symbol) of the provided +klass+.
+  # After calling the given +blck+ reverts the method mock.
+  # This is for cases where a method call has to be mocked of an object that is 
+  # not yet created. 
+  # (Couldn't find out how to do that using existing rspec mocking features.)
+  def mock_method(klass, method, &blck)
+    tmp_method = "original_before_mocking_#{method}".to_sym
+    logger_key = "#{klass.name}_#{method}"
+    $mock_method_marker ||= {}
+    $mock_method_marker[logger_key] = mock("#{logger_key}")
+    $mock_method_marker[logger_key].should_receive(:notify).at_least(:once)
+    klass.send :alias_method, tmp_method, method
+    klass.class_eval "def #{method}(*args); $mock_method_marker['#{logger_key}'].notify; end"
+    blck.call
+  ensure
+    klass.send :alias_method, method, tmp_method
+  end
+  
 # If number_of_calls is :once, mock ActiveRecord for 1 call.
 # If number_of_calls is :twice, mock ActiveRecord for 2 calls.
 def mock_active_record(number_of_calls)

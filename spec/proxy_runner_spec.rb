@@ -7,7 +7,6 @@ describe "ProxyRunner" do
     DRb.stub!(:start_service)
     DRb.thread.stub!(:join)
     $stderr.stub!(:puts)
-    require File.dirname(__FILE__) + '/../bin/rrproxy.rb'
   end
 
   it "get_options should return options as nil and status as 1 if command line parameters are unknown" do
@@ -59,5 +58,10 @@ describe "ProxyRunner" do
     DRb.should_receive(:start_service)
     DRb.thread.should_receive(:join)
     ProxyRunner.run(["--port=1234"])    
+  end
+  
+  it "rrproxy.rb should call ProxyRunner#run" do
+    ProxyRunner.should_receive(:run).with(ARGV).and_return(0)
+    mock_method(Kernel, :exit) {load File.dirname(__FILE__) + '/../bin/rrproxy.rb'}
   end
 end
