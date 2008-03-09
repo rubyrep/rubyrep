@@ -1,0 +1,18 @@
+[DEFAULT]
+verbose = True
+
+[project]
+target = svn:target
+start-revision = 1
+root-directory = /tmp/rubyrep_tailor
+state-file = tailor.state
+source = hg:source
+
+[hg:source]
+repository = .
+subdir = hg
+
+[svn:target]
+repository = file:///tmp/rubyrep_tailor/svn_repository
+module = rubyrep
+subdir = svn

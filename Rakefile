@@ -7,15 +7,23 @@ require 'tasks/task_helper'
 Dir['tasks/**/*.rake'].each { |rake| load rake }
 load 'sims/big_scan/big_scan.rake'
 
-desc "Creates the SVN statistics"
-task :statsvn do
+desc "Creates the repository commit statistics"
+task :repostats do
+  # phase 0: create the repository tmp directory
+  system 'mkdir -p tmp'
+  # phase 1: migrate the hg repository to svn
+  tailor_path = '~/usr/tailor/tailor'
+  cmd = "#{tailor_path} --use-propset --configfile '#{File.dirname(__FILE__) + '/tasks/rubyrep.tailor'}'"
+  system cmd
+  
+  # phase 2: create the repository statistics through the statsvn library
   jar_path = '~/usr/statsvn-0.3.1/statsvn.jar'
   log_path = File.dirname(__FILE__) + '/tmp/statsvn.log'
-  checkout_path = File.dirname(__FILE__)
+  checkout_path = '/tmp/rubyrep_tailor/svn'
   svnstats_dir = File.dirname(__FILE__) + '/statsvn'
 
-  system 'svn update'
-  cmd = "svn log -v --xml >#{log_path}"
+  system "cd #{checkout_path}; svn update"
+  cmd = "cd #{checkout_path}; svn log -v --xml >#{log_path}"
   system cmd
   cmd = "java -jar #{jar_path} -output-dir #{svnstats_dir} -exclude 'setup.rb:website/**' #{log_path} #{checkout_path}"
   system cmd
