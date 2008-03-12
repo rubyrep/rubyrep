@@ -1,4 +1,5 @@
-include java.sql
+require 'java'
+include_class 'java.sql.Types'
 
 module RR
   module ConnectionExtenders
