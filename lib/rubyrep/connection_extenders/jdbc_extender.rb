@@ -18,7 +18,7 @@ module RR
           end
           @next_status
         end
-
+        
         # Returns the row as a column => value hash and moves the cursor to the next row.
         def next_row
           raise("no more rows available") unless next?
@@ -104,6 +104,14 @@ module RR
           end
         end
         private :jdbc_to_ruby
+      end
+
+      # Monkey patch for activerecord-jdbc-adapter-0.7.2 as it doesn't set the 
+      # +@active+ flag to false, thus ActiveRecord#active? incorrectly confirms
+      # the connection to still be active.
+      def disconnect!
+        super
+        @active = false
       end
 
       # Executes the given sql query with the otional name written in the 
