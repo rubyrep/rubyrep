@@ -6,18 +6,31 @@ require 'drb'
 module RR
   class ScanRunner
     
+    # Default options if not overriden in command line
+    DEFAULT_OPTIONS = {
+      :table_specs => []
+    }
+    
     # Parses the given command line parameter array
     # Returns 
     #   * the options hash or nil if command line parsing failed
     #   * status (as per UNIX conventions: 1 if parameters were invalid, 0 otherwise)
     def get_options(args)
       status = 0
-      options = {}
+      options = DEFAULT_OPTIONS
 
       parser = OptionParser.new do |opts|
-        opts.banner = "Usage: #{__FILE__} [options]"
+        opts.banner = "Usage: #{__FILE__} [options] table_spec [table_spec] ...
+          table_spec can be either: 
+            * a specific table name (e. g. 'users') or
+            * a regular expression (e. g. '/^user/')"
         opts.separator ""
         opts.separator "Specific options:"
+
+        opts.on("-c","--config", "=CONFIG_FILE", 
+          "Mandatory. Path to configuration file.") do |arg|
+          options[:config_file] = arg
+        end
 
         opts.on_tail("--help", "Show this message") do
           $stderr.puts opts
@@ -26,7 +39,12 @@ module RR
       end
 
       begin
-        parser.parse!(args)
+        unprocessed_args = parser.parse!(args)
+        if options # this will be +nil+ if the --help option is specified
+          options[:table_specs] = unprocessed_args
+          raise("Please specify configuration file") unless options.include?(:config_file)
+          raise("Please provide at least one table_spec") if options[:table_specs].empty?
+        end
       rescue Exception => e
         $stderr.puts "Command line parsing failed: #{e}"
         $stderr.puts parser.help
