@@ -23,13 +23,15 @@ module RR
       options = DEFAULT_OPTIONS
 
       parser = OptionParser.new do |opts|
-        opts.banner = "Usage: #{__FILE__} [options] table_spec [table_spec] ...
-          table_spec can be either: 
-            * a specific table name (e. g. 'users') or
-            * a pair of (specific) table names (e. g.: 'users,users_backup')
-                (In this case the first table in the 'left' database is compared
-                 with the second table in the 'right' database.)
-            * a regular expression (e. g. '/^user/')"
+        opts.banner = <<EOS
+Usage: #{$0} [options] table_spec [table_spec] ...        
+  table_spec can be either: 
+    * a specific table name (e. g. 'users') or
+    * a pair of (specific) table names (e. g.: 'users,users_backup')
+        (In this case the first table in the 'left' database is compared
+         with the second table in the 'right' database.)
+    * a regular expression (e. g. '/^user/')
+EOS
         opts.separator ""
         opts.separator "Specific options:"
 

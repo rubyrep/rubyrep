@@ -21,7 +21,7 @@ module RR
       status = 0
 
       parser = OptionParser.new do |opts|
-        opts.banner = "Usage: #{__FILE__} [options]"
+        opts.banner = "Usage: #{$0} [options]"
         opts.separator ""
         opts.separator "Specific options:"
 
