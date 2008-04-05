@@ -62,6 +62,8 @@ describe ProxyRunner do
   
   it "rrproxy.rb should call ProxyRunner#run" do
     ProxyRunner.should_receive(:run).with(ARGV).and_return(0)
-    mock_method(Kernel, :exit) {load File.dirname(__FILE__) + '/../bin/rrproxy.rb'}
+    Kernel.any_instance_should_receive(:exit) {
+      load File.dirname(__FILE__) + '/../bin/rrproxy.rb'
+    }
   end
 end

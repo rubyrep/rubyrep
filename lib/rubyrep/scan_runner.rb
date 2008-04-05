@@ -13,7 +13,10 @@ module RR
     
     # Parses the given command line parameter array
     # Returns 
-    #   * the options hash or nil if command line parsing failed
+    #   * the options hash or nil if command line parsing failed.
+    #     Hash values:
+    #       * +:config_file+: path to config file
+    #       * +:table_specs: array of table specification strings
     #   * status (as per UNIX conventions: 1 if parameters were invalid, 0 otherwise)
     def get_options(args)
       status = 0
@@ -58,9 +61,11 @@ module RR
       return options, status
     end
     
-    # Executes a scan run based on the given options
+    # Executes a scan run based on the given options.
+    # Options is as returned by #get_options.
     def scan(options)
-      
+      load options[:config_file]
+      session = Session.new Initializer.configuration
     end
 
     # Runs the ProxyRunner (processing of command line & starting of server)

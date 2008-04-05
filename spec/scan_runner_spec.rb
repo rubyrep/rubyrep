@@ -38,14 +38,23 @@ describe ScanRunner do
     status.should == 0
   end
   
-  it "run should not start a scan if the command line is invalid"
+  it "run should not start a scan if the command line is invalid" do
+    $stderr.should_receive(:puts).any_number_of_times
+    ScanRunner.any_instance_should_not_receive(:scan) {
+      ScanRunner.run(["--nonsense"])
+    }
+  end
 
   it "run should start a scan if the command line is correct" do
-    mock_method(ScanRunner, :scan) {ScanRunner.run(["--config=path", "table"])}
+    ScanRunner.any_instance_should_receive(:scan) {
+      ScanRunner.run(["--config=path", "table"])
+    }
   end
   
   it "rrscan.rb should call ScanRunner#run" do
     ScanRunner.should_receive(:run).with(ARGV).and_return(0)
-    mock_method(Kernel, :exit) {load File.dirname(__FILE__) + '/../bin/rrscan.rb'}
+    Kernel.any_instance_should_receive(:exit) {
+      load File.dirname(__FILE__) + '/../bin/rrscan.rb'
+    }
   end
 end

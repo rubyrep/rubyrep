@@ -15,25 +15,46 @@ $LOAD_PATH.unshift File.dirname(__FILE__)
 require 'rubyrep'
 require 'connection_extender_interface_spec'
 
-
-  # Used to temporary mock out the given +method+ (a symbol) of the provided +klass+.
-  # After calling the given +blck+ reverts the method mock.
+class Module
+  # Used to verify that an instance of the class / module receives a call of the
+  # specified method.
   # This is for cases where a method call has to be mocked of an object that is 
   # not yet created. 
   # (Couldn't find out how to do that using existing rspec mocking features.)
-  def mock_method(klass, method, &blck)
+  def any_instance_should_receive(method, &blck)
     tmp_method = "original_before_mocking_#{method}".to_sym
-    logger_key = "#{klass.name}_#{method}"
+    logger_key = "#{self.name}_#{method}"
     $mock_method_marker ||= {}
-    $mock_method_marker[logger_key] = mock("#{logger_key}")
-    $mock_method_marker[logger_key].should_receive(:notify).at_least(:once)
-    klass.send :alias_method, tmp_method, method
-    klass.class_eval "def #{method}(*args); $mock_method_marker['#{logger_key}'].notify; end"
+    $mock_method_marker[logger_key] = Spec::Mocks::Mock.new("#{name} Instance")
+    $mock_method_marker[logger_key].should_receive(method).at_least(:once)
+    self.send :alias_method, tmp_method, method
+    self.class_eval "def #{method}(*args); $mock_method_marker['#{logger_key}'].#{method}; end"
     blck.call
   ensure
-    klass.send :alias_method, method, tmp_method
+    $mock_method_marker.delete logger_key
+    self.send :alias_method, method, tmp_method rescue nil
   end
-  
+
+  # Used to verify that an instance of the class / module does not receive a 
+  # call of the specified method.
+  # This is for cases where a method call has to be mocked of an object that is 
+  # not yet created. 
+  # (Couldn't find out how to do that using existing rspec mocking features.)
+  def any_instance_should_not_receive(method, &blck)
+    tmp_method = "original_before_mocking_#{method}".to_sym
+    logger_key = "#{self.name}_#{method}"
+    $mock_method_marker ||= {}
+    $mock_method_marker[logger_key] = Spec::Mocks::Mock.new("#{name} Instance")
+    $mock_method_marker[logger_key].should_not_receive(method)
+    self.send :alias_method, tmp_method, method
+    self.class_eval "def #{method}(*args); $mock_method_marker['#{logger_key}'].#{method}; end"
+    blck.call
+  ensure
+    $mock_method_marker.delete logger_key
+    self.send :alias_method, method, tmp_method rescue nil
+  end
+end
+
 # If number_of_calls is :once, mock ActiveRecord for 1 call.
 # If number_of_calls is :twice, mock ActiveRecord for 2 calls.
 def mock_active_record(number_of_calls)
