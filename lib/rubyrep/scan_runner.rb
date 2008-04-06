@@ -30,7 +30,7 @@ Usage: #{$0} [options] table_spec [table_spec] ...
     * a pair of (specific) table names (e. g.: 'users,users_backup')
         (In this case the first table in the 'left' database is compared
          with the second table in the 'right' database.)
-    * a regular expression (e. g. '/^user/')
+    * a regular expression (e. g. '/^user/') [case insensitive match]
 EOS
         opts.separator ""
         opts.separator "Specific options:"
