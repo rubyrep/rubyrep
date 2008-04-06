@@ -64,7 +64,7 @@ EOS
     end
     
     # Executes a scan run based on the given options.
-    # Options is as returned by #get_options.
+    # +options+ is a hash as returned by #get_options.
     def scan(options)
       load options[:config_file]
       session = Session.new Initializer.configuration

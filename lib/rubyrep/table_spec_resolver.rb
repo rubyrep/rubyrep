@@ -1,6 +1,6 @@
 module RR
   
-  # Resolves table specification springs in actual table name pairs.
+  # Resolves table specifications as provided e. g. in the command line of rrscan
   class TableSpecResolver
     
     # The +Session+ instance from which the table specifications are resolved.
