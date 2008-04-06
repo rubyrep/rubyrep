@@ -38,6 +38,12 @@ describe ScanRunner do
     status.should == 0
   end
   
+  it "get_options should return the correct options" do
+    options, _ = ScanRunner.new.get_options ["-c", "config_path", "table_spec1", "table_spec2"]
+    options[:config_file].should == 'config_path'
+    options[:table_specs].should == ['table_spec1', 'table_spec2']
+  end
+  
   it "run should not start a scan if the command line is invalid" do
     $stderr.should_receive(:puts).any_number_of_times
     ScanRunner.any_instance_should_not_receive(:scan) {
