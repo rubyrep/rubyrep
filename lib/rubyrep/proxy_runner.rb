@@ -4,6 +4,7 @@ require 'optparse'
 require 'drb'
 
 module RR
+  # This class implements the functionality of the rrproxy.rb command.
   class ProxyRunner
     
     # Default options to start a DatabaseProxy server
