@@ -63,4 +63,27 @@ describe ScanRunner do
       load File.dirname(__FILE__) + '/../bin/rrscan.rb'
     }
   end
+  
+  it "report_printers should return the registered scan result printers" do
+    org_printers = ScanRunner.report_printers
+    begin
+      ScanRunner.instance_eval { class_variable_set :@@report_printers, nil }
+      ScanRunner.report_printers.should == []
+      ScanRunner.instance_eval { class_variable_set :@@report_printers, [:dummy_printer] }
+      ScanRunner.report_printers.should == [:dummy_printer]
+    ensure
+      ScanRunner.instance_eval { class_variable_set :@@report_printers, org_printers }
+    end
+  end
+  
+  it "register_printer should store the provided printer" do
+    org_printers = ScanRunner.report_printers
+    begin
+      ScanRunner.instance_eval { class_variable_set :@@report_printers, nil }
+      ScanRunner.register_printer :dummy_printer
+      ScanRunner.report_printers.should == [:dummy_printer]
+    ensure
+      ScanRunner.instance_eval { class_variable_set :@@report_printers, org_printers }
+    end
+  end
 end

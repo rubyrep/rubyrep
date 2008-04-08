@@ -4,6 +4,25 @@ require 'optparse'
 require 'drb'
 
 module RR
+  # This class implements the functionality of the rrscan.rb command.
+  #
+  # Output of scan results is done by separate scan report printers.
+  # Those printers need to register itself with #register_printer.
+  # The printers need to implement at the minimum the following functionality:
+  #
+  #   # Printer to configure it's own relevant options 
+  #   def self.configure_commandline(option_parser)
+  #
+  #   # For each table scan a new printer instance is created.
+  #   def self.new(left_table, right_table)
+  #
+  #   # Each difference is handed to the printer as described in the format
+  #   # as described e. g. in DirectTableScan#run
+  #   def report_difference(type, row)
+  #
+  #   # Is called after all differences have been reported
+  #   def print_report
+  #  
   class ScanRunner
     
     # Default options if not overriden in command line
@@ -70,6 +89,17 @@ EOS
       session = Session.new Initializer.configuration
     end
 
+    # Array of registered ScanReportPrinters
+    def self.report_printers
+      @@report_printers ||= []
+    end
+    
+    # Register a new ScanReportPrinter.
+    # See above for details.
+    def self.register_printer(printer)
+      report_printers << printer
+    end
+    
     # Runs the ProxyRunner (processing of command line & starting of server)
     # args: the array of command line options with which to start the server
     def self.run(args)
