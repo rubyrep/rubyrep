@@ -5,10 +5,10 @@ module RR
     # Register ScanSummaryReporter with the given command line options.
     # (Command line format as specified by OptionParser#on.)
     ScanRunner.register_printer self, "-s", "--summary", "[=totals_only]",
-        "Print only number of differences of each table. Either totals only, e. g.
-                                       left_table / right_table [conflicts] [left_only records] [right_only records]
-                                     or split by type, e. g.
-                                       left_table / right_table [differences]"
+        "Print only number of differences of each table. Either totals only, e. g.",
+        "  left_table / right_table [conflicts] [left_only records] [right_only records]",
+        "or split by type, e. g.",
+        "  left_table / right_table [differences]"
     
     # Set to true if only the total number of differences should be reported
     attr_accessor :only_totals
