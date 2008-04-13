@@ -22,6 +22,7 @@ require 'proxy_runner'
 require 'proxy_session'
 require 'table_spec_resolver'
 require 'scan_runner'
+require 'scan_summary_reporter'
 
 Dir["#{File.dirname(__FILE__)}/rubyrep/connection_extenders/*.rb"].each do |extender| 
   # jdbc_extender.rb is only loaded if we are running on jruby

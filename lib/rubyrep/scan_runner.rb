@@ -7,21 +7,26 @@ module RR
   # This class implements the functionality of the rrscan.rb command.
   #
   # Output of scan results is done by separate scan report printers.
-  # Those printers need to register itself with #register_printer.
+  # Those printers need to register themselves and their command line options
+  # with #register_printer.
   # The printers need to implement at the minimum the following functionality:
   #
-  #   # Printer to configure it's own relevant options 
-  #   def self.configure_commandline(option_parser)
+  #   # ScanRunner creates the ScanReportPrinter that is to be used.
+  #   # +arg+ is the command line argument as yielded by OptionParser#on.
+  #   def initialize(arg)
   #
-  #   # For each table scan a new printer instance is created.
-  #   def self.new(left_table, right_table)
+  #   # A scan of the given 'left' table and corresponding 'right' table is executed.
+  #   # Needs to yield so that the actual scan can be executed.
+  #   def scan(left_table, right_table)
   #
   #   # Each difference is handed to the printer as described in the format
   #   # as described e. g. in DirectTableScan#run
   #   def report_difference(type, row)
-  #
-  #   # Is called after all differences have been reported
-  #   def print_report
+  #   
+  #   # Optional method. If a scan report printer has it, it is called after the
+  #   # last table scan is executed.
+  #   # (A good place to print a final summary.)
+  #   def scanning_finished
   #  
   class ScanRunner
     
@@ -30,7 +35,24 @@ module RR
       :table_specs => []
     }
     
-    # Parses the given command line parameter array
+    # Returns the active ScanReportPrinter (as selected through the ScanRunner 
+    # command line options OR if none was selected, the default one).
+    def active_printer
+      @active_printer ||= ScanSummaryReporter.new(nil)
+    end
+    
+    # Sets the active ScanReportPrinter
+    attr_writer :active_printer
+    
+    # Array of registered ScanReportPrinters.
+    # Each entry is a hash with the following keys:
+    # * +:printer_class+: The ScanReportPrinter class.
+    # * +:opts+: An array defining the command line options (handed to OptionParter#on).
+    def self.report_printers
+      @@report_printers ||= []
+    end
+    
+    # Parses the given command line parameter array.
     # Returns 
     #   * the options hash or nil if command line parsing failed.
     #     Hash values:
@@ -54,11 +76,17 @@ EOS
         opts.separator ""
         opts.separator "Specific options:"
 
-        opts.on("-c","--config", "=CONFIG_FILE", 
+        self.class.report_printers.each do |printer|
+          opts.on(*printer[:opts]) do |arg|
+            self.active_printer = printer[:printer_class].new(arg)
+          end
+        end
+
+        opts.on("-c", "--config", "=CONFIG_FILE", 
           "Mandatory. Path to configuration file.") do |arg|
           options[:config_file] = arg
         end
-
+        
         opts.on_tail("--help", "Show this message") do
           $stderr.puts opts
           options = nil
@@ -89,15 +117,15 @@ EOS
       session = Session.new Initializer.configuration
     end
 
-    # Array of registered ScanReportPrinters
-    def self.report_printers
-      @@report_printers ||= []
-    end
-    
-    # Register a new ScanReportPrinter.
-    # See above for details.
-    def self.register_printer(printer)
-      report_printers << printer
+    # Needs to be called by ScanReportPrinters to register themselves (+printer+)
+    # and their command line options.
+    # +:printer_class+ is the ScanReportPrinter class, 
+    # +:opts+ is an array defining the command line options (handed to OptionParter#on).
+    def self.register_printer(printer_class, *opts)
+      report_printers << {
+        :printer_class => printer_class,
+        :opts => opts
+      }
     end
     
     # Runs the ProxyRunner (processing of command line & starting of server)
