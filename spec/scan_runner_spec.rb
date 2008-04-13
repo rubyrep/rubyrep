@@ -124,7 +124,6 @@ describe ScanRunner do
   end
   
   it "active_printer should return the ScanSummaryReporter if no other printer was chosen" do
-    $stdout.should_receive(:puts)
     ScanRunner.new.active_printer.should be_an_instance_of(ScanSummaryReporter)
   end
 end

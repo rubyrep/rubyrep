@@ -33,7 +33,7 @@ describe ScanSummaryReporter do
         reporter.report_difference :left, :dummy_row
         reporter.report_difference :right, :dummy_row
       end
-      $stdout.string.should == "left_table / right_table [differences]\nleft_table / right_table 3\n"
+      $stdout.string.should == "left_table / right_table 3\n"
     ensure 
       $stdout = org_stdout
     end
@@ -53,7 +53,7 @@ describe ScanSummaryReporter do
         reporter.report_difference :right, :dummy_row
         reporter.report_difference :right, :dummy_row
       end
-      $stdout.string.should == "left_table / right_table [conflicts] [left_only records] [right_only records]\nleft_table / right_table 1 2 3\n"
+      $stdout.string.should == "left_table / right_table 1 2 3\n"
     ensure 
       $stdout = org_stdout
     end
