@@ -13,7 +13,7 @@ module RR
       :host => ''
     }
     
-    # Parses the given command line parameter array
+    # Parses the given command line parameter array.
     # Returns 
     #   * the options hash or nil if command line parsing failed
     #   * status (as per UNIX conventions: 1 if parameters were invalid, 0 otherwise)
