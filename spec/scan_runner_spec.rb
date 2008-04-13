@@ -126,4 +126,60 @@ describe ScanRunner do
   it "active_printer should return the ScanSummaryReporter if no other printer was chosen" do
     ScanRunner.new.active_printer.should be_an_instance_of(ScanSummaryReporter)
   end
+  
+  it "table_scan_class should return TableScan for non-proxied sessions" do
+    session = mock("session")
+    session.should_receive(:proxied?).and_return(false)
+    scan_runner = ScanRunner.new
+    scan_runner.table_scan_class(session).should == DirectTableScan
+  end
+  
+  it "table_scan_class should return ProxiedTableScan for proxied sessions" do
+    session = mock("session")
+    session.should_receive(:proxied?).and_return(true)
+    scan_runner = ScanRunner.new
+    scan_runner.table_scan_class(session).should == ProxiedTableScan
+  end
+  
+  it "signal_scanning_completion should signal completion if the scan report printer supports it" do
+    printer = mock("printer")
+    printer.should_receive(:scanning_finished)
+    printer.should_receive(:respond_to?).with(:scanning_finished).and_return(true)
+    scan_runner = ScanRunner.new
+    scan_runner.active_printer = printer
+    scan_runner.signal_scanning_completion
+  end
+  
+  it "signal_scanning_completion should not signal completion if the scan report printer doesn't supports it" do
+    printer = mock("printer")
+    printer.should_not_receive(:scanning_finished)
+    printer.should_receive(:respond_to?).with(:scanning_finished).and_return(false)
+    scan_runner = ScanRunner.new
+    scan_runner.active_printer = printer
+    scan_runner.signal_scanning_completion
+  end
+  
+  it "scan should scan the specified tables" do
+    org_stdout = $stdout
+    $stdout = StringIO.new
+    begin
+      scan_runner = ScanRunner.new
+      scan_runner.active_printer = ScanSummaryReporter.new("totals_only")
+      options = {
+        :config_file => "#{File.dirname(__FILE__)}/../config/test_config.rb",
+        :table_specs => ["scanner_records", "extender_one_record"]
+      }
+      
+      # verify that the scanning_completion signal is given to scan report printer
+      scan_runner.should_receive :signal_scanning_completion
+      
+      scan_runner.scan options
+      
+      $stdout.string.should == 
+        "scanner_records / scanner_records 5\n" +
+        "extender_one_record / extender_one_record 0\n"
+    ensure 
+      $stdout = org_stdout
+    end
+  end
 end

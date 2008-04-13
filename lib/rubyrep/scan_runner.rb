@@ -57,7 +57,7 @@ module RR
     #   * the options hash or nil if command line parsing failed.
     #     Hash values:
     #       * +:config_file+: path to config file
-    #       * +:table_specs: array of table specification strings
+    #       * +:table_specs+: array of table specification strings
     #   * status (as per UNIX conventions: 1 if parameters were invalid, 0 otherwise)
     def get_options(args)
       status = 0
@@ -110,11 +110,41 @@ EOS
       return options, status
     end
     
+    # Returns the correct class for the table scan based on the type of the 
+    # session (proxied or direct).
+    def table_scan_class(session)
+      if session.proxied?
+        ProxiedTableScan
+      else
+        DirectTableScan
+      end
+    end
+    
+    # Signals scan completion to the (active) scan report printer if it supports
+    # that method.
+    def signal_scanning_completion
+      if active_printer.respond_to? :scanning_finished
+        active_printer.scanning_finished 
+      end
+    end
+    
     # Executes a scan run based on the given options.
     # +options+ is a hash as returned by #get_options.
     def scan(options)
       load options[:config_file]
       session = Session.new Initializer.configuration
+      resolver = TableSpecResolver.new session
+      table_specs = resolver.resolve options[:table_specs]
+      table_specs.each do |table_spec|
+        active_printer.scan table_spec[:left_table], table_spec[:right_table] do
+          scan = table_scan_class(session).new session, 
+            table_spec[:left_table], table_spec[:right_table]
+          scan.run do |diff_type, row|
+            active_printer.report_difference diff_type, row
+          end
+        end
+      end
+      signal_scanning_completion
     end
 
     # Needs to be called by ScanReportPrinters to register themselves (+printer+)
