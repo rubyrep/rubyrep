@@ -91,5 +91,10 @@ module RR
     def primary_key_names(table)
       connection.primary_key_names table
     end
+    
+    # Returns an array of table names of the proxied database session
+    def tables
+      connection.tables
+    end
   end
 end
