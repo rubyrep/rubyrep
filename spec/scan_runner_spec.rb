@@ -164,7 +164,7 @@ describe ScanRunner do
     $stdout = StringIO.new
     begin
       scan_runner = ScanRunner.new
-      scan_runner.active_printer = ScanSummaryReporter.new("totals_only")
+      scan_runner.active_printer = ScanSummaryReporter.new(nil)
       options = {
         :config_file => "#{File.dirname(__FILE__)}/../config/test_config.rb",
         :table_specs => ["scanner_records", "extender_one_record"]

@@ -13,17 +13,17 @@ describe ScanSummaryReporter do
     end.should be_true
   end
   
-  it "initialize should detect if only the total number of differnces should be counted" do
-    ScanSummaryReporter.new(nil).only_totals.should be_false
-    ScanSummaryReporter.new("bla").only_totals.should be_false
-    ScanSummaryReporter.new("totals_only").only_totals.should be_true
+  it "initialize should detect if the detailed number of differnces should be counted" do
+    ScanSummaryReporter.new(nil).only_totals.should be_true
+    ScanSummaryReporter.new("bla").only_totals.should be_true
+    ScanSummaryReporter.new("detailed").only_totals.should be_false
   end
   
   it "scan should count differences correctly in totals mode" do
     org_stdout = $stdout
     $stdout = StringIO.new
     begin
-      reporter = ScanSummaryReporter.new("totals_only")
+      reporter = ScanSummaryReporter.new(nil)
       
       # set some existing scan result to ensure it gets reset before the next run
       reporter.scan_result = {:conflict => 0, :left => 0, :right => 1}
@@ -39,11 +39,11 @@ describe ScanSummaryReporter do
     end
   end
 
-  it "scan should count differences correctly in standard mode" do
+  it "scan should count differences correctly in detailed mode" do
     org_stdout = $stdout
     $stdout = StringIO.new
     begin
-      reporter = ScanSummaryReporter.new(nil)
+      reporter = ScanSummaryReporter.new("detailed")
       
       reporter.scan('left_table', 'right_table') do 
         reporter.report_difference :conflict, :dummy_row
