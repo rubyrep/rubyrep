@@ -43,19 +43,7 @@ namespace :spec do
     [:postgres, :mysql].each do |test_db|
       puts "Running specs for #{test_db.id2name}"
       ENV['RR_TEST_DB'] = test_db.id2name
-      Kernel.module_eval do
-        alias_method :orig_exit, :exit
-        def exit(status)
-          # Overwriting System#exit to do nothing as for some reason 
-          # Spec::Runner::CommandLine exits even if the according command line
-          # arguments specifies not to exit.
-        end
-      end
-      require File.dirname(__FILE__) + '/../spec/spec_helper.rb'
-      RR::ConnectionExtenders.clear_db_connection_cache
-      clear_config_cache
-      Spec::Runner::CommandLine.run ['--options', "spec/spec.opts", "./spec"], STDERR, STDOUT, false  
-      Kernel.module_eval {alias_method :exit, :orig_exit} # revert back to original System#exit behaviour
+      system "spec spec"
     end
   end
   
