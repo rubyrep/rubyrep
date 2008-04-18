@@ -116,7 +116,10 @@ namespace :sims do
     
     desc "Runs the big_scan simulation"
     task :run do
-      Spec::Runner::CommandLine.run ['--options', "spec/spec.opts", "./sims/big_scan/big_scan_spec.rb"], STDERR, STDOUT, false  
+      Spec::Runner::CommandLine.run(
+        Spec::Runner::OptionParser.parse(
+          ['--options', "spec/spec.opts", "./sims/big_scan/big_scan_spec.rb"], 
+          $stdout, $stderr))
     end
     
     begin
