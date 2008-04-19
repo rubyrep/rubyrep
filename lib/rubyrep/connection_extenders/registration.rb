@@ -39,10 +39,7 @@ module RR
         
         # As recommended in the activerecord-jdbc-adapter use the jdbc versions
         # of the Adapters. E. g. instead of "postgresql", "jdbcpostgresql".
-        # However the activerecord-jdbcmysql-adapter (version 0.6) failed the 
-        # multi-lingual test. So for mysql I am not rewriting the adapter name so
-        # that I am using the activerecord built-in adapter (which passes the test)
-        adapter = 'jdbc' + adapter unless adapter =~ /^jdbc/ or adapter == 'mysql'
+        adapter = 'jdbc' + adapter unless adapter =~ /^jdbc/
 
         DummyActiveRecord.establish_connection(config.merge(:adapter => adapter))
       else
@@ -54,9 +51,7 @@ module RR
       ActiveRecord::Base.active_connections.delete DummyActiveRecord.name
       
       extender = ""
-      if RUBY_PLATFORM =~ /java/ and config[:adapter] != 'mysql'
-        # Also here: the standard mysql extender works perfectly fine under jruby.
-        # So use it. For all other cases (under jruby) use the JDBC extender.
+      if RUBY_PLATFORM =~ /java/
         extender = :jdbc
       elsif ConnectionExtenders.extenders.include? config[:adapter].to_sym
         extender = config[:adapter].to_sym

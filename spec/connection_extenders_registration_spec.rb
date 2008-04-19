@@ -52,23 +52,6 @@ describe ConnectionExtenders, "Registration" do
     end
   end
 
-  it "db_connect should not use jdbc configuration adapter and extender under jruby for mysql connections" do
-    fake_ruby_platform 'java' do
-      mock_active_record :once
-      used_extender = nil
-      ConnectionExtenders.extenders.should_receive('[]'.to_sym).once \
-        .and_return {|extender| used_extender = extender }
-
-      configuration = deep_copy(Initializer.configuration)
-      configuration.left[:adapter] = 'mysql'
-      
-      ConnectionExtenders.db_connect configuration.left
-      
-      $used_config[:adapter].should == "mysql"
-      used_extender.should == :mysql
-    end
-  end
-
   it "db_connect created connections should be alive" do
     connection = ConnectionExtenders.db_connect Initializer.configuration.left
     

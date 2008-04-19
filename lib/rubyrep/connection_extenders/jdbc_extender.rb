@@ -80,8 +80,8 @@ module RR
             if rss == nil or self.wasNull
               return nil
             end
-            str = new java.lang.StringBuffer(2048)
-            cuf = Java::char.new(2048)
+            str = java.lang.StringBuffer.new(2048)
+            cuf = Java::char[2048].new
             while (n = rss.read(cuf)) != -1
               str.append(cuf, 0, n)
             end
