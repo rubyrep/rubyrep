@@ -134,7 +134,16 @@ module RR
         if not tables.include? table
           raise "table does not exist"
         end
-        @connection.primary_keys table
+        columns = []
+        result_set = @connection.connection.getMetaData.getPrimaryKeys(nil, nil, table);
+        while result_set.next
+          column_name = result_set.getString("COLUMN_NAME")
+          key_seq = result_set.getShort("KEY_SEQ")
+          columns << {:column_name => column_name, :key_seq => key_seq}
+        end
+        columns.sort! {|a, b| a[:key_seq] <=> b[:key_seq]}
+        key_names = columns.map {|column| column[:column_name]}
+        key_names
       end
     end
   end
