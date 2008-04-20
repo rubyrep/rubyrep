@@ -80,4 +80,9 @@ describe ProxySession do
     
     @session.select_one('dummy_query','dummy_name').should == 'dummy_result'
   end
+  
+  it "tables should proxy to connection.tables" do
+    @session.connection.should_receive(:tables).and_return(:dummy_tables_list)
+    @session.tables.should == :dummy_tables_list
+  end
 end
