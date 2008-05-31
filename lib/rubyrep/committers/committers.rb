@@ -81,7 +81,10 @@ module RR
         @@current_session
       end
       
-      # Saves the provided database session as class variable 
+      # Saves the provided database session as class variable.
+      # Purpose: the last database session stays available after the 
+      # NeverCommitter is destroyed so that also later the transaction rollback
+      # can still be executed.
       def self.current_session=(session)
         @@current_session = session
       end
