@@ -92,10 +92,14 @@ describe Committers::NeverCommitter do
     @committer.sync_options.should == :dummy_options
   end
   
-  it "initialize should rollback the previous sesson" do
+  it "initialize should rollback the previous current sesson and then register the new one as current session" do
+    old_session = mock("old session", :null_object => true)
+    new_session = mock("new session", :null_object => true)
+    Committers::NeverCommitter.current_session = old_session
     Committers::NeverCommitter.should_receive(:rollback_current_session)
-    Committers::NeverCommitter.new mock("new session", :null_object => true), 
-      "left", "right", :dummy_options 
+    
+    Committers::NeverCommitter.new new_session, "left", "right", :dummy_options
+    Committers::NeverCommitter.current_session.should == new_session
   end
   
   it "initialize should start new transactions" do
@@ -133,10 +137,17 @@ describe Committers::NeverCommitter do
   
   it "should work will real sessions" do
     session = Session.new(standard_config)
-    Committers::NeverCommitter.new session,
-      "left", "right", :dummy_options    
-    Committers::NeverCommitter.new @session,
-      "left", "right", :dummy_options   
+    Committers::NeverCommitter.new session, "left", "right", :dummy_options    
+    Committers::NeverCommitter.new session, "left", "right", :dummy_options
+    Committers::NeverCommitter.rollback_current_session
+  end
+  
+  it "should work will real proxied sessions" do
+    ensure_proxy
+    session = Session.new(proxied_config)
+    Committers::NeverCommitter.new session, "left", "right", :dummy_options    
+    Committers::NeverCommitter.new session, "left", "right", :dummy_options   
+    Committers::NeverCommitter.rollback_current_session
   end
   
   it_should_behave_like "Committer"

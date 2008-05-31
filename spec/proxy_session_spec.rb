@@ -85,4 +85,19 @@ describe ProxySession do
     @session.connection.should_receive(:tables).and_return(:dummy_tables_list)
     @session.tables.should == :dummy_tables_list
   end
+
+  it "begin_db_transaction should proxy to connection.begin_db_transaction" do
+    @session.connection.should_receive(:begin_db_transaction)
+    @session.begin_db_transaction
+  end
+
+  it "rollback_db_transaction should proxy to connection.rollback_db_transaction" do
+    @session.connection.should_receive(:rollback_db_transaction)
+    @session.rollback_db_transaction
+  end
+
+  it "commit_db_transaction should proxy to connection.rollback_db_transaction" do
+    @session.connection.should_receive(:commit_db_transaction)
+    @session.commit_db_transaction
+  end
 end

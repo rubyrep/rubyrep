@@ -96,5 +96,20 @@ module RR
     def tables
       connection.tables
     end
+    
+    # Begins a transaction
+    def begin_db_transaction
+      connection.begin_db_transaction
+    end
+    
+    # Rolls back a transaction
+    def rollback_db_transaction
+      connection.rollback_db_transaction
+    end
+    
+    # Commits back a transaction
+    def commit_db_transaction
+      connection.commit_db_transaction
+    end
   end
 end

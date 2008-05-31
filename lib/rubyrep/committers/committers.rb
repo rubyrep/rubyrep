@@ -104,6 +104,7 @@ module RR
       def initialize(session, left_table, right_table, sync_options)
         super
         self.class.rollback_current_session
+        self.class.current_session = session
         session.left.begin_db_transaction
         session.right.begin_db_transaction
       end
