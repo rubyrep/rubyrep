@@ -12,6 +12,7 @@ config/proxied_test_config.rb
 config/requirements.rb
 config/test_config.rb
 lib/rubyrep.rb
+lib/rubyrep/committers/committers.rb
 lib/rubyrep/connection_extenders/jdbc_extender.rb
 lib/rubyrep/connection_extenders/mysql_extender.rb
 lib/rubyrep/connection_extenders/postgresql_extender.rb
@@ -41,6 +42,7 @@ setup.rb
 sims/big_scan/big_scan.rake
 sims/big_scan/big_scan_spec.rb
 sims/sim_helper.rb
+spec/committers_spec.rb
 spec/configuration_spec.rb
 spec/connection_extender_interface_spec.rb
 spec/connection_extenders_registration_spec.rb
