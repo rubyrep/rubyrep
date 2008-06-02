@@ -4,7 +4,7 @@ class PGresult
   # Returns true if there are more rows to read.
   def next?
     @current_row_num ||= 0
-    @num_rows ||= self.num_tuples()
+    @num_rows ||= self.ntuples()
     @current_row_num < @num_rows
   end
   
