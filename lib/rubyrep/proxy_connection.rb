@@ -6,10 +6,9 @@ require 'rubyrep'
 
 module RR
 
-  # This class represents a remote rubyrep session.
-  # DatabaseProxy creates one for each client connection.
-  # Creates and holds expensive objects like e. g. database connections.
-  class ProxySession
+  # This class represents a remote activerecord database connection.
+  # Normally created by DatabaseProxy
+  class ProxyConnection
     
     # The database connection
     attr_accessor :connection
@@ -111,5 +110,12 @@ module RR
     def commit_db_transaction
       connection.commit_db_transaction
     end
+    
+    def columns(table_name) connection.columns(table_name); end
+    def quote_column_name(column_name) connection.quote_column_name(column_name); end
+    def quote_table_name(table_name) connection.quote_table_name(table_name); end
+    def select_cursor(query) connection.select_cursor(query); end
+    def execute(query) connection.execute(query); end
+    
   end
 end

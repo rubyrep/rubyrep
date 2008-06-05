@@ -68,7 +68,7 @@ describe Session do
     session.proxies[:right].should be_an_instance_of(DatabaseProxy)
     
     session.left.should == :dummy_proxy_session
-    session.right.should be_an_instance_of(ProxySession)
+    session.right.should be_an_instance_of(ProxyConnection)
   end
 end
 

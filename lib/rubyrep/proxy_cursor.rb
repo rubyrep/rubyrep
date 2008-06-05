@@ -6,8 +6,8 @@ module RR
   # Provides shared functionality for ProxyRowCursor and ProxyBlockCursor
   class ProxyCursor
     
-    # The current ProxySession.
-    attr_accessor :session
+    # The current ProxyConnection.
+    attr_accessor :connection
     
     # The name of the current table.
     attr_accessor :table
@@ -19,33 +19,33 @@ module RR
     attr_accessor :cursor
     
     # Shared initializations 
-    #   * session: the current proxy session
+    #   * connection: the current proxy connection
     #   * table: table_name
-    def initialize(session, table)
-      self.session = session
+    def initialize(connection, table)
+      self.connection = connection
       self.table = table
-      self.primary_key_names = session.primary_key_names table
+      self.primary_key_names = connection.primary_key_names table
     end
     
     # Initiate a query for the specified row range.
     # +options+: An option hash that is used to construct the SQL query. See ProxyCursor#construct_query for details.
     def prepare_fetch(options = {})
       self.cursor = TypeCastingCursor.new(
-        session.connection,
+        connection,
         table, 
-        session.connection.select_cursor(construct_query(options))
+        connection.select_cursor(construct_query(options))
       )
     end
     
     # Quotes the given value. The value is assumed to belong to the given column name.
     def quote_column_value(column, value)
-      session.quote_value(table, column, value)
+      connection.quote_value(table, column, value)
     end
     
     # Returns a quoted and comma separated list of column names
     def quoted_column_list
-      session.column_names(table).map do |column_name| 
-        session.connection.quote_column_name(column_name)
+      connection.column_names(table).map do |column_name| 
+        connection.quote_column_name(column_name)
       end.join(', ')
     end
     private :quoted_column_list
@@ -53,7 +53,7 @@ module RR
     # Returns a quoted and comma separated list of primary key names
     def quoted_key_list
       primary_key_names.map do |column_name| 
-        session.connection.quote_column_name(column_name)
+        connection.quote_column_name(column_name)
       end.join(', ')
     end
     private :quoted_key_list
@@ -68,7 +68,7 @@ module RR
         raise "options must only include :from, :to or :row_keys" unless [:from, :to, :row_keys].include? key
       end
       query = "select #{quoted_column_list}"
-      query << " from #{session.connection.quote_table_name(table)}"
+      query << " from #{connection.quote_table_name(table)}"
       query << " where" unless options.empty?
       first_condition = true
       if options[:from]

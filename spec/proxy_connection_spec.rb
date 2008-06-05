@@ -2,10 +2,10 @@ require File.dirname(__FILE__) + '/spec_helper.rb'
 
 include RR
 
-describe ProxySession do
+describe ProxyConnection do
   before(:each) do
     Initializer.configuration = proxied_config
-    @session = ProxySession.new Initializer.configuration.left
+    @session = ProxyConnection.new Initializer.configuration.left
   end
 
   it "initialize should connect to the database" do

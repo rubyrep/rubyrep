@@ -37,7 +37,8 @@ module RR
     # config:: the rubyrep Configuration
     def db_connect(db_arm, config)
       arm_config = config.send db_arm
-      @connections[db_arm] = ConnectionExtenders.db_connect arm_config
+      @proxies[db_arm] = DatabaseProxy.new
+      @connections[db_arm] = @proxies[db_arm].create_session arm_config
     end
     
     # Does the actual work of establishing a proxy connection

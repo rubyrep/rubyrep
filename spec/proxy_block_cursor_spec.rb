@@ -4,7 +4,7 @@ include RR
 
 describe ProxyBlockCursor do
   before(:each) do
-    @session = create_mock_session 'dummy_table', ['dummy_id']
+    @session = create_mock_proxy_connection 'dummy_table', ['dummy_id']
     @cursor = ProxyBlockCursor.new @session, 'dummy_table'
   end
 
@@ -116,7 +116,7 @@ describe ProxyBlockCursor do
   end
   
   it "checksum should read maximum :block_size rows" do
-    session = ProxySession.new proxied_config.left
+    session = ProxyConnection.new proxied_config.left
 
     cursor = ProxyBlockCursor.new session, 'scanner_records'
     cursor.prepare_fetch
@@ -129,7 +129,7 @@ describe ProxyBlockCursor do
   end
   
   it "checksum should read up to the specified :max_row" do
-    session = ProxySession.new proxied_config.left
+    session = ProxyConnection.new proxied_config.left
 
     cursor = ProxyBlockCursor.new session, 'scanner_records'
     cursor.prepare_fetch
@@ -141,7 +141,7 @@ describe ProxyBlockCursor do
   end
   
   it "checksum called with :block_size should return the correct checksum" do
-    session = ProxySession.new proxied_config.left
+    session = ProxyConnection.new proxied_config.left
 
     cursor = ProxyBlockCursor.new session, 'scanner_records'
     cursor.prepare_fetch
@@ -157,7 +157,7 @@ describe ProxyBlockCursor do
   end
 
   it "checksum called with :max_row should return the correct checksum" do
-    session = ProxySession.new proxied_config.left
+    session = ProxyConnection.new proxied_config.left
 
     cursor = ProxyBlockCursor.new session, 'scanner_records'
     cursor.prepare_fetch

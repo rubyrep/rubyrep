@@ -8,53 +8,53 @@ describe ProxyCursor do
   end
 
   it "initialize should store session and table and cache the primary keys of table" do
-    session = create_mock_session 'dummy_table', ['dummy_key']
+    connection = create_mock_proxy_connection 'dummy_table', ['dummy_key']
     
-    cursor = ProxyCursor.new session, 'dummy_table'
+    cursor = ProxyCursor.new connection, 'dummy_table'
     
-    cursor.session.should == session
+    cursor.connection.should == connection
     cursor.table.should == 'dummy_table'
     cursor.primary_key_names.should == ['dummy_key']
   end
   
   it "construct_query should handle queries without any conditions" do
-    session = create_mock_session 'dummy_table', ['dummy_key'], ['dummy_key', 'dummy_column']
+    connection = create_mock_proxy_connection 'dummy_table', ['dummy_key'], ['dummy_key', 'dummy_column']
     
-    ProxyCursor.new(session, 'dummy_table').construct_query \
+    ProxyCursor.new(connection, 'dummy_table').construct_query \
       .should == "select 'dummy_key', 'dummy_column' from 'dummy_table' order by 'dummy_key'"
   end
   
   it "construct_query should handle queries with only a from condition" do
-    session = create_mock_session 'dummy_table', ['dummy_key'], ['dummy_key', 'dummy_column']
+    connection = create_mock_proxy_connection 'dummy_table', ['dummy_key'], ['dummy_key', 'dummy_column']
     
-    ProxyCursor.new(session, 'dummy_table').construct_query(:from => {'dummy_key' => 1}) \
+    ProxyCursor.new(connection, 'dummy_table').construct_query(:from => {'dummy_key' => 1}) \
       .should == "\
          select 'dummy_key', 'dummy_column' from 'dummy_table' \
          where ('dummy_key') >= (1) order by 'dummy_key'".strip!.squeeze!(' ')
   end
   
   it "construct_query should handle queries with only a to condition" do
-    session = create_mock_session 'dummy_table', ['dummy_key'], ['dummy_key', 'dummy_column']
+    connection = create_mock_proxy_connection 'dummy_table', ['dummy_key'], ['dummy_key', 'dummy_column']
     
-    ProxyCursor.new(session, 'dummy_table').construct_query(:to => {'dummy_key' => 1}) \
+    ProxyCursor.new(connection, 'dummy_table').construct_query(:to => {'dummy_key' => 1}) \
       .should == "\
          select 'dummy_key', 'dummy_column' from 'dummy_table' \
          where ('dummy_key') <= (1) order by 'dummy_key'".strip!.squeeze!(' ')
   end
   
   it "construct_query should handle queries with both from and to conditions" do
-    session = create_mock_session 'dummy_table', ['dummy_key'], ['dummy_key', 'dummy_column']
+    connection = create_mock_proxy_connection 'dummy_table', ['dummy_key'], ['dummy_key', 'dummy_column']
     
-    ProxyCursor.new(session, 'dummy_table').construct_query(:from => {'dummy_key' => 0}, :to => {'dummy_key' => 1}) \
+    ProxyCursor.new(connection, 'dummy_table').construct_query(:from => {'dummy_key' => 0}, :to => {'dummy_key' => 1}) \
       .should == "\
         select 'dummy_key', 'dummy_column' from 'dummy_table' \
         where ('dummy_key') >= (0) and ('dummy_key') <= (1) order by 'dummy_key'".strip!.squeeze!(' ')
   end
   
   it "construct_query should handle queries for specific rows" do
-    session = create_mock_session 'dummy_table', ['dummy_key'], ['dummy_key', 'dummy_column']
+    connection = create_mock_proxy_connection 'dummy_table', ['dummy_key'], ['dummy_key', 'dummy_column']
     
-    ProxyCursor.new(session, 'dummy_table').construct_query(
+    ProxyCursor.new(connection, 'dummy_table').construct_query(
       :row_keys => [{'dummy_key' => 0}, {'dummy_key' => 1}]) \
       .should == "\
         select 'dummy_key', 'dummy_column' from 'dummy_table' \
@@ -62,18 +62,18 @@ describe ProxyCursor do
   end
   
   it "construct_query should handle queries for specific rows with the row array actually being empty" do
-    session = create_mock_session 'dummy_table', ['dummy_key'], ['dummy_key', 'dummy_column']
+    connection = create_mock_proxy_connection 'dummy_table', ['dummy_key'], ['dummy_key', 'dummy_column']
     
-    ProxyCursor.new(session, 'dummy_table').construct_query(:row_keys => []) \
+    ProxyCursor.new(connection, 'dummy_table').construct_query(:row_keys => []) \
       .should == "\
         select 'dummy_key', 'dummy_column' from 'dummy_table' \
         where false order by 'dummy_key'".strip!.squeeze!(' ')
   end
   
   it "construct_query should handle queries for specific rows in combination with other conditions" do
-    session = create_mock_session 'dummy_table', ['dummy_key'], ['dummy_key', 'dummy_column']
+    connection = create_mock_proxy_connection 'dummy_table', ['dummy_key'], ['dummy_key', 'dummy_column']
     
-    ProxyCursor.new(session, 'dummy_table').construct_query(
+    ProxyCursor.new(connection, 'dummy_table').construct_query(
       :from => {'dummy_key' => 0},
       :row_keys => [{'dummy_key' => 1}, {'dummy_key' => 2}]) \
       .should == "\
@@ -82,11 +82,11 @@ describe ProxyCursor do
   end
   
   it "construct_query should handle tables with combined primary keys" do
-    session = create_mock_session 'dummy_table', 
+    connection = create_mock_proxy_connection 'dummy_table', 
       ['dummy_key1', 'dummy_key2'], 
       ['dummy_key1', 'dummy_key2', 'dummy_column']
     
-    ProxyCursor.new(session, 'dummy_table').construct_query(
+    ProxyCursor.new(connection, 'dummy_table').construct_query(
       :from => {'dummy_key1' => 0, 'dummy_key2' => 1}, 
       :to => {'dummy_key1' => 2, 'dummy_key2' => 3}) \
       .should == "\
@@ -96,9 +96,9 @@ describe ProxyCursor do
   end
   
   it "construct_query should quote column values" do
-    session = ProxySession.new Initializer.configuration.left
+    connection = ProxyConnection.new Initializer.configuration.left
     
-    cursor = ProxyCursor.new(session, 'scanner_text_key')
+    cursor = ProxyCursor.new(connection, 'scanner_text_key')
     cursor.construct_query(:from => {'text_id' => 'a'}, :to => {'text_id' => 'b'}) \
       .should match(/'a'.*'b'/)
     # additional check that the quoted query actually works
@@ -109,9 +109,9 @@ describe ProxyCursor do
   end
   
   it "prepare_fetch should initiate the query and wrap it for type casting" do
-    session = ProxySession.new Initializer.configuration.left
+    connection = ProxyConnection.new Initializer.configuration.left
     
-    cursor = ProxyCursor.new(session, 'scanner_records')
+    cursor = ProxyCursor.new(connection, 'scanner_records')
     cursor.prepare_fetch
     cursor.cursor.should be_an_instance_of(TypeCastingCursor)
     cursor.cursor.next_row.should == {'id' => 1, 'name' => 'Alice - exists in both databases'}
@@ -120,9 +120,9 @@ describe ProxyCursor do
   it "prepare_fetch called with option :row_keys should initiate the correct query" do
     # Note: I am testing row_keys exclusively to make sure that this type of 
     #       sub query will work correctly on all supported databases
-    session = ProxySession.new Initializer.configuration.left
+    connection = ProxyConnection.new Initializer.configuration.left
     
-    cursor = ProxyCursor.new(session, 'extender_combined_key')
+    cursor = ProxyCursor.new(connection, 'extender_combined_key')
     cursor.prepare_fetch :row_keys => [
       {'first_id' => 1, 'second_id' => 1}, 
       {'first_id' => 1, 'second_id' => 2}
@@ -134,8 +134,8 @@ describe ProxyCursor do
 
   
   it "destroy should clear and nil the cursor" do
-    session = create_mock_session 'dummy_table', ['dummy_key']
-    cursor = ProxyCursor.new session, 'dummy_table'
+    connection = create_mock_proxy_connection 'dummy_table', ['dummy_key']
+    cursor = ProxyCursor.new connection, 'dummy_table'
     
     table_cursor = mock("DBCursor")
     table_cursor.should_receive(:clear)

@@ -8,13 +8,13 @@ describe ProxyRowCursor do
   end
 
   it "initialize should super to ProxyCursor" do
-    session = create_mock_session 'dummy_table', ['dummy_id']
+    session = create_mock_proxy_connection 'dummy_table', ['dummy_id']
     cursor = ProxyRowCursor.new session, 'dummy_table'
     cursor.table.should == 'dummy_table'        
   end
   
   it "next? should delegate to the DB cursor" do
-    session = create_mock_session 'dummy_table', ['dummy_id']
+    session = create_mock_proxy_connection 'dummy_table', ['dummy_id']
     cursor = ProxyRowCursor.new session, 'dummy_table'
     
     table_cursor = mock("DBCursor")
@@ -25,7 +25,7 @@ describe ProxyRowCursor do
   end
   
   it "next_row should return the next row in the cursor" do
-    session = create_mock_session 'dummy_table', ['dummy_id']
+    session = create_mock_proxy_connection 'dummy_table', ['dummy_id']
     cursor = ProxyRowCursor.new session, 'dummy_table'
     
     table_cursor = mock("DBCursor")
@@ -36,7 +36,7 @@ describe ProxyRowCursor do
   end
   
   it "next_row_keys_and_checksum should store the found row under current_row" do
-    session = create_mock_session 'dummy_table', ['dummy_id']
+    session = create_mock_proxy_connection 'dummy_table', ['dummy_id']
     cursor = ProxyRowCursor.new session, 'dummy_table'
     
     table_cursor = mock("DBCursor")
@@ -48,7 +48,7 @@ describe ProxyRowCursor do
   end
 
   it "next_row_keys_and_checksum should returns the primary_keys and checksum of the found row" do
-    session = ProxySession.new proxied_config.left
+    session = ProxyConnection.new proxied_config.left
 
     cursor = ProxyRowCursor.new session, 'scanner_records'
     cursor.prepare_fetch

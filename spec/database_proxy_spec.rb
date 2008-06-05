@@ -21,7 +21,7 @@ describe DatabaseProxy do
   it "create_session should register the created session" do
     proxy, session = create_proxy_and_session
 
-    session.should be_an_instance_of(ProxySession)
+    session.should be_an_instance_of(ProxyConnection)
     proxy.session_register.include?(session).should == true
   end
 
