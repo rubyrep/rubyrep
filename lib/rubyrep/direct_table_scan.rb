@@ -63,7 +63,14 @@ module RR
     # Note: The column & order part of the query are always generated based on left_table.
     def construct_query(target_table)
       column_names = session.left.columns(left_table).map {|column| column.name}
-      "select #{column_names.join(', ')} from #{target_table} order by #{primary_key_names.join(', ')}"
+      quoted_column_list = column_names.map do |column_name| 
+        session.left.quote_column_name(column_name)
+      end.join(', ')
+      quoted_table = session.left.quote_table_name(target_table)
+      quoted_key_list = primary_key_names.map do |column_name| 
+        session.left.quote_column_name(column_name)
+      end.join(', ')
+      "select #{quoted_column_list} from #{quoted_table} order by #{quoted_key_list}"
     end
   end
 end

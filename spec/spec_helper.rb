@@ -89,7 +89,22 @@ def create_mock_session(mock_table, primary_key_names, column_names = nil)
   session.should_receive(:quote_value) \
     .any_number_of_times \
     .with(an_instance_of(String), an_instance_of(String), anything) \
-    .and_return {| value, column, value| value}
+    .and_return { |table, column, value| value}
+  
+  dummy_connection = mock("dummy connection")
+  session.should_receive(:connection) \
+    .any_number_of_times \
+    .and_return {dummy_connection}
+  
+  dummy_connection.should_receive(:quote_column_name) \
+    .any_number_of_times \
+    .with(an_instance_of(String)) \
+    .and_return { |column_name| "'#{column_name}'" }
+      
+  dummy_connection.should_receive(:quote_table_name) \
+    .any_number_of_times \
+    .with(an_instance_of(String)) \
+    .and_return { |table_name| "'#{table_name}'" }
       
   session
 end

@@ -42,6 +42,22 @@ module RR
       session.quote_value(table, column, value)
     end
     
+    # Returns a quoted and comma separated list of column names
+    def quoted_column_list
+      session.column_names(table).map do |column_name| 
+        session.connection.quote_column_name(column_name)
+      end.join(', ')
+    end
+    private :quoted_column_list
+    
+    # Returns a quoted and comma separated list of primary key names
+    def quoted_key_list
+      primary_key_names.map do |column_name| 
+        session.connection.quote_column_name(column_name)
+      end.join(', ')
+    end
+    private :quoted_key_list
+    
     # Creates an SQL query string based on the given +options+.
     # +options+ is a hash that can contain any of the following:
     #   * +:from+: nil OR the hash of primary key => value pairs designating the start of the selection
@@ -51,7 +67,8 @@ module RR
       options.each_key do |key| 
         raise "options must only include :from, :to or :row_keys" unless [:from, :to, :row_keys].include? key
       end
-      query = "select #{session.column_names(table).join(', ')} from #{table}"
+      query = "select #{quoted_column_list}"
+      query << " from #{session.connection.quote_table_name(table)}"
       query << " where" unless options.empty?
       first_condition = true
       if options[:from]
@@ -68,7 +85,7 @@ module RR
         if options[:row_keys].empty?
           query << ' false'
         else
-          query << ' (' << primary_key_names.join(', ') << ') in ('
+          query << ' (' << quoted_key_list << ') in ('
           first_key = true
           options[:row_keys].each do |row|
             query << ', ' unless first_key
@@ -78,7 +95,7 @@ module RR
           query << ')'
         end
       end
-      query << " order by #{primary_key_names.join(', ')}"
+      query << " order by #{quoted_key_list}"
 
       query
     end
@@ -88,7 +105,7 @@ module RR
     #   * +condition+: the type of sql condition (something like '>=' or '=', etc.)
     def row_condition(row, condition)
       query_part = ""
-      query_part << ' (' << primary_key_names.join(', ') << ') ' << condition
+      query_part << ' (' << quoted_key_list << ') ' << condition
       query_part << ' (' << primary_key_names.map {|key| quote_column_value(key, row[key])}.join(', ') << ')'
       query_part
     end

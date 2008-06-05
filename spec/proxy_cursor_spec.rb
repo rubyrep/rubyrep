@@ -21,7 +21,7 @@ describe ProxyCursor do
     session = create_mock_session 'dummy_table', ['dummy_key'], ['dummy_key', 'dummy_column']
     
     ProxyCursor.new(session, 'dummy_table').construct_query \
-      .should == 'select dummy_key, dummy_column from dummy_table order by dummy_key'    
+      .should == "select 'dummy_key', 'dummy_column' from 'dummy_table' order by 'dummy_key'"
   end
   
   it "construct_query should handle queries with only a from condition" do
@@ -29,8 +29,8 @@ describe ProxyCursor do
     
     ProxyCursor.new(session, 'dummy_table').construct_query(:from => {'dummy_key' => 1}) \
       .should == "\
-         select dummy_key, dummy_column from dummy_table \
-         where (dummy_key) >= (1) order by dummy_key".strip!.squeeze!(' ')
+         select 'dummy_key', 'dummy_column' from 'dummy_table' \
+         where ('dummy_key') >= (1) order by 'dummy_key'".strip!.squeeze!(' ')
   end
   
   it "construct_query should handle queries with only a to condition" do
@@ -38,8 +38,8 @@ describe ProxyCursor do
     
     ProxyCursor.new(session, 'dummy_table').construct_query(:to => {'dummy_key' => 1}) \
       .should == "\
-         select dummy_key, dummy_column from dummy_table \
-         where (dummy_key) <= (1) order by dummy_key".strip!.squeeze!(' ')
+         select 'dummy_key', 'dummy_column' from 'dummy_table' \
+         where ('dummy_key') <= (1) order by 'dummy_key'".strip!.squeeze!(' ')
   end
   
   it "construct_query should handle queries with both from and to conditions" do
@@ -47,8 +47,8 @@ describe ProxyCursor do
     
     ProxyCursor.new(session, 'dummy_table').construct_query(:from => {'dummy_key' => 0}, :to => {'dummy_key' => 1}) \
       .should == "\
-        select dummy_key, dummy_column from dummy_table \
-        where (dummy_key) >= (0) and (dummy_key) <= (1) order by dummy_key".strip!.squeeze!(' ')
+        select 'dummy_key', 'dummy_column' from 'dummy_table' \
+        where ('dummy_key') >= (0) and ('dummy_key') <= (1) order by 'dummy_key'".strip!.squeeze!(' ')
   end
   
   it "construct_query should handle queries for specific rows" do
@@ -57,8 +57,8 @@ describe ProxyCursor do
     ProxyCursor.new(session, 'dummy_table').construct_query(
       :row_keys => [{'dummy_key' => 0}, {'dummy_key' => 1}]) \
       .should == "\
-        select dummy_key, dummy_column from dummy_table \
-        where (dummy_key) in ((0), (1)) order by dummy_key".strip!.squeeze!(' ')
+        select 'dummy_key', 'dummy_column' from 'dummy_table' \
+        where ('dummy_key') in ((0), (1)) order by 'dummy_key'".strip!.squeeze!(' ')
   end
   
   it "construct_query should handle queries for specific rows with the row array actually being empty" do
@@ -66,8 +66,8 @@ describe ProxyCursor do
     
     ProxyCursor.new(session, 'dummy_table').construct_query(:row_keys => []) \
       .should == "\
-        select dummy_key, dummy_column from dummy_table \
-        where false order by dummy_key".strip!.squeeze!(' ')
+        select 'dummy_key', 'dummy_column' from 'dummy_table' \
+        where false order by 'dummy_key'".strip!.squeeze!(' ')
   end
   
   it "construct_query should handle queries for specific rows in combination with other conditions" do
@@ -77,8 +77,8 @@ describe ProxyCursor do
       :from => {'dummy_key' => 0},
       :row_keys => [{'dummy_key' => 1}, {'dummy_key' => 2}]) \
       .should == "\
-        select dummy_key, dummy_column from dummy_table \
-        where (dummy_key) >= (0) and (dummy_key) in ((1), (2)) order by dummy_key".strip!.squeeze!(' ')
+        select 'dummy_key', 'dummy_column' from 'dummy_table' \
+        where ('dummy_key') >= (0) and ('dummy_key') in ((1), (2)) order by 'dummy_key'".strip!.squeeze!(' ')
   end
   
   it "construct_query should handle tables with combined primary keys" do
@@ -90,9 +90,9 @@ describe ProxyCursor do
       :from => {'dummy_key1' => 0, 'dummy_key2' => 1}, 
       :to => {'dummy_key1' => 2, 'dummy_key2' => 3}) \
       .should == "\
-        select dummy_key1, dummy_key2, dummy_column from dummy_table \
-        where (dummy_key1, dummy_key2) >= (0, 1) and (dummy_key1, dummy_key2) <= (2, 3) \
-        order by dummy_key1, dummy_key2".strip!.squeeze!(' ')
+        select 'dummy_key1', 'dummy_key2', 'dummy_column' from 'dummy_table' \
+        where ('dummy_key1', 'dummy_key2') >= (0, 1) and ('dummy_key1', 'dummy_key2') <= (2, 3) \
+        order by 'dummy_key1', 'dummy_key2'".strip!.squeeze!(' ')
   end
   
   it "construct_query should quote column values" do
