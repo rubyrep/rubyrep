@@ -19,8 +19,13 @@ module RR
     def_delegators \
       :connection, :columns, :quote_column_name, \
       :quote_table_name, :select_cursor, :execute, \
-      :select_one, :primary_key_names, :tables, \
+      :select_one, :tables, \
       :begin_db_transaction, :rollback_db_transaction, :commit_db_transaction
+    
+    # Caching the primary keys. This is a hash with
+    #   * key: table name
+    #   * value: array of primary key names
+    attr_accessor :primary_key_names_cache
     
     # Hash to register cursors.
     # Purpose:
@@ -30,6 +35,17 @@ module RR
     
     # 2-level Hash of table_name => column_name => Column objects
     attr_accessor :table_columns
+    
+    # Returns an array of primary key names for the given +table_name+.
+    # Caches the result for future calls.
+    def primary_key_names(table_name)
+      self.primary_key_names_cache ||= {}
+      result = primary_key_names_cache[table_name]
+      unless result
+        result = primary_key_names_cache[table_name] = connection.primary_key_names(table_name)
+      end
+      result
+    end
     
     # Returns a Hash of currently registerred cursors
     def cursors

@@ -66,4 +66,19 @@ describe ProxyConnection do
   it "column_names should return the column names of the specified table" do
     @session.column_names('scanner_records').should == ['id', 'name']
   end
+  
+  it "primary_key_names should return the correct primary keys" do
+    @session.primary_key_names('scanner_records').should == ['id']
+  end
+
+  it "primary_key_names should cache the primary primary keys" do
+    @session.connection.should_receive(:primary_key_names) \
+      .with('dummy_table').once.and_return(['dummy_key'])
+    @session.connection.should_receive(:primary_key_names) \
+      .with('dummy_table2').once.and_return(['dummy_key2'])
+    
+    @session.primary_key_names('dummy_table').should == ['dummy_key']
+    @session.primary_key_names('dummy_table2').should == ['dummy_key2']
+    @session.primary_key_names('dummy_table').should == ['dummy_key']
+  end
 end
