@@ -33,9 +33,7 @@ unless RUBY_PLATFORM =~ /java/
           begin
             query('SELECT version()')[0][0] =~ /PostgreSQL (\d+)\.(\d+)\.(\d+)/
             ($1.to_i * 10000) + ($2.to_i * 100) + $3.to_i
-          rescue
-            0
-          end
+          rescue 0; end
         end
       end
     end
