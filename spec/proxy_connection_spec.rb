@@ -18,10 +18,6 @@ describe ProxyConnection do
     @session.connection.active?.should == false
   end
   
-  it "primary_key_names should return the primary keys of the given table" do
-    @session.primary_key_names('scanner_records').should == ['id']
-  end
-  
   it "cursors should return the current cursor hash or an empty hash if nil" do
     @session.cursors.should == {}
     @session.cursors[:dummy_cursor] = :dummy_cursor
@@ -69,35 +65,5 @@ describe ProxyConnection do
   
   it "column_names should return the column names of the specified table" do
     @session.column_names('scanner_records').should == ['id', 'name']
-  end
-  
-  it "primary_key_names should return the names of the primary keys of the specified table" do
-    @session.primary_key_names('scanner_records').should == ['id']
-  end
-  
-  it "select_one should call select_one of the proxied database connection" do
-    @session.connection.should_receive(:select_one).with('dummy_query', 'dummy_name').and_return('dummy_result')
-    
-    @session.select_one('dummy_query','dummy_name').should == 'dummy_result'
-  end
-  
-  it "tables should proxy to connection.tables" do
-    @session.connection.should_receive(:tables).and_return(:dummy_tables_list)
-    @session.tables.should == :dummy_tables_list
-  end
-
-  it "begin_db_transaction should proxy to connection.begin_db_transaction" do
-    @session.connection.should_receive(:begin_db_transaction)
-    @session.begin_db_transaction
-  end
-
-  it "rollback_db_transaction should proxy to connection.rollback_db_transaction" do
-    @session.connection.should_receive(:rollback_db_transaction)
-    @session.rollback_db_transaction
-  end
-
-  it "commit_db_transaction should proxy to connection.rollback_db_transaction" do
-    @session.connection.should_receive(:commit_db_transaction)
-    @session.commit_db_transaction
   end
 end
