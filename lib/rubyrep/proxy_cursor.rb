@@ -37,79 +37,14 @@ module RR
       )
     end
     
-    # Quotes the given value. The value is assumed to belong to the given column name.
-    def quote_column_value(column, value)
-      connection.quote_value(table, column, value)
-    end
-    
-    # Returns a quoted and comma separated list of column names
-    def quoted_column_list
-      connection.column_names(table).map do |column_name| 
-        connection.quote_column_name(column_name)
-      end.join(', ')
-    end
-    private :quoted_column_list
-    
-    # Returns a quoted and comma separated list of primary key names
-    def quoted_key_list
-      primary_key_names.map do |column_name| 
-        connection.quote_column_name(column_name)
-      end.join(', ')
-    end
-    private :quoted_key_list
-    
     # Creates an SQL query string based on the given +options+.
     # +options+ is a hash that can contain any of the following:
     #   * +:from+: nil OR the hash of primary key => value pairs designating the start of the selection
     #   * +:to+: nil OR the hash of primary key => value pairs designating the end of the selection
     #   * +:row_keys+: an array of primary key => value hashes specify the target rows.
     def construct_query(options = {})
-      options.each_key do |key| 
-        raise "options must only include :from, :to or :row_keys" unless [:from, :to, :row_keys].include? key
-      end
-      query = "select #{quoted_column_list}"
-      query << " from #{connection.quote_table_name(table)}"
-      query << " where" unless options.empty?
-      first_condition = true
-      if options[:from]
-        first_condition = false
-        query << row_condition(options[:from], '>=')
-      end
-      if options[:to]
-        query << ' and' unless first_condition
-        first_condition = false
-        query << row_condition(options[:to], '<=')
-      end
-      if options[:row_keys]
-        query << ' and' unless first_condition
-        if options[:row_keys].empty?
-          query << ' false'
-        else
-          query << ' (' << quoted_key_list << ') in ('
-          first_key = true
-          options[:row_keys].each do |row|
-            query << ', ' unless first_key
-            first_key = false
-            query << '(' << primary_key_names.map {|key| quote_column_value(key, row[key])}.join(', ') << ')'
-          end
-          query << ')'
-        end
-      end
-      query << " order by #{quoted_key_list}"
-
-      query
+      connection.table_select_query(table, options)
     end
-    
-    # Generates an sql condition string based on
-    #   * +row+: a hash of primary key => value pairs designating the target row
-    #   * +condition+: the type of sql condition (something like '>=' or '=', etc.)
-    def row_condition(row, condition)
-      query_part = ""
-      query_part << ' (' << quoted_key_list << ') ' << condition
-      query_part << ' (' << primary_key_names.map {|key| quote_column_value(key, row[key])}.join(', ') << ')'
-      query_part
-    end
-    private :row_condition
     
     # Releases all ressources
     def destroy

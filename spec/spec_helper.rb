@@ -107,7 +107,20 @@ def create_mock_proxy_connection(mock_table, primary_key_names, column_names = n
       
   session
 end
- 
+
+  # Turns an SQL query into a regular expression:
+  #   * Handles quotes (differing depending on DBMS).
+  #   * Handles round brackets (escaping with backslash to make them literals).
+  #   * Removes line breaks and double spaces 
+  #     (allowing use of intendation and line continuation)
+  # Returns the regular expression created from the provided +sql+ string.
+  def sql_to_regexp(sql)
+    Regexp.new(sql.strip.squeeze(" ") \
+      .gsub("(", "\\(").gsub(")", "\\)") \
+      .gsub("'", 'E?.') \
+      .gsub('"', 'E?.'))
+  end
+  
 # Returns a deep copy of the provided object.
 def deep_copy(object)
   Marshal.restore(Marshal.dump(object))

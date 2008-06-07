@@ -114,5 +114,81 @@ module RR
       end
       table_column_names[table]
     end
+  
+    # Returns a list of quoted column names for the given +table+ as comma 
+    # separated string.
+    def quote_column_list(table)
+      column_names(table).map do |column_name| 
+        connection.quote_column_name(column_name)
+      end.join(', ')
+    end
+    private :quote_column_list
+    
+    # Returns a quoted and comma separated list of primary key names for the 
+    # given +table+.
+    def quote_key_list(table)
+      primary_key_names(table).map do |column_name| 
+        connection.quote_column_name(column_name)
+      end.join(', ')
+    end
+    private :quote_key_list
+    
+    
+    # Generates an sql condition string for the given +table+ based on
+    #   * +row+: a hash of primary key => value pairs designating the target row
+    #   * +condition+: the type of sql condition (something like '>=' or '=', etc.)
+    def row_condition(table, row, condition)
+      query_part = ""
+      query_part << ' (' << quote_key_list(table) << ') ' << condition
+      query_part << ' (' << primary_key_names(table).map do |key|
+        quote_value(table, key, row[key])
+      end.join(', ') << ')'
+      query_part
+    end
+    private :row_condition
+
+    # Returns an SQL query string for the given +table+ based on the provided +options+.
+    # +options+ is a hash that can contain any of the following:
+    #   * +:from+: nil OR the hash of primary key => value pairs designating the start of the selection
+    #   * +:to+: nil OR the hash of primary key => value pairs designating the end of the selection
+    #   * +:row_keys+: an array of primary key => value hashes specify the target rows.
+    def table_select_query(table, options = {})
+      options.each_key do |key| 
+        raise "options must only include :from, :to or :row_keys" unless [:from, :to, :row_keys].include? key
+      end
+      query = "select #{quote_column_list(table)}"
+      query << " from #{quote_table_name(table)}"
+      query << " where" unless options.empty?
+      first_condition = true
+      if options[:from]
+        first_condition = false
+        query << row_condition(table, options[:from], '>=')
+      end
+      if options[:to]
+        query << ' and' unless first_condition
+        first_condition = false
+        query << row_condition(table, options[:to], '<=')
+      end
+      if options[:row_keys]
+        query << ' and' unless first_condition
+        if options[:row_keys].empty?
+          query << ' false'
+        else
+          query << ' (' << quote_key_list(table) << ') in ('
+          first_key = true
+          options[:row_keys].each do |row|
+            query << ', ' unless first_key
+            first_key = false
+            query << '(' << primary_key_names(table).map do |key|
+              quote_value(table, key, row[key])
+            end.join(', ') << ')'
+          end
+          query << ')'
+        end
+      end
+      query << " order by #{quote_key_list(table)}"
+
+      query
+    end
   end
 end
