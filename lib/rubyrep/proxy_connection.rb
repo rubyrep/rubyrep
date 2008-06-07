@@ -124,8 +124,8 @@ module RR
     end
     private :quote_column_list
     
-    # Returns a quoted and comma separated list of primary key names for the 
-    # given +table+.
+    # Returns a list of quoted primary key names for the given +table+ as comma
+    # separated string.
     def quote_key_list(table)
       primary_key_names(table).map do |column_name| 
         connection.quote_column_name(column_name)
