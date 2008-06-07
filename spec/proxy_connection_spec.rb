@@ -67,6 +67,13 @@ describe ProxyConnection do
     @session.column_names('scanner_records').should == ['id', 'name']
   end
   
+  it "column_names should cache the column names" do
+    @session.column_names('scanner_records')
+    @session.column_names('scanner_text_key')
+    @session.connection.should_not_receive(:columns)
+    @session.column_names('scanner_records').should == ['id', 'name']
+  end
+  
   it "primary_key_names should return the correct primary keys" do
     @session.primary_key_names('scanner_records').should == ['id']
   end

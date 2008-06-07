@@ -33,8 +33,11 @@ module RR
     #   We register them in this hash to protect them from unintended garbage collection.
     attr_accessor :cursors
     
-    # 2-level Hash of table_name => column_name => Column objects
+    # 2-level Hash of table_name => column_name => Column objects.
     attr_accessor :table_columns
+    
+    # Hash of table_name => array of column names pairs.
+    attr_accessor :table_column_names
     
     # Returns an array of primary key names for the given +table_name+.
     # Caches the result for future calls.
@@ -79,7 +82,7 @@ module RR
       self.table_columns ||= {}
       unless table_columns.include? table
         table_columns[table] = {}
-        connection.columns(table).each {|c| table_columns[table][c.name] = c}
+        columns(table).each {|c| table_columns[table][c.name] = c}
       end
       connection.quote value, table_columns[table][column]
     end
@@ -101,9 +104,15 @@ module RR
       cursors.delete cursor
     end
     
-    # returns the columns of the given table name
+    # Returns an array of column names of the given table name.
+    # The array is ordered in the sequence as returned by the database.
+    # The result is cached for higher speed.
     def column_names(table)
-      connection.columns(table).map {|column| column.name}
+      self.table_column_names ||= {}
+      unless table_column_names.include? table
+        table_column_names[table] = columns(table).map {|c| c.name}
+      end
+      table_column_names[table]
     end
   end
 end
