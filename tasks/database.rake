@@ -215,23 +215,23 @@ def create_sample_data
   session = RR::Session.new
   
   # Create records existing in both databases
-  [session.left, session.right].each do |connection|
+  [session.left.connection, session.right.connection].each do |connection|
     delete_all_and_create_shared_sample_data connection
   end
 
   # Create data in left table
-  ScannerRecords.connection = session.left
+  ScannerRecords.connection = session.left.connection
   ScannerRecords.create_with_key :id => 2, :name => 'Bob - left database version'
   ScannerRecords.create_with_key :id => 3, :name => 'Charlie - exists in left database only'
   ScannerRecords.create_with_key :id => 5, :name => 'Eve - exists in left database only'
   
   # Create data in right table
-  ScannerRecords.connection = session.right
+  ScannerRecords.connection = session.right.connection
   ScannerRecords.create_with_key :id => 2, :name => 'Bob - right database version'
   ScannerRecords.create_with_key :id => 4, :name => 'Dave - exists in right database only'
   ScannerRecords.create_with_key :id => 6, :name => 'Fred - exists in right database only'
 
-  ScannerLeftRecordsOnly.connection = session.left
+  ScannerLeftRecordsOnly.connection = session.left.connection
   ScannerLeftRecordsOnly.delete_all
   ScannerLeftRecordsOnly.create_with_key :id => 1, :name => 'Alice'
   ScannerLeftRecordsOnly.create_with_key :id => 2, :name => 'Bob'
