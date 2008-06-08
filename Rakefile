@@ -17,7 +17,7 @@ task :repostats do
   system cmd
   
   # phase 2: create the repository statistics through the statsvn library
-  jar_path = '~/usr/statsvn-0.3.1/statsvn.jar'
+  jar_path = '~/usr/statsvn-0.4.0/statsvn.jar'
   log_path = File.dirname(__FILE__) + '/tmp/statsvn.log'
   checkout_path = '/tmp/rubyrep_tailor/svn'
   svnstats_dir = File.dirname(__FILE__) + '/statsvn'
