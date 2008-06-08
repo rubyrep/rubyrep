@@ -7,19 +7,6 @@ describe DirectTableScan do
     Initializer.configuration = standard_config
   end
 
-  it "construct_query should create the query for scanning the table" do
-    session = Session.new
-    scan = DirectTableScan.new session, 'scanner_records'
-    # note: using regular expression match as quoting characters differes between databases
-    scan.construct_query('scanner_records').should =~ /select .id., .name. from .scanner_records. order by .id./
-  end
-
-  it "construct_query should handle combined primary keys correctly" do
-    session = Session.new
-    scan = DirectTableScan.new session, 'extender_combined_key'
-    scan.construct_query('extender_combined_key').should =~ /select .first_id., .second_id. from .extender_combined_key. order by .first_id., .second_id./
-  end
-
   it "run should compare all the records in the table" do
     session = Session.new
     scan = DirectTableScan.new session, 'scanner_records'

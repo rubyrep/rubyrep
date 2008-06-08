@@ -33,17 +33,8 @@ module RR
       self.cursor = TypeCastingCursor.new(
         connection,
         table, 
-        connection.select_cursor(construct_query(options))
+        connection.select_cursor(connection.table_select_query(table, options))
       )
-    end
-    
-    # Creates an SQL query string based on the given +options+.
-    # +options+ is a hash that can contain any of the following:
-    #   * +:from+: nil OR the hash of primary key => value pairs designating the start of the selection
-    #   * +:to+: nil OR the hash of primary key => value pairs designating the end of the selection
-    #   * +:row_keys+: an array of primary key => value hashes specify the target rows.
-    def construct_query(options = {})
-      connection.table_select_query(table, options)
     end
     
     # Releases all ressources

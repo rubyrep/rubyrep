@@ -31,8 +31,10 @@ module RR
     #   * row: for :left or :right cases a hash describing the row; for :conflict an array of left and right row
     def run(&blck)
       left_cursor = right_cursor = nil
-      left_cursor = TypeCastingCursor.new(session.left, left_table, session.left.select_cursor(construct_query(left_table)))
-      right_cursor = TypeCastingCursor.new(session.right, right_table, session.right.select_cursor(construct_query(right_table))) 
+      left_cursor = TypeCastingCursor.new(session.left, left_table, 
+        session.left.select_cursor(session.left.table_select_query(left_table)))
+      right_cursor = TypeCastingCursor.new(session.right, right_table, 
+        session.right.select_cursor(session.left.table_select_query(right_table))) 
       left_row = right_row = nil
       while left_row or right_row or left_cursor.next? or right_cursor.next?
         # if there is no current left row, _try_ to load the next one
@@ -57,12 +59,6 @@ module RR
       end
     ensure
       [left_cursor, right_cursor].each {|cursor| cursor.clear if cursor}
-    end
-    
-    # Generates the SQL query to iterate through the given target table.
-    # Note: The column & order part of the query are always generated based on left_table.
-    def construct_query(target_table)
-      session.left.table_select_query(target_table, {})
     end
   end
 end
