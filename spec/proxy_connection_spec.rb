@@ -89,28 +89,28 @@ describe ProxyConnection do
     @connection.primary_key_names('dummy_table').should == ['dummy_key']
   end
 
-  it "construct_query should handle queries without any conditions" do
+  it "table_select_query should handle queries without any conditions" do
     @connection.table_select_query('scanner_records') \
       .should =~ sql_to_regexp("\
         select 'id', 'name' from 'scanner_records'\
         order by 'id'")
   end
   
-  it "construct_query should handle queries with only a from condition" do
+  it "table_select_query should handle queries with only a from condition" do
     @connection.table_select_query('scanner_records', :from => {'id' => 1}) \
       .should =~ sql_to_regexp("\
          select 'id', 'name' from 'scanner_records' \
          where ('id') >= (1) order by 'id'")
   end
   
-  it "construct_query should handle queries with only a to condition" do
+  it "table_select_query should handle queries with only a to condition" do
     @connection.table_select_query('scanner_text_key', :to => {'text_id' => 'k1'}) \
       .should =~ sql_to_regexp("\
          select 'text_id', 'name' from 'scanner_text_key' \
          where ('text_id') <= ('k1') order by 'text_id'")
   end
   
-  it "construct_query should handle queries with both from and to conditions" do
+  it "table_select_query should handle queries with both from and to conditions" do
     @connection.table_select_query('scanner_records', 
       :from => {'id' => 0}, :to => {'id' => 1}) \
       .should =~ sql_to_regexp("\
@@ -118,7 +118,7 @@ describe ProxyConnection do
         where ('id') >= (0) and ('id') <= (1) order by 'id'")
   end
   
-  it "construct_query should handle queries for specific rows" do
+  it "table_select_query should handle queries for specific rows" do
     @connection.table_select_query('scanner_records',
       :row_keys => [{'id' => 0}, {'id' => 1}]) \
       .should =~ sql_to_regexp("\
@@ -126,14 +126,14 @@ describe ProxyConnection do
         where ('id') in ((0), (1)) order by 'id'")
   end
   
-  it "construct_query should handle queries for specific rows with the row array actually being empty" do
+  it "table_select_query should handle queries for specific rows with the row array actually being empty" do
     @connection.table_select_query('scanner_records', :row_keys => []) \
       .should =~ sql_to_regexp("\
         select 'id', 'name' from 'scanner_records' \
         where false order by 'id'")
   end
   
-  it "construct_query should handle queries for specific rows in combination with other conditions" do
+  it "table_select_query should handle queries for specific rows in combination with other conditions" do
     @connection.table_select_query('scanner_records',
       :from => {'id' => 0},
       :row_keys => [{'id' => 1}, {'id' => 2}]) \
@@ -142,7 +142,7 @@ describe ProxyConnection do
         where ('id') >= (0) and ('id') in ((1), (2)) order by 'id'")
   end
   
-  it "construct_query should handle tables with combined primary keys" do
+  it "table_select_query should handle tables with combined primary keys" do
     @connection.table_select_query('extender_combined_key',
       :from => {'first_id' => 0, 'second_id' => 1}, 
       :to => {'first_id' => 2, 'second_id' => 3}) \
@@ -153,7 +153,7 @@ describe ProxyConnection do
         order by 'first_id', 'second_id'")
   end
   
-  it "construct_query should quote column values" do
+  it "table_select_query should quote column values" do
     select_options = {:from => {'text_id' => 'a'}, :to => {'text_id' => 'b'}}
     
     @connection.table_select_query('scanner_text_key', select_options) \
