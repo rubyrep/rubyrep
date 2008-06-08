@@ -183,4 +183,27 @@ describe ProxyConnection do
       @connection.rollback_db_transaction
     end
   end
+
+  it "queries returned by table_insert_query should write uncommon data types correctly" do
+    @connection.begin_db_transaction
+    begin
+      test_data = {
+        'id' => 2, 
+        'decimal_test' => 1.234,
+        'timestamp' => Time.local(2008,"jun",9,20,15,1),
+        'multi_byte' => "よろしくお願(ねが)いします yoroshiku onegai shimasu: I humbly ask for your favor.",
+        'binary_test' => Marshal.dump(['bla',:dummy,1,2,3]),
+        'text_test' => 'dummy text'
+      }
+      query = @connection.table_insert_query('extender_type_check', test_data)
+      @connection.execute query
+
+      org_cursor = @connection.select_cursor("select * from extender_type_check where id = 2")
+      cursor = TypeCastingCursor.new @connection, 'extender_type_check', org_cursor
+      result_data = cursor.next_row
+      result_data.should == test_data
+    ensure
+      @connection.rollback_db_transaction
+    end
+  end
 end
