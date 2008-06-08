@@ -57,8 +57,8 @@ end
 # Populates the big_scan tables with sample data.
 # Takes a Session object holding the according database connection.
 def big_scan_populate_data(session)
-  LeftBigScan.connection = session.left
-  RightBigScan.connection = session.right
+  LeftBigScan.connection = session.left.connection
+  RightBigScan.connection = session.right.connection
   
   LeftBigScan.delete_all
   RightBigScan.delete_all
@@ -103,7 +103,7 @@ end
 # Prepares the database for the big_scan test
 def big_scan_prepare
   session = RR::Session.new
-  [:left, :right].each {|arm| big_scan_prepare_schema(session.send(arm))}
+  [:left, :right].each {|arm| big_scan_prepare_schema(session.send(arm).connection)}
   puts "time required: " + Benchmark.measure {big_scan_populate_data session}.to_s
 end
 
