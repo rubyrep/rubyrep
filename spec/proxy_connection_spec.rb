@@ -5,53 +5,53 @@ include RR
 describe ProxyConnection do
   before(:each) do
     Initializer.configuration = proxied_config
-    @session = ProxyConnection.new Initializer.configuration.left
+    @connection = ProxyConnection.new Initializer.configuration.left
   end
 
   it "initialize should connect to the database" do
-    @session.connection.active?.should == true
+    @connection.connection.active?.should == true
   end
   
   it "destroy should disconnect from the database" do
-    @session.destroy
+    @connection.destroy
 
-    @session.connection.active?.should == false
+    @connection.connection.active?.should == false
   end
   
   it "cursors should return the current cursor hash or an empty hash if nil" do
-    @session.cursors.should == {}
-    @session.cursors[:dummy_cursor] = :dummy_cursor
-    @session.cursors.should == {:dummy_cursor => :dummy_cursor}    
+    @connection.cursors.should == {}
+    @connection.cursors[:dummy_cursor] = :dummy_cursor
+    @connection.cursors.should == {:dummy_cursor => :dummy_cursor}    
   end
   
   it "save_cursor should register the provided cursor" do
-    @session.save_cursor :dummy_cursor
+    @connection.save_cursor :dummy_cursor
     
-    @session.cursors[:dummy_cursor].should == :dummy_cursor
+    @connection.cursors[:dummy_cursor].should == :dummy_cursor
   end
   
   it "destroy should destroy and unregister any stored cursors" do
     cursor = mock("Cursor")
     cursor.should_receive(:destroy)
     
-    @session.save_cursor cursor
-    @session.destroy
+    @connection.save_cursor cursor
+    @connection.destroy
     
-    @session.cursors.should == {}
+    @connection.cursors.should == {}
   end
 
   it "destroy_cursor should destroy and unregister the provided cursor" do
     cursor = mock("Cursor")
     cursor.should_receive(:destroy)
     
-    @session.save_cursor cursor
-    @session.destroy_cursor cursor
+    @connection.save_cursor cursor
+    @connection.destroy_cursor cursor
     
-    @session.cursors.should == {}
+    @connection.cursors.should == {}
   end
   
   it "create_cursor should create and register the cursor and initiate row fetching" do
-    cursor = @session.create_cursor(
+    cursor = @connection.create_cursor(
       ProxyRowCursor, 
       'scanner_records',
       :from => {'id' => 2},
@@ -64,29 +64,29 @@ describe ProxyConnection do
   end
   
   it "column_names should return the column names of the specified table" do
-    @session.column_names('scanner_records').should == ['id', 'name']
+    @connection.column_names('scanner_records').should == ['id', 'name']
   end
   
   it "column_names should cache the column names" do
-    @session.column_names('scanner_records')
-    @session.column_names('scanner_text_key')
-    @session.connection.should_not_receive(:columns)
-    @session.column_names('scanner_records').should == ['id', 'name']
+    @connection.column_names('scanner_records')
+    @connection.column_names('scanner_text_key')
+    @connection.connection.should_not_receive(:columns)
+    @connection.column_names('scanner_records').should == ['id', 'name']
   end
   
   it "primary_key_names should return the correct primary keys" do
-    @session.primary_key_names('scanner_records').should == ['id']
+    @connection.primary_key_names('scanner_records').should == ['id']
   end
 
   it "primary_key_names should cache the primary primary keys" do
-    @session.connection.should_receive(:primary_key_names) \
+    @connection.connection.should_receive(:primary_key_names) \
       .with('dummy_table').once.and_return(['dummy_key'])
-    @session.connection.should_receive(:primary_key_names) \
+    @connection.connection.should_receive(:primary_key_names) \
       .with('dummy_table2').once.and_return(['dummy_key2'])
     
-    @session.primary_key_names('dummy_table').should == ['dummy_key']
-    @session.primary_key_names('dummy_table2').should == ['dummy_key2']
-    @session.primary_key_names('dummy_table').should == ['dummy_key']
+    @connection.primary_key_names('dummy_table').should == ['dummy_key']
+    @connection.primary_key_names('dummy_table2').should == ['dummy_key2']
+    @connection.primary_key_names('dummy_table').should == ['dummy_key']
   end
 
   it "construct_query should handle queries without any conditions" do
