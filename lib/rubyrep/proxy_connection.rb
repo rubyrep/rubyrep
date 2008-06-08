@@ -119,7 +119,7 @@ module RR
     # separated string.
     def quote_column_list(table)
       column_names(table).map do |column_name| 
-        connection.quote_column_name(column_name)
+        quote_column_name(column_name)
       end.join(', ')
     end
     private :quote_column_list
@@ -128,7 +128,7 @@ module RR
     # separated string.
     def quote_key_list(table)
       primary_key_names(table).map do |column_name| 
-        connection.quote_column_name(column_name)
+        quote_column_name(column_name)
       end.join(', ')
     end
     private :quote_key_list
@@ -190,5 +190,19 @@ module RR
 
       query
     end
+    
+    # Returns an SQL insert query for the given +table+ and +values+.
+    # +values+ is a hash of column_name => value pairs.
+    def table_insert_query(table, values)
+      query = "insert into #{quote_table_name(table)}"
+      query << '(' << values.keys.map do |column_name|
+        quote_column_name(column_name)
+      end.join(', ') << ') '
+      query << 'values(' << values.map do |column_name, value|
+        quote_value(table, column_name, value)
+      end.join(', ') << ')'
+      query
+    end
+    
   end
 end

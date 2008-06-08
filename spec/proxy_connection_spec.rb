@@ -166,4 +166,21 @@ describe ProxyConnection do
     results.next_row.should == {'text_id' => 'b', 'name' => 'Bob'}
     results.next?.should be_false
   end
+  
+  it "table_insert_query should return the correct SQL query" do
+    @connection.table_insert_query('scanner_records', 'id' => 9, 'name' => 'bla') \
+      .should =~ sql_to_regexp(%q!insert into "scanner_records"("name", "id") values('bla', 9)!)
+  end
+  
+  it "queries returned by table_insert_query should execute successfully" do
+    @connection.begin_db_transaction
+    begin
+      query = @connection.table_insert_query('scanner_records', 'id' => 9, 'name' => 'bla')
+      @connection.execute query
+      @connection.select_one("select * from scanner_records where id = 9") \
+        .should == {'id' => '9', 'name' => 'bla'}
+    ensure
+      @connection.rollback_db_transaction
+    end
+  end
 end
