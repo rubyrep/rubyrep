@@ -204,5 +204,9 @@ module RR
       query
     end
     
+    def insert_record(table, values)
+      execute table_insert_query(table, values)
+    end
+    
   end
 end

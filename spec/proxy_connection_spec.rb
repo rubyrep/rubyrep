@@ -178,11 +178,10 @@ describe ProxyConnection do
     end
   end
   
-  it "queries returned by table_insert_query should execute successfully" do
+  it "insert_record should insert the specified record" do
     @connection.begin_db_transaction
     begin
-      query = @connection.table_insert_query('scanner_records', 'id' => 9, 'name' => 'bla')
-      @connection.execute query
+      @connection.insert_record('scanner_records', 'id' => 9, 'name' => 'bla')
       @connection.select_one("select * from scanner_records where id = 9") \
         .should == {'id' => '9', 'name' => 'bla'}
     ensure
@@ -190,7 +189,7 @@ describe ProxyConnection do
     end
   end
 
-  it "queries returned by table_insert_query should write uncommon data types correctly" do
+  it "insert_record should also insert uncommon data types correctly" do
     @connection.begin_db_transaction
     begin
       test_data = {
@@ -201,8 +200,7 @@ describe ProxyConnection do
         'binary_test' => Marshal.dump(['bla',:dummy,1,2,3]),
         'text_test' => 'dummy text'
       }
-      query = @connection.table_insert_query('extender_type_check', test_data)
-      @connection.execute query
+      @connection.insert_record('extender_type_check', test_data)
 
       org_cursor = @connection.select_cursor("select * from extender_type_check where id = 2")
       cursor = TypeCastingCursor.new @connection, 'extender_type_check', org_cursor
