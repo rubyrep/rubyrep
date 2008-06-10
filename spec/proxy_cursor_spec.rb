@@ -36,8 +36,8 @@ describe ProxyCursor do
       {'first_id' => 1, 'second_id' => 1}, 
       {'first_id' => 1, 'second_id' => 2}
     ]
-    cursor.cursor.next_row.should == {'first_id' => 1, 'second_id' => 1}
-    cursor.cursor.next_row.should == {'first_id' => 1, 'second_id' => 2}
+    cursor.cursor.next_row.should == {'first_id' => 1, 'second_id' => 1, 'name' => 'aa'}
+    cursor.cursor.next_row.should == {'first_id' => 1, 'second_id' => 2, 'name' => 'ab'}
     cursor.cursor.next?.should == false
   end
 

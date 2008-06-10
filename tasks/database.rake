@@ -75,6 +75,7 @@ def create_sample_schema(config)
     create_table :extender_combined_key, :id => false do |t|
       t.column :first_id, :integer
       t.column :second_id, :integer
+      t.column :name, :string
     end rescue nil 
     
     ActiveRecord::Base.connection.execute(<<-end_sql) rescue nil
@@ -204,9 +205,9 @@ def delete_all_and_create_shared_sample_data(connection)
   # ActiveRecord also doesn't handle tables with combined primary keys
   connection.execute("delete from extender_combined_key")
   [
-    {:first_id => 1, :second_id => 1},
-    {:first_id => 1, :second_id => 2},
-    {:first_id => 2, :second_id => 1}
+    {:first_id => 1, :second_id => 1, :name => 'aa'},
+    {:first_id => 1, :second_id => 2, :name => 'ab'},
+    {:first_id => 2, :second_id => 1, :name => 'ba'}
   ].each { |row| create_row connection, 'extender_combined_key', row}
 end
 

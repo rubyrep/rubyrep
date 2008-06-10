@@ -147,7 +147,7 @@ describe ProxyConnection do
       :from => {'first_id' => 0, 'second_id' => 1}, 
       :to => {'first_id' => 2, 'second_id' => 3}) \
       .should =~ sql_to_regexp("\
-        select 'first_id', 'second_id' from 'extender_combined_key' \
+        select 'first_id', 'second_id', 'name' from 'extender_combined_key' \
         where ('first_id', 'second_id') >= (0, 1) \
         and ('first_id', 'second_id') <= (2, 3) \
         order by 'first_id', 'second_id'")
@@ -178,6 +178,19 @@ describe ProxyConnection do
       @connection.insert_record('scanner_records', 'id' => 9, 'name' => 'bla')
       @connection.select_one("select * from scanner_records where id = 9") \
         .should == {'id' => '9', 'name' => 'bla'}
+    ensure
+      @connection.rollback_db_transaction
+    end
+  end
+
+  it "insert_record should handle combined primary keys" do
+    @connection.begin_db_transaction
+    begin
+      @connection.insert_record('extender_combined_key', 'first_id' => 8, 'second_id' => '9')
+      @connection.select_one(
+        "select first_id, second_id 
+         from extender_combined_key where (first_id, second_id) = (8, 9)") \
+        .should == {'first_id' => '8', 'second_id' => '9'}
     ensure
       @connection.rollback_db_transaction
     end
