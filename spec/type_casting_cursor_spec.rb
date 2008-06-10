@@ -45,5 +45,6 @@ describe TypeCastingCursor do
       'timestamp' => Time.local(2007,"nov",10,20,15,1),
       'binary_test' => Marshal.dump(['bla',:dummy,1,2,3])
     }
+    cursor.clear
   end
 end
