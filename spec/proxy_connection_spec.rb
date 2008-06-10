@@ -167,15 +167,9 @@ describe ProxyConnection do
     results.next?.should be_false
   end
   
-  unless RUBY_PLATFORM =~ /java/
-    # This test unfortunately does not run correctly under java as the columns 
-    # are written in the query in a different sequence (hash data sorting problem).
-    # However the insert queries are also under jruby verified by actually
-    # running them (refer to the next spec)
-    it "table_insert_query should return the correct SQL query" do
-      @connection.table_insert_query('scanner_records', 'id' => 9, 'name' => 'bla') \
-        .should =~ sql_to_regexp(%q!insert into "scanner_records"("name", "id") values('bla', 9)!)
-    end
+  it "table_insert_query should return the correct SQL query" do
+    @connection.table_insert_query('scanner_records', 'name' => 'bla') \
+      .should =~ sql_to_regexp(%q!insert into "scanner_records"("name") values("bla")!)
   end
   
   it "insert_record should insert the specified record" do
