@@ -205,7 +205,7 @@ module RR
     end
     
     # Inserts the specified records into the named +table+.
-    # +values+ is a hash of columN_name => value pairs.
+    # +values+ is a hash of column_name => value pairs.
     def insert_record(table, values)
       execute table_insert_query(table, values)
     end
@@ -224,10 +224,9 @@ module RR
     end
     
     # Updates the specified records of the named +table+.
-    # +values+ is a hash of columN_name => value pairs.
+    # +values+ is a hash of column_name => value pairs.
     def update_record(table, values)
       execute table_update_query(table, values)
     end
-    
   end
 end
