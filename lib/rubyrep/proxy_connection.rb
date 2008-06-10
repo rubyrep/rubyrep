@@ -204,6 +204,8 @@ module RR
       query
     end
     
+    # Inserts the specified records into the names +table+.
+    # +values+ is a hash of columN_name => value pairs.
     def insert_record(table, values)
       execute table_insert_query(table, values)
     end
