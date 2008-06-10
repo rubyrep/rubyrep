@@ -210,4 +210,42 @@ describe ProxyConnection do
       @connection.rollback_db_transaction
     end
   end
+  
+  it "table_update_query should return the correct SQL query" do
+    @connection.table_update_query('scanner_records', 'id' => 1) \
+      .should =~ sql_to_regexp(%q!update "scanner_records" set "id" = 1 where ("id") = (1)!)
+  end
+  
+  it "update_record should update the specified record" do
+    @connection.begin_db_transaction
+    begin
+      @connection.update_record('scanner_records', 'id' => 1, 'name' => 'update_test')
+      @connection.select_one("select * from scanner_records where id = 1") \
+        .should == {'id' => '1', 'name' => 'update_test'}
+    ensure
+      @connection.rollback_db_transaction
+    end
+  end
+
+  it "update_record should also update uncommon data types correctly" do
+    @connection.begin_db_transaction
+    begin
+      test_data = {
+        'id' => 1, 
+        'decimal_test' => 0.234,
+        'timestamp' => Time.local(2009,"jun",9,20,15,1),
+        'multi_byte' => "よろしくお願(ねが)いします yoroshiku onegai shimasu: I humbly ask for your favor. bla",
+        'binary_test' => Marshal.dump(['bla',:dummy,1,2,3,4]),
+        'text_test' => 'dummy text bla'
+      }
+      @connection.update_record('extender_type_check', test_data)
+
+      org_cursor = @connection.select_cursor("select * from extender_type_check where id = 1")
+      cursor = TypeCastingCursor.new @connection, 'extender_type_check', org_cursor
+      result_data = cursor.next_row
+      result_data.should == test_data
+    ensure
+      @connection.rollback_db_transaction
+    end
+  end
 end
