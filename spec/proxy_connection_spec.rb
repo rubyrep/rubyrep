@@ -234,6 +234,19 @@ describe ProxyConnection do
     end
   end
 
+  it "update_record should handle combined primary keys" do
+    @connection.begin_db_transaction
+    begin
+      @connection.update_record('extender_combined_key', 'first_id' => 1, 'second_id' => '1', 'name' => 'xy')
+      @connection.select_one(
+        "select first_id, second_id, name
+         from extender_combined_key where (first_id, second_id) = (1, 1)") \
+        .should == {'first_id' => '1', 'second_id' => '1', 'name' => 'xy'}
+    ensure
+      @connection.rollback_db_transaction
+    end
+  end
+
   it "update_record should also update uncommon data types correctly" do
     @connection.begin_db_transaction
     begin
