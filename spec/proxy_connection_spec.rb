@@ -195,6 +195,19 @@ describe ProxyConnection do
       @connection.rollback_db_transaction
     end
   end
+  
+  it "insert_record should write nil values correctly" do
+    @connection.begin_db_transaction
+    begin
+      @connection.insert_record('extender_combined_key', 'first_id' => 8, 'second_id' => '9', 'name' => nil)
+      @connection.select_one(
+        "select first_id, second_id, name 
+         from extender_combined_key where (first_id, second_id) = (8, 9)") \
+        .should == {'first_id' => '8', 'second_id' => '9', "name" => nil}
+    ensure
+      @connection.rollback_db_transaction
+    end
+  end
 
   it "insert_record should also insert uncommon data types correctly" do
     @connection.begin_db_transaction
@@ -242,6 +255,19 @@ describe ProxyConnection do
         "select first_id, second_id, name
          from extender_combined_key where (first_id, second_id) = (1, 1)") \
         .should == {'first_id' => '1', 'second_id' => '1', 'name' => 'xy'}
+    ensure
+      @connection.rollback_db_transaction
+    end
+  end
+
+  it "update_record should write nil values correctly" do
+    @connection.begin_db_transaction
+    begin
+      @connection.update_record('extender_combined_key', 'first_id' => 1, 'second_id' => '1', 'name' => nil)
+      @connection.select_one(
+        "select first_id, second_id, name
+         from extender_combined_key where (first_id, second_id) = (1, 1)") \
+        .should == {'first_id' => '1', 'second_id' => '1', 'name' => nil}
     ensure
       @connection.rollback_db_transaction
     end
