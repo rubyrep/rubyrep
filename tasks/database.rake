@@ -207,7 +207,8 @@ def delete_all_and_create_shared_sample_data(connection)
   [
     {:first_id => 1, :second_id => 1, :name => 'aa'},
     {:first_id => 1, :second_id => 2, :name => 'ab'},
-    {:first_id => 2, :second_id => 1, :name => 'ba'}
+    {:first_id => 2, :second_id => 1, :name => 'ba'},
+    {:first_id => 3, :second_id => 1}
   ].each { |row| create_row connection, 'extender_combined_key', row}
 end
 

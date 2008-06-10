@@ -57,6 +57,14 @@ describe "ConnectionExtender", :shared => true do
     }
   end
   
+  it "select_cursor should read null values correctly" do
+    session = Session.new
+    result = session.left.select_cursor(
+       "select first_id, second_id, name from extender_combined_key 
+       where (first_id, second_id) = (3, 1)")
+    result.next_row.should == {'first_id' => '3', 'second_id' => '1', 'name' => nil}
+  end
+  
   it "should read and write binary data correctly" do
     session = Session.new
 

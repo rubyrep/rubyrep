@@ -14,7 +14,11 @@ class PGresult
     row = {}
     @fields ||= self.fields
     @fields.each_with_index do |field, field_index| 
-      value = self.getvalue @current_row_num, field_index
+      if self.getisnull(@current_row_num, field_index)
+        value = nil
+      else
+        value = self.getvalue @current_row_num, field_index
+      end
       
       row[@fields[field_index]] = value
     end
