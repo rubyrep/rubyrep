@@ -294,4 +294,23 @@ describe ProxyConnection do
       @connection.rollback_db_transaction
     end
   end
+
+  it "table_delete_query should return the correct SQL query" do
+    @connection.table_delete_query('scanner_records', 'id' => 1) \
+      .should =~ sql_to_regexp(%q!delete from "scanner_records" where ("id") = (1)!)
+  end
+  
+  it "delete_record should delete the specified record" do
+    @connection.begin_db_transaction
+    begin
+      @connection.delete_record('extender_combined_key', 'first_id' => 1, 'second_id' => '1', 'name' => 'xy')
+      @connection.select_one(
+        "select first_id, second_id, name
+         from extender_combined_key where (first_id, second_id) = (1, 1)") \
+        .should be_nil
+    ensure
+      @connection.rollback_db_transaction
+    end
+  end
+
 end

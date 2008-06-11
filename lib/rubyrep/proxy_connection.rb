@@ -228,5 +228,23 @@ module RR
     def update_record(table, values)
       execute table_update_query(table, values)
     end
+
+    # Returns an SQL delete query for the given +table+ and +values+
+    # +values+ is a hash of column_name => value pairs. (Only the primary key
+    # values will be used and must be included in the hash.)
+    def table_delete_query(table, values)
+      query = "delete from #{quote_table_name(table)}"
+      query << " where (" << quote_key_list(table) << ") = ("
+      query << primary_key_names(table).map do |key|
+        quote_value(table, key, values[key])
+      end.join(', ') << ")"
+    end
+    
+    # Updates the specified records of the named +table+.
+    # +values+ is a hash of column_name => value pairs. (Only the primary key
+    # values will be used and must be included in the hash.)
+    def delete_record(table, values)
+      execute table_delete_query(table, values)
+    end
   end
 end
