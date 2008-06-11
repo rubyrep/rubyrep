@@ -240,7 +240,7 @@ module RR
       end.join(', ') << ")"
     end
     
-    # Updates the specified records of the named +table+.
+    # Updates the specified record of the named +table+.
     # +values+ is a hash of column_name => value pairs. (Only the primary key
     # values will be used and must be included in the hash.)
     def delete_record(table, values)
