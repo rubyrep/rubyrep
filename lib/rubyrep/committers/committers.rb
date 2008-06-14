@@ -3,8 +3,32 @@ module RR
   # This module provides functionality to register committers and access the
   # list of registered committers.
   # Every Committer needs to register itself with Committers#register.
-  # See RR::Committers::DefaultCommitter for the methods that a Committer needs
-  # to implement.
+  # Each Committer must implement at the following methods:
+  #
+  #   # Creates a new committer
+  #   #   * session: a Session object representing the current database session
+  #   #   * left_table: name of the table in the left database
+  #   #   * right_table: name of the table in the right database.
+  #   #   * sync_options: a hash of table specific sync options
+  #   def initialize(session, left_table, right_table, sync_options)
+  #
+  #   # Inserts the specified record in the specified +database+ (either :left or :right).
+  #   # +values+ is a hash of column_name => value pairs.
+  #   def insert_record(database, values)
+  #
+  #   # Updates the specified record in the specified +database+ (either :left or :right).
+  #   # +values+ is a hash of column_name => value pairs. (Only the primary key
+  #   # values will be used and must be included in the hash.)
+  #   def update_record(database, values)
+  #
+  #   # Deletes the specified record in the specified +database+ (either :left or :right).
+  #   # +values+ is a hash of column_name => value pairs. (Only the primary key
+  #   # values will be used and must be included in the hash.)
+  #   def delete_record(database, values)
+  #
+  #   # Is called after the last insert / update / delete query.
+  #   def finalize
+  #
   module Committers
     # Returns a Hash of currently registered committers.
     # (Empty Hash if no connection committers were defined.)
@@ -33,40 +57,50 @@ module RR
       # The current Session object
       attr_accessor :session 
       
-      # Name of the left table
-      attr_accessor :left_table
+      # A hash holding the table names
+      # E. g. {:left => "left_table", :right => "right_table"}
+      attr_accessor :tables
+      
+      # A hash holding the proxy connections
+      # E. g. {:left => <left connection>, :right => <right connection>}
+      attr_accessor :connections
     
-      # Name of the right table
-      attr_accessor :right_table
-    
-      # The table specific sync options
+      # A hash of table specific sync options
       attr_accessor :sync_options
 
       # A new committer is created for each table sync.
       #   * session: a Session object representing the current database session
       #   * left_table: name of the table in the left database
       #   * right_table: name of the table in the right database.
-      #   * sync_options: the table specific sync options
+      #   * sync_options: a hash of table specific sync options
       def initialize(session, left_table, right_table, sync_options)
-        self.session, self.left_table, self.right_table, self.sync_options =
-          session, left_table, right_table, sync_options
+        self.session, self.sync_options = session, sync_options
+        self.tables = {:left => left_table, :right => right_table}
+        self.connections = {:left => session.left, :right => session.right}
       end
       
-      # Is called whenever data are modified.
-      # Needs to yield so that the data changes can be executed.
-      # +databases+ is an array containing +:left+ and / or +:right+ to signal
-      # in which databases changes are going to be executed.
-      def notify_change(databases)
-        databases.each do |database|
-          unless [:left, :right].include? database
-            raise ArgumentError, "only :left or :right allowed"
-          end
-        end
-        yield
+      # Inserts the specified record in the specified +database+ (either :left or :right).
+      # +values+ is a hash of column_name => value pairs.
+      def insert_record(database, values)
+        connections[database].insert_record(tables[database], values)
       end
       
-      # Is called after the table sync is completed.
-      def table_sync_completed
+      # Updates the specified record in the specified +database+ (either :left or :right).
+      # +values+ is a hash of column_name => value pairs. (Only the primary key
+      # values will be used and must be included in the hash.)
+      def update_record(database, values)
+        connections[database].update_record(tables[database], values)
+      end
+      
+      # Deletes the specified record in the specified +database+ (either :left or :right).
+      # +values+ is a hash of column_name => value pairs. (Only the primary key
+      # values will be used and must be included in the hash.)
+      def delete_record(database, values)
+        connections[database].delete_record(tables[database], values)
+      end
+      
+      # Is called after the last insert / update / delete query.
+      def finalize
       end
     end
     

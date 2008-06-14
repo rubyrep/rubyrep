@@ -32,25 +32,47 @@ end
 
 
 describe "Committer", :shared => true do
-  it "execute_change should yield" do
-    block_called = false
-    @committer.notify_change([:left]) {block_called = true}
-    block_called.should be_true
+  it "should support the right constructor interface" do
+    session = mock("session")
+    session.should_receive(:left).any_number_of_times \
+      .and_return(mock("left connection", :null_object => true))
+    session.should_receive(:right).any_number_of_times \
+      .and_return(mock("right connection", :null_object => true))
+    @committer.class.new session, 
+      "left", "right", :dummy_options
   end
   
-  it "execute_change should raise if parameters contains invalid entries" do
-    lambda {@committer.notify_change([:left, :right]) {}}.should_not raise_error
-    lambda {@committer.notify_change([:left, :blub]) {}}.should raise_error(ArgumentError)
+  it "should proxy insert_record, update_record and delete_record calls" do
+    left_connection = mock("left connection", :null_object => true)
+    left_connection.should_receive(:insert_record).with("left", :dummy_insert_values)
+
+    right_connection = mock("right connection", :null_object => true)
+    right_connection.should_receive(:update_record).with("right", :dummy_update_values)
+    right_connection.should_receive(:delete_record).with("right", :dummy_delete_values)
+
+    session = mock("session")
+    session.should_receive(:left).any_number_of_times.and_return(left_connection)
+    session.should_receive(:right).any_number_of_times.and_return(right_connection)
+
+    committer = @committer.class.new session, 
+      "left", "right", :dummy_options
+
+    committer.insert_record :left, :dummy_insert_values
+    committer.update_record :right, :dummy_update_values
+    committer.delete_record :right, :dummy_delete_values
   end
   
-  it "should support table_sync_completed" do
-    @committer.table_sync_completed
+  it "should support finalize" do
+    @committer.finalize
   end
 end
 
 describe Committers::DefaultCommitter do
   before(:each) do
-    @committer = Committers::DefaultCommitter.new :dummy_session, 
+    @session = mock("session")
+    @session.should_receive(:left).any_number_of_times.and_return(:left_connection)
+    @session.should_receive(:right).any_number_of_times.and_return(:right_connection)
+    @committer = Committers::DefaultCommitter.new @session, 
       "left", "right", :dummy_options
   end
 
@@ -59,9 +81,10 @@ describe Committers::DefaultCommitter do
   end
   
   it "initialize should store the provided parameters" do
-    @committer.session.should == :dummy_session
-    @committer.left_table.should == "left"
-    @committer.right_table.should == "right"
+    @committer.session.should == @session
+    @committer.connections \
+      .should == {:left => @session.left, :right => @session.right}
+    @committer.tables.should == {:left => "left", :right => "right"}
     @committer.sync_options.should == :dummy_options
   end
   
@@ -72,7 +95,11 @@ describe Committers::NeverCommitter do
   before(:each) do
     @old_session = Committers::NeverCommitter.current_session
     Committers::NeverCommitter.current_session = nil
-    @session = mock("session", :null_object => true)
+    @session = mock("session")
+    @session.should_receive(:left).any_number_of_times \
+      .and_return(mock("left connection", :null_object => true))
+    @session.should_receive(:right).any_number_of_times \
+      .and_return(mock("right connection", :null_object => true))
     @committer = Committers::NeverCommitter.new @session,
       "left", "right", :dummy_options
   end
@@ -87,12 +114,13 @@ describe Committers::NeverCommitter do
   
   it "initialize should store the provided parameters" do
     @committer.session.should == @session
-    @committer.left_table.should == "left"
-    @committer.right_table.should == "right"
+    @committer.connections \
+      .should == {:left => @session.left, :right => @session.right}
+    @committer.tables.should == {:left => "left", :right => "right"}
     @committer.sync_options.should == :dummy_options
   end
   
-  it "initialize should rollback the previous current sesson and then register the new one as current session" do
+  it "initialize should rollback the previous current session and then register the new one as current session" do
     old_session = mock("old session", :null_object => true)
     new_session = mock("new session", :null_object => true)
     Committers::NeverCommitter.current_session = old_session
@@ -108,13 +136,13 @@ describe Committers::NeverCommitter do
     Committers::NeverCommitter.current_session = nil
     new_session = mock("new session")
 
-    left_connection = mock("connection")
+    left_connection = mock("left connection")
     left_connection.should_receive :begin_db_transaction
-    new_session.should_receive(:left).and_return(left_connection)
+    new_session.should_receive(:left).any_number_of_times.and_return(left_connection)
 
-    right_connection = mock("connection")
+    right_connection = mock("right connection")
     right_connection.should_receive :begin_db_transaction
-    new_session.should_receive(:right).and_return(right_connection)
+    new_session.should_receive(:right).any_number_of_times.and_return(right_connection)
 
     @committer = Committers::NeverCommitter.new new_session,
       "left", "right", :dummy_options
@@ -123,11 +151,11 @@ describe Committers::NeverCommitter do
   it "rollback_current_session should rollback current session" do
     old_session = mock("old session")
 
-    left_connection = mock("connection")
+    left_connection = mock("left connection")
     left_connection.should_receive :rollback_db_transaction
     old_session.should_receive(:left).and_return(left_connection)
 
-    right_connection = mock("connection")
+    right_connection = mock("right connection")
     right_connection.should_receive :rollback_db_transaction
     old_session.should_receive(:right).and_return(right_connection)
     
