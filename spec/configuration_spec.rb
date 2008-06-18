@@ -13,8 +13,13 @@ describe Configuration do
     end
   end
   
-  it "initialize should set #proxy_options to default proxy options" do
+  it "initialize should set #proxy_options to the default proxy options" do
     config = Configuration.new
     config.proxy_options.should == Configuration::DEFAULT_PROXY_OPTIONS
+  end
+
+  it "initialize should set #sync_options to the default sync options" do
+    config = Configuration.new
+    config.sync_options.should == Configuration::DEFAULT_SYNC_OPTIONS
   end
 end

@@ -32,6 +32,7 @@ lib/rubyrep/session.rb
 lib/rubyrep/table_scan.rb
 lib/rubyrep/table_scan_helper.rb
 lib/rubyrep/table_spec_resolver.rb
+lib/rubyrep/table_sync.rb
 lib/rubyrep/type_casting_cursor.rb
 lib/rubyrep/version.rb
 log/debug.log
@@ -66,6 +67,7 @@ spec/spec_helper.rb
 spec/table_scan_helper_spec.rb
 spec/table_scan_spec.rb
 spec/table_spec_resolver_spec.rb
+spec/table_sync_spec.rb
 spec/type_casting_cursor_spec.rb
 tasks/database.rake
 tasks/deployment.rake
