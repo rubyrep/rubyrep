@@ -27,7 +27,13 @@ module RR
     # General options for the proxy operation mode.
     # Possible settings:
     #   * +:block_size+: To proxy cursor will calculate the checksum for block_size number of records each.
-    attr_accessor :proxy_options
+    attr_reader :proxy_options
+    
+    # Set the specified +options+ hash as new proxy options +after+ merging them
+    # into the default proxy option hash.
+    def proxy_options=(options)
+      @proxy_options = DEFAULT_PROXY_OPTIONS.clone.merge!(options)
+    end
     
     # Table sync options. A hash with the following possible settings:
     # * +:syncer+: A syncer key as registered by TableSync#register_syncer
@@ -36,7 +42,13 @@ module RR
     #   Each array element consists of a 1 entry hash with
     #   * key: A table name string or a Regexp matching multiple tables.
     #   * values: An hash with sync options as described abobve.
-    attr_accessor :sync_options
+    attr_reader :sync_options
+    
+    # Set the specified +options+ hash as new sync options +after+ merging them
+    # into the default proxy option hash.
+    def sync_options=(options)
+      @sync_options = DEFAULT_SYNC_OPTIONS.clone.merge!(options)
+    end
     
     # initialize attributes with empty hashes
     def initialize
