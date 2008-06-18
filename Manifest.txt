@@ -13,6 +13,7 @@ config/requirements.rb
 config/test_config.rb
 lib/rubyrep.rb
 lib/rubyrep/committers/committers.rb
+lib/rubyrep/configuration.rb
 lib/rubyrep/connection_extenders/jdbc_extender.rb
 lib/rubyrep/connection_extenders/mysql_extender.rb
 lib/rubyrep/connection_extenders/postgresql_extender.rb

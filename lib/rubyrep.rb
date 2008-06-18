@@ -6,6 +6,7 @@ require 'rubygems'
 gem 'activerecord', '>= 2.0.1'
 require 'active_record'
 
+require 'configuration'
 require 'initializer'
 require 'session'
 require 'connection_extenders/registration'
