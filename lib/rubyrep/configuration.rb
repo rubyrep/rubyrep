@@ -50,6 +50,50 @@ module RR
       @sync_options = DEFAULT_SYNC_OPTIONS.clone.merge!(options)
     end
     
+    # Table specific options. This is an array of +table_options+.
+    # +table_options+ is a 2 element array with 
+    # * first element: A +table_spec+ (either a table name or a regexp matching multiple tables)
+    # * second element: The +options+ hash (detailed format described in #add_options_for_table
+    # Should only be accessed via #add_options_for_table and #options_for_table
+    attr_accessor :table_specific_options
+    
+    # Adds the table specific options for the specified +table_spec+.
+    # A +table_spec+ can be either a table name or a regexp matching multiple tables.
+    # +options+ is a multi-element hash with
+    # * key: Designates type of options. Either :proxy_options or :sync_options
+    # * values: The according table specific options as described under #proxy_options or #sync_options
+    def add_options_for_table(table_spec, options)
+      self.table_specific_options ||= []
+      i = nil
+      table_specific_options.each_with_index { |table_options, k|
+        i = k if table_options[0] == table_spec
+      }
+      if i
+        table_options = table_specific_options[i][1]
+      else
+        table_options = {:proxy_options => {}, :sync_options => {}}
+        table_specific_options << [table_spec, table_options]
+      end
+      table_options[:proxy_options].merge! options[:proxy_options] || {}
+      table_options[:sync_options].merge! options[:sync_options] || {}
+    end
+    
+    # Returns an option hash for the given table.
+    # Accumulates options for all matching table specs (most recently added options
+    # overwrite according options added before).
+    # Refer to #add_options_for_table for the exact format of the returned options.
+    def options_for_table(table)
+      table_proxy_options = proxy_options.clone
+      table_sync_options = sync_options.clone
+      table_specific_options.each do |table_options|
+        if table_options[0] === table
+          table_proxy_options.merge! table_options[1][:proxy_options]
+          table_sync_options.merge! table_options[1][:sync_options]
+        end
+      end
+      {:proxy_options => table_proxy_options, :sync_options => table_sync_options}
+    end
+    
     # initialize attributes with empty hashes
     def initialize
       [:left, :right].each do |hash_attr|

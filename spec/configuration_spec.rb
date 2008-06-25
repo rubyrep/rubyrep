@@ -34,4 +34,42 @@ describe Configuration do
     config.sync_options = {:bla => :blub}
     config.sync_options.should == Configuration::DEFAULT_SYNC_OPTIONS.merge({:bla => :blub})
   end
+  
+  it "options_for_table should return the general options if there are no matching table specific options" do
+    config = Configuration.new
+    config.add_options_for_table(/a/, :sync_options => {:bla => :blub})
+    config.options_for_table('b').should == {:proxy_options => config.proxy_options, :sync_options => config.sync_options}
+  end
+
+  it "options_for_table should return table specific options mixed in with default options" do
+    config = Configuration.new
+    config.add_options_for_table(/a/, :sync_options => {:bla => :blub})
+    config.options_for_table('a') \
+      .should == {
+      :proxy_options => config.proxy_options, 
+      :sync_options => config.sync_options.merge(:bla => :blub)}
+  end
+
+  it "options_for_table should return last added version of added options for matching table spec" do
+    config = Configuration.new
+    config.add_options_for_table(/a/, :sync_options => {:bla => :blub})
+    config.add_options_for_table('a', :sync_options => {:bla => :blok})
+    config.add_options_for_table(/x/, :sync_options => {:bla => :bar})
+    config.add_options_for_table('y', :sync_options => {:bla => :foo})
+    config.options_for_table('a') \
+      .should == {
+      :proxy_options => config.proxy_options, 
+      :sync_options => config.sync_options.merge(:bla => :blok)}
+  end
+
+  it "add_options_for_table should not create table_spec duplicates" do
+    config = Configuration.new
+    config.add_options_for_table(/a/, :sync_options => {:bla => :blub})
+    config.add_options_for_table(/a/, :proxy_options => {:foo => :bar})
+    config.options_for_table('a') \
+      .should == {
+      :proxy_options => config.proxy_options.merge(:foo => :bar), 
+      :sync_options => config.sync_options.merge(:bla => :blub)}
+  end
+
 end
