@@ -55,7 +55,9 @@ module RR
     # * first element: A +table_spec+ (either a table name or a regexp matching multiple tables)
     # * second element: The +options+ hash (detailed format described in #add_options_for_table
     # Should only be accessed via #add_options_for_table and #options_for_table
-    attr_accessor :table_specific_options
+    def table_specific_options
+      @table_specific_options ||= []
+    end
     
     # Adds the table specific options for the specified +table_spec+.
     # A +table_spec+ can be either a table name or a regexp matching multiple tables.
@@ -63,7 +65,6 @@ module RR
     # * key: Designates type of options. Either :proxy_options or :sync_options
     # * values: The according table specific options as described under #proxy_options or #sync_options
     def add_options_for_table(table_spec, options)
-      self.table_specific_options ||= []
       i = nil
       table_specific_options.each_with_index { |table_options, k|
         i = k if table_options[0] == table_spec

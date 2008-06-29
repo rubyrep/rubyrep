@@ -35,6 +35,11 @@ describe Configuration do
     config.sync_options.should == Configuration::DEFAULT_SYNC_OPTIONS.merge({:bla => :blub})
   end
   
+  it "options_for_table should return the general options if there are no table specific options at all" do
+    config = Configuration.new
+    config.options_for_table('b').should == {:proxy_options => config.proxy_options, :sync_options => config.sync_options}
+  end
+
   it "options_for_table should return the general options if there are no matching table specific options" do
     config = Configuration.new
     config.add_options_for_table(/a/, :sync_options => {:bla => :blub})
