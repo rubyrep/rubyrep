@@ -31,6 +31,19 @@ describe ProxiedTableScan do
       .should == 2
   end
   
+  it "block_size should return the matching table specific option if available" do
+    config = Initializer.configuration
+    old_table_specific_options = config.table_specific_options
+    begin
+      config.proxy_options = {:block_size => 2}
+      config.add_options_for_table 'scanner_records', :proxy_options => {:block_size => 3}
+      ProxiedTableScan.new(Session.new(config), 'scanner_records').block_size \
+        .should == 3
+    ensure
+      config.instance_eval {@table_specific_options = old_table_specific_options}
+    end
+  end
+  
   # Creates, prepares and returns a +ProxyBlockCursor+ for the given database 
   # +connection+ and +table+.
   # Sets the ProxyBlockCursor#max_row_cache_size as per method parameter.
