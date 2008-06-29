@@ -11,7 +11,7 @@ module RR
     
     # returns block size to use for table scanning
     def block_size
-      @block_size ||= session.configuration.proxy_options[:block_size]
+      @block_size ||= session.configuration.options_for_table(left_table)[:proxy_options][:block_size]
     end
   
     # Creates a new ProxiedTableScan instance
