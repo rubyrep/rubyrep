@@ -25,6 +25,7 @@ require 'table_spec_resolver'
 require 'scan_runner'
 require 'scan_summary_reporter'
 require 'committers/committers'
+require 'sync_helper'
 require 'table_sync'
 
 Dir["#{File.dirname(__FILE__)}/rubyrep/connection_extenders/*.rb"].each do |extender| 

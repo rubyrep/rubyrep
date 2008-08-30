@@ -21,7 +21,8 @@ module RR
     
     # Default options for a table sync
     DEFAULT_SYNC_OPTIONS = {
-      :syncer => :two_way
+      :syncer => :two_way,
+      :committer => :default
     }
     
     # General options for the proxy operation mode.
