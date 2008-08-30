@@ -22,44 +22,16 @@ describe TableSync do
     TableSync.syncers.should == {:key1 => :dummy_syncer1, :key2 => :dummy_syncer2}
   end
   
-  it "sync_options should return the correct sync options when there are no table specific options" do
-    table_sync = TableSync.new Session.new(standard_config), "scanner_records"
-    table_sync.session.configuration.stub!(:sync_options).and_return({
-        :dummy_a => 1, :dummy_b => 2})
-    table_sync.sync_options.should == {
-      :dummy_a => 1, :dummy_b => 2}
-  end
-  
-  it "sync_options should return the correct sync options when there are table specific options as string" do
-    table_sync = TableSync.new Session.new(standard_config), "scanner_records"
-    table_sync.session.configuration.stub!(:sync_options).and_return({
-        :dummy_a => 1, :dummy_b => 2, 
-        :table_specific => [
-          {"a" => {:dummy_c => 3}}, 
-          {"scanner_records" => {:dummy_a => 10, :dummy_d => 4}}]})
-    table_sync.sync_options.should == {
-      :dummy_a => 10, :dummy_b => 2, :dummy_d => 4}
-  end
-  
-  it "sync_options should return the correct sync options when there are table specific options as regexp" do
-    table_sync = TableSync.new Session.new(standard_config), "scanner_records"
-    table_sync.session.configuration.stub!(:sync_options).and_return({
-        :dummy_a => 1, :dummy_b => 2, 
-        :table_specific => [
-          {/other_table./ => {:dummy_c => 3}},
-          {/scanner_record./ => {:dummy_a => 55, :dummy_d => 4}},
-          {/scanner_record./ => {:dummy_a => 10, :dummy_e => 5}}]})
-    table_sync.sync_options.should == {
-      :dummy_a => 10, :dummy_b => 2, :dummy_d => 4, :dummy_e => 5}
-  end
-  
-  it "sync_options should complain if any table hash contains more than 1 element" do
-    table_sync = TableSync.new Session.new(standard_config), "scanner_records"
-    table_sync.session.configuration.stub!(:sync_options).and_return({
-        :dummy_a => 1, :dummy_b => 2, 
-        :table_specific => [
-          /other_table./ => {:dummy_c => 3},
-          /scanner_record./ => {:dummy_a => 55, :dummy_d => 4}]})
-    lambda {table_sync.sync_options}.should raise_error(RuntimeError, /table_specific.*multiple entries/)
+  it "sync_options should return the correct table specific sync options" do
+    config = standard_config
+    old_table_specific_options = config.table_specific_options
+    begin
+      config.sync_options = {:syncer => :bla}
+      config.add_options_for_table 'scanner_records', :sync_options => {:syncer => :blub}
+      TableSync.new(Session.new(config), 'scanner_records').sync_options[:syncer] \
+        .should == :blub
+    ensure
+      config.instance_eval {@table_specific_options = old_table_specific_options}
+    end
   end
 end  

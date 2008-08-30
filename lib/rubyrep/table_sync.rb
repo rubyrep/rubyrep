@@ -21,23 +21,7 @@ module RR
     
     # Returns a hash of sync options for this table sync.
     def sync_options
-      unless @sync_options
-        options = session.configuration.sync_options
-        if options[:table_specific]
-          options[:table_specific].each do |table_hash|
-            if table_hash.size > 1
-              raise "table_specific sync options contains hashes with multiple entries" 
-            end
-            table_hash.each do |table, table_options|
-              # note: using === as table might be a String or Regexp
-              options.merge! table_options if table === left_table
-            end
-          end
-        end
-        options.delete :table_specific
-        @sync_options = options
-      end
-      @sync_options      
+      @sync_options ||= session.configuration.options_for_table(left_table)[:sync_options]
     end
     
     # Creates a new TableSync instance
