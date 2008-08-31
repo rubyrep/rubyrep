@@ -30,13 +30,14 @@ lib/rubyrep/proxy_runner.rb
 lib/rubyrep/scan_runner.rb
 lib/rubyrep/scan_summary_reporter.rb
 lib/rubyrep/session.rb
+lib/rubyrep/sync_helper.rb
+lib/rubyrep/syncers/syncers.rb
 lib/rubyrep/table_scan.rb
 lib/rubyrep/table_scan_helper.rb
 lib/rubyrep/table_spec_resolver.rb
 lib/rubyrep/table_sync.rb
 lib/rubyrep/type_casting_cursor.rb
 lib/rubyrep/version.rb
-log/debug.log
 script/destroy
 script/generate
 script/txt2html
@@ -65,6 +66,8 @@ spec/scan_summary_reporter_spec.rb
 spec/session_spec.rb
 spec/spec.opts
 spec/spec_helper.rb
+spec/sync_helper_spec.rb
+spec/syncers_spec.rb
 spec/table_scan_helper_spec.rb
 spec/table_scan_spec.rb
 spec/table_spec_resolver_spec.rb
