@@ -28,7 +28,8 @@ module RR
     # Calls the block for every found difference.
     # Differences are yielded with 2 parameters
     #   * type: describes the difference, either :left (row only in left table), :right (row only in right table) or :conflict
-    #   * row: for :left or :right cases a hash describing the row; for :conflict an array of left and right row
+    #   * row: For :left or :right cases a hash describing the row; for :conflict an array of left and right row.
+    #          A row is a hash of column_name => value pairs.
     def run(&blck)
       left_cursor = right_cursor = nil
       left_cursor = TypeCastingCursor.new(session.left, left_table, 
