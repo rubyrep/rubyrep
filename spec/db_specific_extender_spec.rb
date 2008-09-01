@@ -8,11 +8,17 @@ extenders = [:mysql, :postgres]
 extenders.each do |extender|
   describe "#{extender.to_s.capitalize} Extender" do
     before(:each) do
-      Initializer.configuration = read_config(extender)
+      @org_test_db = ENV['RR_TEST_DB']
+      ENV['RR_TEST_DB'] = extender.to_s
+      Initializer.configuration = standard_config
+    end
+
+    after(:each) do
+      ENV['RR_TEST_DB'] = @org_test_db
     end
 
     begin
-      if read_config(extender).left[:adapter] != standard_config.left[:adapter]
+      if ENV['RR_TEST_DB'] != @org_test_db.to_s
         # If the current adapter is *not* the adapter for the standard tests
         # (meaning the adapter which is used to run all other tests)
         # then only run the extender spec if the database connection is available

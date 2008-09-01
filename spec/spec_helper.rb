@@ -145,18 +145,19 @@ end
 # E.g. if config is :postgres, tries to read the config from 'postgres_config.rb'
 def read_config(config)
   $config_cache ||= {}
-  unless $config_cache[config]
+  cache_key = "#{config.to_s}_#{ENV['RR_TEST_DB']}"
+  unless $config_cache[cache_key]
     # load the proxied config but ensure that the original configuration is restored
     old_config = RR::Initializer.configuration
     RR::Initializer.reset
     begin
       load File.dirname(__FILE__) + "/../config/#{config}_config.rb"
-      $config_cache[config] = RR::Initializer.configuration
+      $config_cache[cache_key] = RR::Initializer.configuration
     ensure
       RR::Initializer.configuration = old_config
     end
   end
-  $config_cache[config]
+  $config_cache[cache_key]
 end
 
 # Removes all cached database configurations
