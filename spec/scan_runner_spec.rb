@@ -127,20 +127,6 @@ describe ScanRunner do
     ScanRunner.new.active_printer.should be_an_instance_of(ScanSummaryReporter)
   end
   
-  it "table_scan_class should return TableScan for non-proxied sessions" do
-    session = mock("session")
-    session.should_receive(:proxied?).and_return(false)
-    scan_runner = ScanRunner.new
-    scan_runner.table_scan_class(session).should == DirectTableScan
-  end
-  
-  it "table_scan_class should return ProxiedTableScan for proxied sessions" do
-    session = mock("session")
-    session.should_receive(:proxied?).and_return(true)
-    scan_runner = ScanRunner.new
-    scan_runner.table_scan_class(session).should == ProxiedTableScan
-  end
-  
   it "signal_scanning_completion should signal completion if the scan report printer supports it" do
     printer = mock("printer")
     printer.should_receive(:scanning_finished)

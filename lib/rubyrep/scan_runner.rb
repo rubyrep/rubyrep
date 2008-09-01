@@ -110,16 +110,6 @@ EOS
       return options, status
     end
     
-    # Returns the correct class for the table scan based on the type of the 
-    # session (proxied or direct).
-    def table_scan_class(session)
-      if session.proxied?
-        ProxiedTableScan
-      else
-        DirectTableScan
-      end
-    end
-    
     # Signals scan completion to the (active) scan report printer if it supports
     # that method.
     def signal_scanning_completion
@@ -137,7 +127,7 @@ EOS
       table_specs = resolver.resolve options[:table_specs]
       table_specs.each do |table_spec|
         active_printer.scan table_spec[:left_table], table_spec[:right_table] do
-          scan = table_scan_class(session).new session, 
+          scan = TableScanHelper.scan_class(session).new session,
             table_spec[:left_table], table_spec[:right_table]
           scan.run do |diff_type, row|
             active_printer.report_difference diff_type, row

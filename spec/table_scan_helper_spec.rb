@@ -18,4 +18,11 @@ describe TableScanHelper do
     @scan.rank_rows({'first_id' => 1, 'second_id' => 1}, nil).should == -1
   end
 
+  it "table_scan_class should return TableScan for non-proxied sessions" do
+    TableScanHelper.scan_class(Session.new(standard_config)).should == DirectTableScan
+  end
+
+  it "table_scan_class should return ProxiedTableScan for proxied sessions" do
+    TableScanHelper.scan_class(Session.new(proxied_config)).should == ProxiedTableScan
+  end
 end

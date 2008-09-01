@@ -24,5 +24,15 @@ module RR
       end
       rank
     end
+
+    # Returns the correct class for the table scan based on the type of the
+    # session (proxied or direct).
+    def self.scan_class(session)
+      if session.proxied?
+        ProxiedTableScan
+      else
+        DirectTableScan
+      end
+    end
   end
 end
