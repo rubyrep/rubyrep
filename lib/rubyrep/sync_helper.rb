@@ -18,7 +18,7 @@ module RR
     def right_table; table_sync.right_table; end
 
     # Sync options for the current table sync
-    def sync_options; table_sync.sync_options; end
+    def sync_options; @sync_options ||= table_sync.sync_options; end
 
     # Delegates to Committer#insert_record
     def insert_record(database, values)
