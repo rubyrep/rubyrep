@@ -32,9 +32,27 @@ module RR
       super
     end
     
-    # Executes the table sync
+    # Executes the table sync. If a block is given, yields each difference with
+    # the following 2 parameters
+    # * +:type+
+    # * +:row+
+    # Purpose: enable display of progress information.
+    # See DirectTableScan#run for full description of yielded parameters.
     def run
-      
+      success = false
+      helper = SyncHelper.new(self)
+      scan_class = TableScanHelper.scan_class(session)
+      scan = scan_class.new(session, left_table, right_table)
+      syncer_class = Syncers.syncers[sync_options[:syncer]]
+      syncer = syncer_class.new(helper)
+
+      scan.run do |type, row|
+        yield type, row if block_given? # To enable progress reporting
+        syncer.sync_difference type, row
+      end
+      success = true # considered to be successful if we get till here
+    ensure
+      helper.finalize success
     end
     
   end

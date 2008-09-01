@@ -23,7 +23,7 @@ describe TableSync do
   end
   
   it "sync_options should return the correct table specific sync options" do
-    config = standard_config
+    config = deep_copy(standard_config)
     old_table_specific_options = config.table_specific_options
     begin
       config.sync_options = {:syncer => :bla}
@@ -32,6 +32,25 @@ describe TableSync do
         .should == :blub
     ensure
       config.instance_eval {@table_specific_options = old_table_specific_options}
+    end
+  end
+
+  it "run should synchronize the databases" do
+    begin
+      config = deep_copy(standard_config)
+      config.sync_options[:committer] = :never_commit
+      config.sync_options[:delete] = true
+
+      session = Session.new(config)
+      sync = TableSync.new(session, 'scanner_records')
+      sync.run
+
+      left_records = session.left.connection.select_all("select * from scanner_records order by id")
+      right_records = session.right.connection.select_all("select * from scanner_records order by id")
+
+      left_records.should == right_records
+    ensure
+      Committers::NeverCommitter.rollback_current_session
     end
   end
 end  

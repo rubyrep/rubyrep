@@ -23,6 +23,7 @@ describe TableScanHelper do
   end
 
   it "table_scan_class should return ProxiedTableScan for proxied sessions" do
+    ensure_proxy
     TableScanHelper.scan_class(Session.new(proxied_config)).should == ProxiedTableScan
   end
 end
