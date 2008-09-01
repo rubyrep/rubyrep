@@ -2,8 +2,8 @@ module RR
   # Syncers are classes that implement the sync policies.
   # This module provides functionality to register syncers and access the
   # list of registered syncers.
-  # Every Syncer needs to register itself with Syncers#register.
-  # Each Syncer must implement at the following methods:
+  # Each Syncer must register itself with Syncers#register.
+  # Each Syncer must implement the following methods:
   #
   #   # Creates a new syncer (A syncer is used for one table sync only)
   #   #   * sync_helper: a SyncHelper object providing necessary information and functionalities
@@ -68,7 +68,7 @@ module RR
       end
 
       # Called to sync the provided difference.
-      # See DirectTableSync#run for a description of the +type+ and +row+ parameters.
+      # See DirectTableScan#run for a description of the +type+ and +row+ parameters.
       def sync_difference(type, row)
         case type
         when source
