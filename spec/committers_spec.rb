@@ -63,7 +63,7 @@ describe "Committer", :shared => true do
   end
   
   it "should support finalize" do
-    @committer.finalize
+    @committer.finalize(false)
   end
 end
 

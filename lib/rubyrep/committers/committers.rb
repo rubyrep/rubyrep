@@ -100,7 +100,8 @@ module RR
       end
       
       # Is called after the last insert / update / delete query.
-      def finalize
+      # +success+ should be true if there were no problems, false otherwise.
+      def finalize(success = true)
       end
     end
     
