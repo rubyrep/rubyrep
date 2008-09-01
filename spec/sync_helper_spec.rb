@@ -70,4 +70,17 @@ describe Configuration do
     c.should_receive(:delete_record).with(:right, :dummy_record)
     helper.delete_record :right, :dummy_record
   end
+
+  it "finalize should be delegated to the committer" do
+    sync = TableSync.new(Session.new, 'scanner_records')
+    helper = SyncHelper.new(sync)
+
+    # finalize itself should not lead to creation of committer
+    helper.finalize
+    helper.instance_eval {@committer}.should be_nil
+    
+    c = helper.instance_eval {committer}
+    c.should_receive(:finalize).with(false)
+    helper.finalize(false)
+  end
 end

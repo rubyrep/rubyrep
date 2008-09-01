@@ -35,6 +35,7 @@ module RR
       committer.delete_record(database, values)
     end
 
+    # Return the committer, creating it if not yet there.
     def committer
       unless @committer
         committer_class = Committers::committers[sync_options[:committer]]
@@ -44,6 +45,12 @@ module RR
       @committer
     end
     private :committer
+
+    # Asks the committer (if it exists) to finalize any open transactions
+    # +success+ should be true if there were no problems, false otherwise.
+    def finalize(success = true)
+      @committer.finalize(success) if @committer
+    end
     
     # Creates a new SyncHelper for the given +TableSync+ instance.
     def initialize(table_sync)
