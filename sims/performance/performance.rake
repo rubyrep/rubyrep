@@ -13,9 +13,9 @@ class RightBigScan < ActiveRecord::Base
   include CreateWithKey
 end
 
-# Prepares the database schema for the big_scan test.
+# Prepares the database schema for the performance tests.
 # db_connection holds the database connection to be used.
-def big_scan_prepare_schema(db_connection)
+def prepare_schema(db_connection)
   ActiveRecord::Base.connection = db_connection
 
   ActiveRecord::Schema.define do
@@ -56,7 +56,7 @@ end
 
 # Populates the big_scan tables with sample data.
 # Takes a Session object holding the according database connection.
-def big_scan_populate_data(session)
+def populate_data(session)
   LeftBigScan.connection = session.left.connection
   RightBigScan.connection = session.right.connection
   
@@ -100,32 +100,40 @@ def big_scan_populate_data(session)
   end
 end
 
-# Prepares the database for the big_scan test
-def big_scan_prepare
+# Prepares the database for the performance simulations
+def prepare
   session = RR::Session.new
-  [:left, :right].each {|arm| big_scan_prepare_schema(session.send(arm).connection)}
-  puts "time required: " + Benchmark.measure {big_scan_populate_data session}.to_s
+  [:left, :right].each {|arm| prepare_schema(session.send(arm).connection)}
+  puts "time required: " + Benchmark.measure {populate_data session}.to_s
 end
 
 namespace :sims do
-  namespace :big_scan do
+  namespace :performance do
     desc "Prepare database"
     task :prepare do
-      big_scan_prepare
+      prepare
     end
     
     desc "Runs the big_scan simulation"
-    task :run do
+    task :scan do
       Spec::Runner::CommandLine.run(
         Spec::Runner::OptionParser.parse(
-          ['--options', "spec/spec.opts", "./sims/big_scan/big_scan_spec.rb"], 
+          ['--options', "spec/spec.opts", "./sims/performance/big_scan_spec.rb"],
           $stdout, $stderr))
     end
     
+    desc "Runs the big_sync simulation"
+    task :sync do
+      Spec::Runner::CommandLine.run(
+        Spec::Runner::OptionParser.parse(
+          ['--options', "spec/spec.opts", "./sims/performance/big_sync_spec.rb"],
+          $stdout, $stderr))
+    end
+
     begin
       require 'ruby-prof/task'
       RubyProf::ProfileTask.new do |t|
-        t.test_files = FileList["./sims/big_scan/big_scan_spec.rb"]
+        t.test_files = FileList["./sims/performance/*_spec.rb"]
         t.output_dir = 'profile'
         t.printer = :flat
         t.min_percent = 1

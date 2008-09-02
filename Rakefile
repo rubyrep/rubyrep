@@ -5,7 +5,7 @@ require 'lib/rubyrep'
 require 'tasks/task_helper'
 
 Dir['tasks/**/*.rake'].each { |rake| load rake }
-load 'sims/big_scan/big_scan.rake'
+load 'sims/performance/performance.rake'
 
 desc "Creates the repository commit statistics"
 task :repostats do
