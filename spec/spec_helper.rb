@@ -108,22 +108,39 @@ def create_mock_proxy_connection(mock_table, primary_key_names, column_names = n
   session
 end
 
-  # Turns an SQL query into a regular expression:
-  #   * Handles quotes (differing depending on DBMS).
-  #   * Handles round brackets (escaping with backslash to make them literals).
-  #   * Removes line breaks and double spaces 
-  #     (allowing use of intendation and line continuation)
-  # Returns the regular expression created from the provided +sql+ string.
-  def sql_to_regexp(sql)
-    Regexp.new(sql.strip.squeeze(" ") \
+# Turns an SQL query into a regular expression:
+#   * Handles quotes (differing depending on DBMS).
+#   * Handles round brackets (escaping with backslash to make them literals).
+#   * Removes line breaks and double spaces 
+#     (allowing use of intendation and line continuation)
+# Returns the regular expression created from the provided +sql+ string.
+def sql_to_regexp(sql)
+  Regexp.new(sql.strip.squeeze(" ") \
       .gsub("(", "\\(").gsub(")", "\\)") \
       .gsub("'", 'E?.') \
       .gsub('"', 'E?.'))
-  end
+end
   
-# Returns a deep copy of the provided object.
+# Returns a deep copy of the provided object. Works also for Proc objects or
+# objects referencing Proc objects.
 def deep_copy(object)
+  Proc.send :define_method, :_dump, lambda { |depth|
+    @@proc_store ||= {}
+    @@proc_key ||= "000000000"
+    @@proc_key.succ!
+    @@proc_store[@@proc_key] = self
+    @@proc_key
+  }
+  Proc.class.send :define_method, :_load, lambda { |key|
+    proc = @@proc_store[key]
+    @@proc_store.delete key
+    proc
+  }
+
   Marshal.restore(Marshal.dump(object))
+ensure
+  Proc.send :remove_method, :_dump if Proc.method_defined? :_dump
+  Proc.class.send :remove_method, :_load if Proc.class.method_defined? :_load
 end
 
 # Allows the temporary faking of RUBY_PLATFORM to the given value
