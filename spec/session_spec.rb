@@ -13,15 +13,11 @@ describe Session do
     ConnectionExtenders.use_db_connection_cache(@@old_cache_status)
   end
   
-  it "initialize should make a deep copy of the Configuration object" do
+  it "initialize should keep a reference of the Configuration object" do
     mock_active_record :twice
     
-    session = Session.new
-    session.configuration.left.should == Initializer.configuration.left
-    session.configuration.right.should == Initializer.configuration.right
-    
-    session.configuration.left[:adapter].object_id.should_not \
-      == Initializer.configuration.left[:adapter].object_id
+    session = Session.new(Initializer.configuration)
+    session.configuration.should == Initializer.configuration
   end
   
   it "initialize should establish the database connections" do

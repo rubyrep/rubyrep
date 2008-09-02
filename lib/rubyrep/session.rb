@@ -69,8 +69,7 @@ module RR
       @proxies = {:left => nil, :right => nil}
       
       # Keep the database configuration for future reference
-      # Make a deep copy to isolate from future changes to the configuration
-      self.configuration = Marshal.load(Marshal.dump(config))
+      self.configuration = config
 
       # Determine method of connection (either 'proxy_connect' or 'db_connect'
       connection_method = proxied? ? :proxy_connect : :db_connect
