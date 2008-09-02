@@ -66,10 +66,7 @@ describe Syncers::OneWaySyncer do
   end
 
   it "default_option should return the correct default options" do
-    sync = TableSync.new(Session.new, 'scanner_records')
-    helper = SyncHelper.new(sync)
-    syncer = Syncers::OneWaySyncer.new(helper)
-    syncer.default_options.should == {
+    Syncers::OneWaySyncer.default_options.should == {
       :direction => :right,
       :delete => false, :no_update => false, :no_insert => false
     }

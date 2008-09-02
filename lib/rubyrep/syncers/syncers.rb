@@ -15,7 +15,7 @@ module RR
   #
   #   # Provides default option for the syncer. Optional.
   #   # Returns a hash with :key => value pairs.
-  #   def default_options
+  #   def self.default_options
   module Syncers
     # Returns a Hash of currently registered committers.
     # (Empty Hash if no connection committers were defined.)
@@ -62,7 +62,7 @@ module RR
       
       # Provides default option for the syncer. Optional.
       # Returns a hash with :key => value pairs.
-      def default_options
+      def self.default_options
         {
           :direction => :right,
           :delete => false, :no_update => false, :no_insert => false
