@@ -77,4 +77,18 @@ describe Configuration do
       :sync_options => config.sync_options.merge(:bla => :blub)}
   end
 
+  it "add_options_for_table should include default syncer options" do
+    config = Configuration.new
+    config.sync_options = {:syncer => :one_way}
+
+    # overwrite one syncer option
+    config.add_options_for_table(/a/, :sync_options => {:delete => true}) 
+
+    sync_options = config.options_for_table('a')[:sync_options]
+    Syncers::OneWaySyncer.default_options.each do |key, value|
+      sync_options[key].should == value unless key == :delete
+    end
+    sync_options[:delete].should == true
+  end
+
 end

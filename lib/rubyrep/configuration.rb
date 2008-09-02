@@ -84,6 +84,11 @@ module RR
     # Accumulates options for all matching table specs (most recently added options
     # overwrite according options added before).
     # Refer to #add_options_for_table for the exact format of the returned options.
+    #
+    # Note:
+    # The returned sync options also include the default options of the
+    # syncer specified by the :syncer option.
+    # (Specifically provided options overwrite the default sync options.)
     def options_for_table(table)
       table_proxy_options = proxy_options.clone
       table_sync_options = sync_options.clone
@@ -93,6 +98,16 @@ module RR
           table_sync_options.merge! table_options[1][:sync_options]
         end
       end
+
+      # Merge the default syncer options in (if syncer has some)
+      syncer_class = Syncers.syncers[table_sync_options[:syncer]]
+      if syncer_class.respond_to? :default_options
+        default_syncer_options = syncer_class.default_options.clone
+      else
+        default_syncer_options = {}
+      end
+      table_sync_options = default_syncer_options.merge! table_sync_options
+
       {:proxy_options => table_proxy_options, :sync_options => table_sync_options}
     end
     
