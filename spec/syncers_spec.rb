@@ -65,6 +65,16 @@ describe Syncers::OneWaySyncer do
     syncer.source_record_index.should == 0
   end
 
+  it "default_option should return the correct default options" do
+    sync = TableSync.new(Session.new, 'scanner_records')
+    helper = SyncHelper.new(sync)
+    syncer = Syncers::OneWaySyncer.new(helper)
+    syncer.default_options.should == {
+      :direction => :right,
+      :delete => false, :no_update => false, :no_insert => false
+    }
+  end
+
   it "sync_difference should only delete if :delete option is given" do
     sync = TableSync.new(Session.new, 'scanner_records')
     helper = SyncHelper.new(sync)

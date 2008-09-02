@@ -13,6 +13,9 @@ module RR
   #   # See DirectTableScan#run for a description of the +type+ and +row+ parameters.
   #   def sync_difference(type, row)
   #
+  #   # Provides default option for the syncer. Optional.
+  #   # Returns a hash with :key => value pairs.
+  #   def default_options
   module Syncers
     # Returns a Hash of currently registered committers.
     # (Empty Hash if no connection committers were defined.)
@@ -57,6 +60,15 @@ module RR
       # (As in that case the +row+ parameter is an array of left and right records.)
       attr_accessor :source_record_index
       
+      # Provides default option for the syncer. Optional.
+      # Returns a hash with :key => value pairs.
+      def default_options
+        {
+          :direction => :right,
+          :delete => false, :no_update => false, :no_insert => false
+        }
+      end
+
       # Initializes the syncer
       #   * sync_helper: The SyncHelper object provided information and utility
       #                  functions.
