@@ -38,10 +38,12 @@ module RR
     #   * +:direction+: Sync direction. Possible values:
     #     * +:left+
     #     * +:right+
-    #   * +:delete+: If true, deletes in the target database all records _not_
-    #                existing in the source database.
-    #   * +:no_update+: Do not update any records
-    #   * +:no_insert+: Do not insert any records
+    #   * +:delete+: Default: false. If true, deletes in the target database all
+    #                records _not_ existing in the source database.
+    #   * +:update+: If true (default), update records in the target database
+    #                if different.
+    #   * +:insert+: If true (default), copy over records not existing in the
+    #                target database.
     class OneWaySyncer
       
       # Register the syncer
@@ -84,7 +86,7 @@ module RR
       def sync_difference(type, row)
         case type
         when source
-          unless sync_helper.sync_options[:no_insert]
+          if sync_helper.sync_options[:insert]
             sync_helper.insert_record target, row
           end
         when target
@@ -92,7 +94,7 @@ module RR
             sync_helper.delete_record target, row
           end
         when :conflict
-          unless sync_helper.sync_options[:no_update]
+          if sync_helper.sync_options[:update]
             sync_helper.update_record target, row[source_record_index]
           end
         end
