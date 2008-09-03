@@ -68,7 +68,7 @@ describe Syncers::OneWaySyncer do
   it "default_option should return the correct default options" do
     Syncers::OneWaySyncer.default_options.should == {
       :direction => :right,
-      :delete => false, :no_update => false, :no_insert => false
+      :delete => false, :update => true, :insert => true
     }
   end
 

@@ -65,7 +65,7 @@ module RR
       def self.default_options
         {
           :direction => :right,
-          :delete => false, :no_update => false, :no_insert => false
+          :delete => false, :update => true, :insert => true
         }
       end
 
