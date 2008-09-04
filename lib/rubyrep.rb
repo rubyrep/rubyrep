@@ -28,6 +28,7 @@ require 'committers/committers'
 require 'sync_helper'
 require 'table_sync'
 require 'syncers/syncers'
+require 'syncers/two_way_syncer'
 
 Dir["#{File.dirname(__FILE__)}/rubyrep/connection_extenders/*.rb"].each do |extender| 
   # jdbc_extender.rb is only loaded if we are running on jruby

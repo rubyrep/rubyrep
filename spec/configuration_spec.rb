@@ -37,13 +37,21 @@ describe Configuration do
   
   it "options_for_table should return the general options if there are no table specific options at all" do
     config = Configuration.new
-    config.options_for_table('b').should == {:proxy_options => config.proxy_options, :sync_options => config.sync_options}
+    config.options_for_table('b').should == {
+      :proxy_options => config.proxy_options,
+      :sync_options => Syncers::TwoWaySyncer.default_options.clone \
+        .merge(config.sync_options)
+    }
   end
 
   it "options_for_table should return the general options if there are no matching table specific options" do
     config = Configuration.new
     config.add_options_for_table(/a/, :sync_options => {:bla => :blub})
-    config.options_for_table('b').should == {:proxy_options => config.proxy_options, :sync_options => config.sync_options}
+    config.options_for_table('b').should == {
+      :proxy_options => config.proxy_options,
+      :sync_options => Syncers::TwoWaySyncer.default_options.clone \
+        .merge(config.sync_options)
+    }
   end
 
   it "options_for_table should return table specific options mixed in with default options" do
@@ -52,7 +60,8 @@ describe Configuration do
     config.options_for_table('a') \
       .should == {
       :proxy_options => config.proxy_options, 
-      :sync_options => config.sync_options.merge(:bla => :blub)}
+      :sync_options => Syncers::TwoWaySyncer.default_options.clone \
+        .merge(config.sync_options.merge(:bla => :blub))}
   end
 
   it "options_for_table should return last added version of added options for matching table spec" do
@@ -64,7 +73,8 @@ describe Configuration do
     config.options_for_table('a') \
       .should == {
       :proxy_options => config.proxy_options, 
-      :sync_options => config.sync_options.merge(:bla => :blok)}
+      :sync_options => Syncers::TwoWaySyncer.default_options.clone \
+        .merge(config.sync_options.merge(:bla => :blok))}
   end
 
   it "add_options_for_table should not create table_spec duplicates" do
@@ -74,7 +84,8 @@ describe Configuration do
     config.options_for_table('a') \
       .should == {
       :proxy_options => config.proxy_options.merge(:foo => :bar), 
-      :sync_options => config.sync_options.merge(:bla => :blub)}
+      :sync_options => Syncers::TwoWaySyncer.default_options.clone \
+        .merge(config.sync_options.merge(:bla => :blub))}
   end
 
   it "add_options_for_table should include default syncer options" do

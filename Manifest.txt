@@ -32,6 +32,7 @@ lib/rubyrep/scan_summary_reporter.rb
 lib/rubyrep/session.rb
 lib/rubyrep/sync_helper.rb
 lib/rubyrep/syncers/syncers.rb
+lib/rubyrep/syncers/two_way_syncer.rb
 lib/rubyrep/table_scan.rb
 lib/rubyrep/table_scan_helper.rb
 lib/rubyrep/table_spec_resolver.rb
@@ -42,8 +43,9 @@ script/destroy
 script/generate
 script/txt2html
 setup.rb
-sims/big_scan/big_scan.rake
-sims/big_scan/big_scan_spec.rb
+sims/performance/big_scan_spec.rb
+sims/performance/big_sync_spec.rb
+sims/performance/performance.rake
 sims/sim_helper.rb
 spec/committers_spec.rb
 spec/configuration_spec.rb
@@ -72,6 +74,7 @@ spec/table_scan_helper_spec.rb
 spec/table_scan_spec.rb
 spec/table_spec_resolver_spec.rb
 spec/table_sync_spec.rb
+spec/two_way_syncer_spec.rb
 spec/type_casting_cursor_spec.rb
 tasks/database.rake
 tasks/deployment.rake
