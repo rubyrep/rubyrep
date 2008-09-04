@@ -7,6 +7,5 @@ RR::Initializer::run do |config|
   config.sync_options = {
     :committer => :default,
     :syncer => :one_way,
-    :direction => :right
   }
 end
