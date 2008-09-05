@@ -2,28 +2,28 @@ module RR
   module Syncers
     # This syncer implements a two way sync.
     # Syncer options relevant for this syncer:
-    # * :left_record_handling, :right_record_handling:
+    # * :+left_record_handling+, :+right_record_handling+:
     #   Handling of records only existing only in the named database.
     #   Can be any of the following:
-    #   * :ignore: No action.
-    #   * :delete: Delete from the source database.
-    #   * :insert: Insert in the target database. *Default Setting*
+    #   * :+ignore+: No action.
+    #   * :+delete+: Delete from the source database.
+    #   * :+insert+: Insert in the target database. *Default* *Setting*
     #   * +Proc+ object:
     #     If a Proc object is given, it is responsible for dealing with the
     #     record. Called with the following parameters:
     #     * sync_helper: The current SyncHelper instance.
-    #     * type: :left or :right to designate source database
+    #     * type: :+left+ or :+right+ to designate source database
     #     * row: column_name => value hash representing the row
-    # * :conflict_handling:
+    # * :+conflict_handling+:
     #   Handling of conflicting records. Can be any of the following:
-    #   * :ignore: No action. *Default Setting*
-    #   * :update_left: Update left database with the field values in the right db.
-    #   * :update_right: Update right database with the field values in the left db.
+    #   * :+ignore+: No action. *Default* *Setting*
+    #   * :+update_left+: Update left database with the field values in the right db.
+    #   * :+update_right+: Update right database with the field values in the left db.
     #   * +Proc+ object:
     #     If a Proc object is given, it is responsible for dealing with the
     #     record. Called with the following parameters:
     #     * sync_helper: The current SyncHelper instance.
-    #     * type: always +:conflict+
+    #     * type: always :+conflict+
     #     * rows: A two element array of rows (column_name => value hashes).
     #       First left, than right record.
     #
@@ -41,7 +41,7 @@ module RR
       attr_accessor :sync_helper
 
       # Provides default option for the syncer. Optional.
-      # Returns a hash with :key => value pairs.
+      # Returns a hash with key => value pairs.
       def self.default_options
         {
           :left_record_handling => :insert,
@@ -50,7 +50,7 @@ module RR
         }
       end
 
-      # Verifies if the given :left_record_handling / :right_record_handling
+      # Verifies if the given :+left_record_handling+ / :+right_record_handling+
       # option is valid.
       # Raises an ArgumentError if option is invalid
       def validate_left_right_record_handling_option(option)
@@ -61,7 +61,7 @@ module RR
         end
       end
 
-      # Verifies if the given :conflict_handling option is valid.
+      # Verifies if the given :+conflict_handling+ option is valid.
       # Raises an ArgumentError if option is invalid
       def validate_conflict_handling_option(option)
         unless option.respond_to? :call
@@ -72,9 +72,10 @@ module RR
       end
 
       # Initializes the syncer
-      #   * sync_helper: The SyncHelper object provided information and utility
-      #                  functions.
-      # Raises an ArgumentError if any of the options is invalid.
+      # * sync_helper:
+      #   The SyncHelper object provided information and utility functions.
+      # Raises an ArgumentError if any of the option in sync_helper.sync_options
+      # is invalid.
       def initialize(sync_helper)
         validate_left_right_record_handling_option sync_helper.sync_options[:left_record_handling]
         validate_left_right_record_handling_option sync_helper.sync_options[:right_record_handling]
