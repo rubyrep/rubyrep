@@ -9,25 +9,42 @@ describe "Big Sync" do
   before(:each) do
   end
 
-  # Runs a sync of the big_scan table
-  def run_sync
+  # Calculates and returns number of records of a given type.
+  # * :session: current Session instance
+  # * :record_type: type of records (String)
+  # * :database: designates database, either :left or :right
+  def record_quantity(session, record_type, database)
+    session.send(database).select_one( \
+        "select count(id) as count from big_scan where diff_type = '#{record_type}'")['count'].to_i
+  end
+
+  # Calculates and returns the sum of the number fields of records of the given type.
+  # * :session: current Session instance
+  # * :record_type: type of records (:left, :right, :same or :conflict)
+  # * :database: designates database, either :left or :right
+  def record_sum(session, record_type, database)
+    session.send(database).select_one( \
+        "select sum(number1) + sum(number2) + sum(number3) + sum(number4) as sum
+         from big_scan where diff_type = '#{record_type}'")['sum'].to_f
+  end
+
+  # Runs a sync of the big_scan table.
+  # * session: the current Session
+  # * expected_result: a hash of record quantities that should result.
+  def run_sync(session, expected_result)
     begin
       session = Session.new
 
-      expected_result = {}
-      expected_result[:conflict] = session.left.select_one( \
-          "select count(id) as count from big_scan where diff_type = 'conflict'")['count'].to_i
-      expected_result[:left] = session.left.select_one( \
-          "select count(id) as count from big_scan where diff_type = 'left'")['count'].to_i
-      expected_result[:right] = 0
+      number_records =
+        record_quantity(session, :left, :left) +
+        record_quantity(session, :conflict, :left) +
+        record_quantity(session, :same, :left) +
+        record_quantity(session, :right, :right)
 
-      number_right_records = session.right.select_one( \
-          "select count(id) as count from big_scan where diff_type = 'right'")['count'].to_i
-      number_records = session.left.select_one( \
-          "select count(id) as count from big_scan")['count'].to_i \
-        + number_right_records
-      number_differences = expected_result.values.inject {|sum, n| sum + n } \
-        + number_right_records
+      number_differences =
+        record_quantity(session, :left, :left) +
+        record_quantity(session, :conflict, :left) +
+        record_quantity(session, :right, :right)
 
       puts "\nSyncing (#{Initializer.configuration.sync_options[:syncer]}, #{session.proxied? ? :proxied : :direct}) table big_scan (#{number_differences} differences in #{number_records} records)"
       progress_bar = ProgressBar.new number_differences
@@ -40,20 +57,21 @@ describe "Big Sync" do
       }
       puts "  time required: #{benchmark}"
 
-      received_result = {}
-      received_result[:conflict] = session.left.select_one( \
-          "select count(id) as count from big_scan where diff_type = 'conflict'")['count'].to_i
-      received_result[:left] = session.left.select_one( \
-          "select count(id) as count from big_scan where diff_type = 'left'")['count'].to_i
-      received_result[:right] = session.right.select_one( \
-          "select count(id) as count from big_scan where diff_type = 'right'")['count'].to_i
-
-      received_result.should == expected_result
+      {
+        :conflict_on_left => record_quantity(session, :conflict, :left),
+        :conflict_on_right => record_quantity(session, :conflict, :right),
+        :conflict_sum_on_left => record_sum(session, :conflict, :left),
+        :conflict_sum_on_right => record_sum(session, :conflict, :right),
+        :left_on_left => record_quantity(session, :left, :left),
+        :left_on_right => record_quantity(session, :left, :right),
+        :right_on_left => record_quantity(session, :right, :left),
+        :right_on_right => record_quantity(session, :right, :right)
+      }.should == expected_result
     ensure
       Committers::NeverCommitter.rollback_current_session
     end
   end
-  
+
   it "Proxied OneWaySync should sync correctly" do
     ensure_proxy
     Initializer.configuration = deep_copy(proxied_config)
@@ -63,7 +81,19 @@ describe "Big Sync" do
       :direction => :right,
       :delete => true
     }
-    run_sync
+
+    session = Session.new
+    expected_result = {
+      :conflict_on_left => record_quantity(session, :conflict, :left),
+      :conflict_on_right => record_quantity(session, :conflict, :right),
+      :conflict_sum_on_left => record_sum(session, :conflict, :left),
+      :conflict_sum_on_right => record_sum(session, :conflict, :left),
+      :left_on_left => record_quantity(session, :left, :left),
+      :left_on_right => record_quantity(session, :left, :left),
+      :right_on_left => 0,
+      :right_on_right => 0
+    }
+    run_sync session, expected_result
   end
 
   it "Direct OneWaySync should sync correctly" do
@@ -74,6 +104,41 @@ describe "Big Sync" do
       :direction => :right,
       :delete => true
     }
-    run_sync
+
+    session = Session.new
+    expected_result = {
+      :conflict_on_left => record_quantity(session, :conflict, :left),
+      :conflict_on_right => record_quantity(session, :conflict, :right),
+      :conflict_sum_on_left => record_sum(session, :conflict, :left),
+      :conflict_sum_on_right => record_sum(session, :conflict, :left),
+      :left_on_left => record_quantity(session, :left, :left),
+      :left_on_right => record_quantity(session, :left, :left),
+      :right_on_left => 0,
+      :right_on_right => 0
+    }
+    run_sync session, expected_result
+  end
+
+  it "Proxied TwoWaySync should sync correctly" do
+    ensure_proxy
+    Initializer.configuration = deep_copy(proxied_config)
+    Initializer.configuration.sync_options = {
+      :committer => :never_commit,
+      :syncer => :two_way,
+      :conflict_handling => :update_left
+    }
+
+    session = Session.new
+    expected_result = {
+      :conflict_on_left => record_quantity(session, :conflict, :left),
+      :conflict_on_right => record_quantity(session, :conflict, :right),
+      :conflict_sum_on_left => record_sum(session, :conflict, :right),
+      :conflict_sum_on_right => record_sum(session, :conflict, :right),
+      :left_on_left => record_quantity(session, :left, :left),
+      :left_on_right => record_quantity(session, :left, :left),
+      :right_on_left => record_quantity(session, :right, :right),
+      :right_on_right => record_quantity(session, :right, :right)
+    }
+    run_sync session, expected_result
   end
 end
