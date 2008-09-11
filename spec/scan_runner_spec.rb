@@ -45,26 +45,26 @@ describe ScanRunner do
   end
   
   it "get_options should correct register the options of the scan report printers" do
-    org_printers = ScanRunner.report_printers
+    org_printers = ScanReportPrinters.report_printers
     begin
       ScanRunner.instance_eval { class_variable_set :@@report_printers, nil }
       
       # register a printer which will not be selected in the command line options
       printer_x = mock("printer_x")
       printer_x.should_not_receive :new
-      ScanRunner.register_printer printer_x, "-x", "--printer_x"
+      ScanReportPrinters.register_printer printer_x, "-x", "--printer_x"
       
       # register a printer that will be selected in the command line options
       printer_y = mock("printer_y")
       printer_y.should_receive(:new).and_return(:printer_y_instance)
       
-      ScanRunner.register_printer printer_y, "-y", "--printer_y", "[=arg_for_y]"
+      ScanReportPrinters.register_printer printer_y, "-y", "--printer_y", "[=arg_for_y]"
       
       scan_runner = ScanRunner.new
       scan_runner.get_options ["-c", "config_path", "-y", "arg_for_y", "table_spec"]
       scan_runner.active_printer.should == :printer_y_instance
     ensure
-      ScanRunner.instance_eval { class_variable_set :@@report_printers, org_printers }
+      ScanReportPrinters.instance_eval { class_variable_set :@@report_printers, org_printers }
     end
   end
   
@@ -86,35 +86,6 @@ describe ScanRunner do
     Kernel.any_instance_should_receive(:exit) {
       load File.dirname(__FILE__) + '/../bin/rrscan.rb'
     }
-  end
-  
-  it "report_printers should an empty array if there are no registered printers" do
-    org_printers = ScanRunner.report_printers
-    begin
-      ScanRunner.instance_eval { class_variable_set :@@report_printers, nil }
-      ScanRunner.report_printers.should == []
-    ensure
-      ScanRunner.instance_eval { class_variable_set :@@report_printers, org_printers }
-    end
-  end
-  
-  it "register_printer should store the provided printers, report_printer should return them" do
-    org_printers = ScanRunner.report_printers
-    begin
-      ScanRunner.instance_eval { class_variable_set :@@report_printers, nil }
-      ScanRunner.register_printer :dummy_printer_class, "-d", "--dummy"
-      ScanRunner.register_printer :another_printer_class, "-t"
-      ScanRunner.report_printers.should == [
-        { :printer_class => :dummy_printer_class,
-          :opts => ["-d", "--dummy"]
-        },
-        { :printer_class => :another_printer_class,
-          :opts => ["-t"]
-        }
-      ]
-    ensure
-      ScanRunner.instance_eval { class_variable_set :@@report_printers, org_printers }
-    end
   end
   
   it "active_printer should return the printer as assigned by active_printer=" do
