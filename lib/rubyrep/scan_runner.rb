@@ -46,10 +46,8 @@ EOS
         opts.separator ""
         opts.separator "Specific options:"
 
-        ScanReportPrinters.printers.each do |printer|
-          opts.on(*printer[:opts]) do |arg|
-            self.active_printer = printer[:printer_class].new(arg)
-          end
+        ScanReportPrinters.on_printer_selection(opts) do |printer|
+          self.active_printer = printer
         end
 
         opts.on("-c", "--config", "=CONFIG_FILE", 

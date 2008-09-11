@@ -44,21 +44,15 @@ describe ScanRunner do
     options[:table_specs].should == ['table_spec1', 'table_spec2']
   end
   
-  it "get_options should correct register the options of the scan report printers" do
+  it "get_options should assign the command line specified printer" do
     org_printers = ScanReportPrinters.printers
     begin
-      ScanRunner.instance_eval { class_variable_set :@@report_printers, nil }
+      ScanReportPrinters.instance_eval { class_variable_set :@@report_printers, nil }
       
-      # register a printer which will not be selected in the command line options
-      printer_x = mock("printer_x")
-      printer_x.should_not_receive :new
-      ScanReportPrinters.register printer_x, "-x", "--printer_x"
-      
-      # register a printer that will be selected in the command line options
       printer_y = mock("printer_y")
       printer_y.should_receive(:new).and_return(:printer_y_instance)
       
-      ScanReportPrinters.register printer_y, "-y", "--printer_y", "[=arg_for_y]"
+      ScanReportPrinters.register printer_y, "-y", "--printer_y[=arg]", "description"
       
       scan_runner = ScanRunner.new
       scan_runner.get_options ["-c", "config_path", "-y", "arg_for_y", "table_spec"]

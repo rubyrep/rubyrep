@@ -45,5 +45,21 @@ module RR
         :opts => opts
       }
     end
+
+    # Registers all report printers command line options into the given
+    # OptionParser.
+    # Once the command line is parsed with OptionParser#parse! it will
+    # create the correct printer as per specified command line options and
+    # yield it.
+    #
+    # Note: if multiple printers are specified in the command line,
+    # all are created and yielded.
+    def self.on_printer_selection(opts)
+      printers.each do |printer|
+        opts.on(*printer[:opts]) do |arg|
+          yield printer[:printer_class].new(arg)
+        end
+      end
+    end
   end
 end
