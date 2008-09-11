@@ -46,7 +46,7 @@ EOS
         opts.separator ""
         opts.separator "Specific options:"
 
-        ScanReportPrinters.report_printers.each do |printer|
+        ScanReportPrinters.printers.each do |printer|
           opts.on(*printer[:opts]) do |arg|
             self.active_printer = printer[:printer_class].new(arg)
           end

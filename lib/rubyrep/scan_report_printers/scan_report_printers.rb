@@ -3,7 +3,7 @@ module RR
   # to report the row differences identified during a scan.
   #
   # Scan report printers need to register themselves and their command line options
-  # with #register_printer.
+  # with #register.
   #
   # A scan report printer neesd to implement at the minimum the following
   # functionality:
@@ -31,7 +31,7 @@ module RR
     # Each entry is a hash with the following keys:
     # * +:printer_class+: The ScanReportPrinter class.
     # * +:opts+: An array defining the command line options (handed to OptionParter#on).
-    def self.report_printers
+    def self.printers
       @@report_printers ||= []
     end
 
@@ -39,8 +39,8 @@ module RR
     # and their command line options.
     # +:printer_class+ is the ScanReportPrinter class,
     # +:opts+ is an array defining the command line options (handed to OptionParter#on).
-    def self.register_printer(printer_class, *opts)
-      report_printers << {
+    def self.register(printer_class, *opts)
+      printers << {
         :printer_class => printer_class,
         :opts => opts
       }

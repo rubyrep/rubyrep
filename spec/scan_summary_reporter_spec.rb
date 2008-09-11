@@ -8,7 +8,7 @@ describe ScanSummaryReporter do
   end
 
   it "should register itself with ScanRunner" do
-    ScanReportPrinters.report_printers.any? do |printer|
+    ScanReportPrinters.printers.any? do |printer|
       printer[:printer_class] == ScanSummaryReporter
     end.should be_true
   end
