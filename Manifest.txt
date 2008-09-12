@@ -27,6 +27,7 @@ lib/rubyrep/proxy_connection.rb
 lib/rubyrep/proxy_cursor.rb
 lib/rubyrep/proxy_row_cursor.rb
 lib/rubyrep/proxy_runner.rb
+lib/rubyrep/scan_report_printers/scan_report_printers.rb
 lib/rubyrep/scan_runner.rb
 lib/rubyrep/scan_summary_reporter.rb
 lib/rubyrep/session.rb
@@ -63,6 +64,7 @@ spec/proxy_cursor_spec.rb
 spec/proxy_row_cursor_spec.rb
 spec/proxy_runner_spec.rb
 spec/rubyrep_spec.rb
+spec/scan_report_printers_spec.rb
 spec/scan_runner_spec.rb
 spec/scan_summary_reporter_spec.rb
 spec/session_spec.rb

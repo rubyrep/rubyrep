@@ -2,3 +2,4 @@ statsvn/*
 coverage/*
 profile/*
 doc/*
+website/.*\.html$
