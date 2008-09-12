@@ -5,7 +5,7 @@ module RR
   # Scan report printers need to register themselves and their command line options
   # with #register.
   #
-  # A scan report printer neesd to implement at the minimum the following
+  # A scan report printer needs to implement at the minimum the following
   # functionality:
   #
   #   # Creation of a new ScanReportPrinter.
@@ -28,17 +28,17 @@ module RR
   module ScanReportPrinters
 
     # Array of registered ScanReportPrinters.
-    # Each entry is a hash with the following keys:
-    # * +:printer_class+: The ScanReportPrinter class.
-    # * +:opts+: An array defining the command line options (handed to OptionParter#on).
+    # Each entry is a hash with the following keys and related values:
+    # * :+printer_class+: The ScanReportPrinter class.
+    # * :+opts+: An array defining the command line options (handed to OptionParter#on).
     def self.printers
       @@report_printers ||= []
     end
 
     # Needs to be called by ScanReportPrinters to register themselves (+printer+)
     # and their command line options.
-    # +:printer_class+ is the ScanReportPrinter class,
-    # +:opts+ is an array defining the command line options (handed to OptionParter#on).
+    # * :+printer_class+ is the ScanReportPrinter class,
+    # * :+opts+ is an array defining the command line options (handed to OptionParter#on).
     def self.register(printer_class, *opts)
       printers << {
         :printer_class => printer_class,
@@ -46,14 +46,15 @@ module RR
       }
     end
 
-    # Registers all report printers command line options into the given
+    # Registers all report printer command line options into the given
     # OptionParser.
     # Once the command line is parsed with OptionParser#parse! it will
     # create the correct printer as per specified command line options and
     # yield it.
     #
-    # Note: if multiple printers are specified in the command line,
-    # all are created and yielded.
+    # Note:
+    # If multiple printers are specified in the command line, all are created
+    # and yielded.
     def self.on_printer_selection(opts)
       printers.each do |printer|
         opts.on(*printer[:opts]) do |arg|
