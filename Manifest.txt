@@ -28,8 +28,8 @@ lib/rubyrep/proxy_cursor.rb
 lib/rubyrep/proxy_row_cursor.rb
 lib/rubyrep/proxy_runner.rb
 lib/rubyrep/scan_report_printers/scan_report_printers.rb
+lib/rubyrep/scan_report_printers/scan_summary_reporter.rb
 lib/rubyrep/scan_runner.rb
-lib/rubyrep/scan_summary_reporter.rb
 lib/rubyrep/session.rb
 lib/rubyrep/sync_helper.rb
 lib/rubyrep/syncers/syncers.rb

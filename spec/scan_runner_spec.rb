@@ -89,7 +89,7 @@ describe ScanRunner do
   end
   
   it "active_printer should return the ScanSummaryReporter if no other printer was chosen" do
-    ScanRunner.new.active_printer.should be_an_instance_of(ScanSummaryReporter)
+    ScanRunner.new.active_printer.should be_an_instance_of(ScanReportPrinters::ScanSummaryReporter)
   end
   
   it "signal_scanning_completion should signal completion if the scan report printer supports it" do
@@ -115,7 +115,7 @@ describe ScanRunner do
     $stdout = StringIO.new
     begin
       scan_runner = ScanRunner.new
-      scan_runner.active_printer = ScanSummaryReporter.new(nil)
+      scan_runner.active_printer = ScanReportPrinters::ScanSummaryReporter.new(nil)
       options = {
         :config_file => "#{File.dirname(__FILE__)}/../config/test_config.rb",
         :table_specs => ["scanner_records", "extender_one_record"]

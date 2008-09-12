@@ -2,28 +2,28 @@ require File.dirname(__FILE__) + '/spec_helper.rb'
 
 include RR
 
-describe ScanSummaryReporter do
+describe ScanReportPrinters::ScanSummaryReporter do
   before(:each) do
     $stdout.should_receive(:puts).any_number_of_times
   end
 
   it "should register itself with ScanRunner" do
-    ScanReportPrinters.printers.any? do |printer|
-      printer[:printer_class] == ScanSummaryReporter
+    RR::ScanReportPrinters.printers.any? do |printer|
+      printer[:printer_class] == ScanReportPrinters::ScanSummaryReporter
     end.should be_true
   end
   
   it "initialize should detect if the detailed number of differnces should be counted" do
-    ScanSummaryReporter.new(nil).only_totals.should be_true
-    ScanSummaryReporter.new("bla").only_totals.should be_true
-    ScanSummaryReporter.new("detailed").only_totals.should be_false
+    ScanReportPrinters::ScanSummaryReporter.new(nil).only_totals.should be_true
+    ScanReportPrinters::ScanSummaryReporter.new("bla").only_totals.should be_true
+    ScanReportPrinters::ScanSummaryReporter.new("detailed").only_totals.should be_false
   end
   
   it "scan should count differences correctly in totals mode" do
     org_stdout = $stdout
     $stdout = StringIO.new
     begin
-      reporter = ScanSummaryReporter.new(nil)
+      reporter = ScanReportPrinters::ScanSummaryReporter.new(nil)
       
       # set some existing scan result to ensure it gets reset before the next run
       reporter.scan_result = {:conflict => 0, :left => 0, :right => 1}
@@ -43,7 +43,7 @@ describe ScanSummaryReporter do
     org_stdout = $stdout
     $stdout = StringIO.new
     begin
-      reporter = ScanSummaryReporter.new("detailed")
+      reporter = ScanReportPrinters::ScanSummaryReporter.new("detailed")
       
       reporter.scan('left_table', 'right_table') do 
         reporter.report_difference :conflict, :dummy_row

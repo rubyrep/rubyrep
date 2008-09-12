@@ -1,10 +1,10 @@
-module RR
+module RR::ScanReportPrinters
   # A ScanReportPrinter producing a summary (number of differences) only.
   class ScanSummaryReporter
     
     # Register ScanSummaryReporter with the given command line options.
     # (Command line format as specified by OptionParser#on.)
-    ScanReportPrinters.register self, "-s", "--summary[=detailed]",
+    RR::ScanReportPrinters.register self, "-s", "--summary[=detailed]",
         "Print the number of differences of each table. Either totals only, e. g.",
         "  left_table / right_table [differences]",
         "or a detailed split by type, e. g.",

@@ -16,7 +16,7 @@ module RR
     # Returns the active ScanReportPrinter (as selected through the ScanRunner 
     # command line options OR if none was selected, the default one).
     def active_printer
-      @active_printer ||= ScanSummaryReporter.new(nil)
+      @active_printer ||= ScanReportPrinters::ScanSummaryReporter.new(nil)
     end
     
     # Sets the active ScanReportPrinter
