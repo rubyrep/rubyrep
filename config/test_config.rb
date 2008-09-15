@@ -6,6 +6,7 @@ load File.dirname(__FILE__) + "/#{database}_config.rb"
 RR::Initializer::run do |config|
   config.sync_options = {
     :committer => :default,
-    :syncer => :one_way,
+    :syncer => :two_way,
+    :conflict_handling => :update_right
   }
 end

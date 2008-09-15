@@ -5,6 +5,7 @@ README.txt
 Rakefile
 bin/rrproxy.rb
 bin/rrscan.rb
+bin/rrsync.rb
 config/hoe.rb
 config/mysql_config.rb
 config/postgres_config.rb
@@ -12,6 +13,7 @@ config/proxied_test_config.rb
 config/requirements.rb
 config/test_config.rb
 lib/rubyrep.rb
+lib/rubyrep/base_runner.rb
 lib/rubyrep/committers/committers.rb
 lib/rubyrep/configuration.rb
 lib/rubyrep/connection_extenders/jdbc_extender.rb
@@ -32,6 +34,7 @@ lib/rubyrep/scan_report_printers/scan_summary_reporter.rb
 lib/rubyrep/scan_runner.rb
 lib/rubyrep/session.rb
 lib/rubyrep/sync_helper.rb
+lib/rubyrep/sync_runner.rb
 lib/rubyrep/syncers/syncers.rb
 lib/rubyrep/syncers/two_way_syncer.rb
 lib/rubyrep/table_scan.rb
@@ -48,6 +51,7 @@ sims/performance/big_scan_spec.rb
 sims/performance/big_sync_spec.rb
 sims/performance/performance.rake
 sims/sim_helper.rb
+spec/base_runner_spec.rb
 spec/committers_spec.rb
 spec/configuration_spec.rb
 spec/connection_extender_interface_spec.rb
@@ -71,6 +75,7 @@ spec/session_spec.rb
 spec/spec.opts
 spec/spec_helper.rb
 spec/sync_helper_spec.rb
+spec/sync_runner_spec.rb
 spec/syncers_spec.rb
 spec/table_scan_helper_spec.rb
 spec/table_scan_spec.rb
