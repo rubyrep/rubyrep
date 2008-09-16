@@ -64,7 +64,7 @@ describe BaseRunner do
   
   it "run should not start a scan if the command line is invalid" do
     $stderr.should_receive(:puts).any_number_of_times
-    BaseRunner.any_instance_should_not_receive(:scan) {
+    BaseRunner.any_instance_should_not_receive(:execute) {
       BaseRunner.run(["--nonsense"])
     }
   end
