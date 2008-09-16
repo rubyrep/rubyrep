@@ -51,4 +51,13 @@ describe SyncRunner do
       end
     end
   end
+
+  it "create_processor should create the TableSync instance" do
+    TableSync.should_receive(:new).
+      with(:dummy_session, "left_table", "right_table").
+      and_return(:dummy_table_sync)
+    sync_runner = SyncRunner.new
+    sync_runner.create_processor(:dummy_session, "left_table", "right_table").
+      should == :dummy_table_sync
+  end
 end

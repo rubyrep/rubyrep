@@ -33,4 +33,16 @@ describe ScanRunner do
       $stdout = org_stdout
     end
   end
+
+  it "create_processor should create the correct table scanner" do
+    scan_runner = ScanRunner.new
+    dummy_scan_class = mock("scan class")
+    dummy_scan_class.should_receive(:new).
+      with(:dummy_session, "left_table", "right_table").
+      and_return(:dummy_table_scanner)
+    TableScanHelper.should_receive(:scan_class).with(:dummy_session).
+      and_return(dummy_scan_class)
+    scan_runner.create_processor(:dummy_session, "left_table", "right_table").
+      should == :dummy_table_scanner
+  end
 end
