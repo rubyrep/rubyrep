@@ -116,7 +116,7 @@ EOS
     # Entry points for executing a processing run.
     # args: the array of command line options that were provided by the user.
     def self.run(args)
-      runner = ScanRunner.new
+      runner = new
 
       options, status = runner.get_options(args)
       if options
