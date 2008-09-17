@@ -28,8 +28,17 @@ describe TableSpecResolver do
     ]
   end
   
-  it "resolve should resolve regular expressions correctly" do
+  it "resolve should resolve string in form of regular expression correctly" do
     @resolver.resolve(['/SCANNER_RECORDS|scanner_text_key/']).sort { |a,b|
+      a[:left_table] <=> b[:left_table]
+    }.should == [
+      {:left_table => 'scanner_records', :right_table => 'scanner_records'},
+      {:left_table => 'scanner_text_key', :right_table => 'scanner_text_key'}
+    ]
+  end
+
+  it "resolve should resolve regular expressions correctly" do
+    @resolver.resolve([/SCANNER_RECORDS|scanner_text_key/]).sort { |a,b|
       a[:left_table] <=> b[:left_table]
     }.should == [
       {:left_table => 'scanner_records', :right_table => 'scanner_records'},

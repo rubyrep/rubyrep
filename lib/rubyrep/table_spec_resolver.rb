@@ -15,14 +15,21 @@ module RR
       self.tables = session.left.tables
     end
     
-    # Resolves the given array of table specificification strings (as produced by
-    # ScanRunner#get_options). Returns an array of table name pairs in Hash form. 
-    # E. g. something like 
-    # [{:left_table => 'my_table', :right_table => 'my_table_backup'}]
+    # Resolves the given array of table specificifications.
+    # Table specifications are either
+    # * strings as produced by BaseRunner#get_options or
+    # * actual regular expressions
+    # Returns an array of table name pairs in Hash form.
+    # For example something like
+    #   [{:left_table => 'my_table', :right_table => 'my_table_backup'}]
     # Takes care that a table is only returned once.
     def resolve(table_specs)
       table_pairs = []
       table_specs.each do |table_spec|
+        
+        # If it is a regexp, convert it in an according string
+        table_spec = table_spec.inspect if table_spec.kind_of? Regexp
+
         case table_spec
         when /^\/.*\/$/ # matches e. g. '/^user/'
           table_spec = table_spec.sub(/^\/(.*)\/$/,'\1') # remove leading and trailing slash
