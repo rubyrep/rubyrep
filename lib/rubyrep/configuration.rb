@@ -10,8 +10,8 @@ module RR
     # Connection settings for the "right" database.
     # Takes a similar hash as ActiveRecord::Base.establish_connection.
     # Additional settings in case a proxy is used:
-    #   * +proxy_host+: name or IP address of where the proxy is running
-    #   * +proxy_port+: port on which the proxy is listening
+    # * +proxy_host+: name or IP address of where the proxy is running
+    # * +proxy_port+: port on which the proxy is listening
     attr_accessor :right
     
     # Default #proxy_options for a new Configuration object.
@@ -27,7 +27,7 @@ module RR
     
     # General options for the proxy operation mode.
     # Possible settings:
-    #   * +:block_size+: To proxy cursor will calculate the checksum for block_size number of records each.
+    # * :+block_size+: To proxy cursor will calculate the checksum for block_size number of records each.
     attr_reader :proxy_options
     
     # Set the specified +options+ hash as new proxy options +after+ merging them
@@ -37,9 +37,14 @@ module RR
     end
     
     # Table sync options. A hash with the following possible settings:
-    # * +:syncer+: A syncer key as registered by TableSync#register_syncer
+    # * :+committer+:
+    #   A committer key as registered by Committers#register.
+    #   Determines the transaction management to be used during the sync.
+    # * :+syncer+:
+    #   A syncer key as registered by TableSync#register_syncer.
+    #   Determines which sync algorithm is used.
     # * further options as defined by each syncer
-    # * +:table_specific+: An array of table specific options.
+    # * :+table_specific+: An array of table specific options.
     #   Each array element consists of a 1 entry hash with
     #   * key: A table name string or a Regexp matching multiple tables.
     #   * values: An hash with sync options as described abobve.
