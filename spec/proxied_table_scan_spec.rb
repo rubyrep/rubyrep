@@ -26,7 +26,7 @@ describe ProxiedTableScan do
       .should raise_error(RuntimeError, "Table extender_without_key doesn't have a primary key. Cannot scan.")
   end
   
-  it "block_size should return the :block_size value of the session proxy options" do
+  it "block_size should return the :proxy_block_size value of the session options" do
     ProxiedTableScan.new(Session.new, 'scanner_records').block_size \
       .should == 2
   end
@@ -35,8 +35,8 @@ describe ProxiedTableScan do
     config = Initializer.configuration
     old_table_specific_options = config.tables_with_options
     begin
-      config.proxy_options = {:block_size => 2}
-      config.add_tables 'scanner_records', :proxy_options => {:block_size => 3}
+      config.options = {:proxy_block_size => 2}
+      config.add_tables 'scanner_records', {:proxy_block_size => 3}
       ProxiedTableScan.new(Session.new(config), 'scanner_records').block_size \
         .should == 3
     ensure
@@ -51,7 +51,7 @@ describe ProxiedTableScan do
     cursor = ProxyBlockCursor.new connection, table
     cursor.max_row_cache_size = max_row_cache_size
     cursor.prepare_fetch
-    cursor.checksum :block_size => 1000
+    cursor.checksum :proxy_block_size => 1000
     cursor
   end
   

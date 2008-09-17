@@ -5,7 +5,7 @@ include RR
 describe Syncers::TwoWaySyncer do
   before(:each) do
     Initializer.configuration = deep_copy(standard_config)
-    Initializer.configuration.sync_options = {:syncer => :two_way}
+    Initializer.configuration.options = {:syncer => :two_way}
   end
 
   it "should register itself" do

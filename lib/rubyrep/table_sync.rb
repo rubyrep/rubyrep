@@ -21,7 +21,7 @@ module RR
     
     # Returns a hash of sync options for this table sync.
     def sync_options
-      @sync_options ||= session.configuration.options_for_table(left_table)[:sync_options]
+      @sync_options ||= session.configuration.options_for_table(left_table)
     end
     
     # Creates a new TableSync instance

@@ -44,7 +44,7 @@ describe "Big Scan" do
   
   it "ProxiedTableScan should identify differences between big_scan tables correctly" do
     Initializer.configuration = deep_copy(proxied_config)
-    Initializer.configuration.proxy_options[:block_size] = 100
+    Initializer.configuration.options[:proxy_block_size] = 100
     ensure_proxy
     
     run_scan

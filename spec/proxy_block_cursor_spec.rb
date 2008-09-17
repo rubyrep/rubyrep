@@ -100,31 +100,31 @@ describe ProxyBlockCursor do
     @cursor.reset_checksum # need to call it now so that for the call to checksum it can be mocked
     @cursor.should_receive(:reset_checksum)
     @cursor.should_receive(:next?).and_return(false)
-    @cursor.checksum :block_size => 1
+    @cursor.checksum :proxy_block_size => 1
   end
   
-  it "checksum should complain if neither :block_size nor :max_row are provided" do
+  it "checksum should complain if neither :proxy_block_size nor :max_row are provided" do
     lambda {@cursor.checksum}.should raise_error(
-      RuntimeError, 'options must include either :block_size or :max_row')
+      RuntimeError, 'options must include either :proxy_block_size or :max_row')
   end
   
   it "checksum should verify options" do
     lambda {@cursor.checksum}.should raise_error(
-      RuntimeError, 'options must include either :block_size or :max_row')
-    lambda {@cursor.checksum(:block_size => 0)}.should raise_error(
-      RuntimeError, ':block_size must be greater than 0')
+      RuntimeError, 'options must include either :proxy_block_size or :max_row')
+    lambda {@cursor.checksum(:proxy_block_size => 0)}.should raise_error(
+      RuntimeError, ':proxy_block_size must be greater than 0')
   end
   
-  it "checksum should read maximum :block_size rows" do
+  it "checksum should read maximum :proxy_block_size rows" do
     session = ProxyConnection.new proxied_config.left
 
     cursor = ProxyBlockCursor.new session, 'scanner_records'
     cursor.prepare_fetch
     
-    last_row, = cursor.checksum :block_size => 2
+    last_row, = cursor.checksum :proxy_block_size => 2
     last_row.should == {'id' => 2} 
 
-    last_row, = cursor.checksum :block_size => 1000
+    last_row, = cursor.checksum :proxy_block_size => 1000
     last_row.should == {'id' => 5}
   end
   
@@ -140,13 +140,13 @@ describe ProxyBlockCursor do
     last_row.should == {'id' => 5} 
   end
   
-  it "checksum called with :block_size should return the correct checksum" do
+  it "checksum called with :proxy_block_size should return the correct checksum" do
     session = ProxyConnection.new proxied_config.left
 
     cursor = ProxyBlockCursor.new session, 'scanner_records'
     cursor.prepare_fetch
     
-    last_row , checksum = cursor.checksum :block_size => 2
+    last_row , checksum = cursor.checksum :proxy_block_size => 2
  
     expected_checksum = Digest::SHA1.hexdigest( 
       Marshal.dump('id' => 1, 'name' => 'Alice - exists in both databases') +

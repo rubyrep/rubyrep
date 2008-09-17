@@ -46,7 +46,7 @@ describe "Big Sync" do
         record_quantity(session, :conflict, :left) +
         record_quantity(session, :right, :right)
 
-      puts "\nSyncing (#{Initializer.configuration.sync_options[:syncer]}, #{session.proxied? ? :proxied : :direct}) table big_scan (#{number_differences} differences in #{number_records} records)"
+      puts "\nSyncing (#{Initializer.configuration.options[:syncer]}, #{session.proxied? ? :proxied : :direct}) table big_scan (#{number_differences} differences in #{number_records} records)"
       progress_bar = ProgressBar.new number_differences
 
       sync = TableSync.new(session, 'big_scan')
@@ -75,13 +75,14 @@ describe "Big Sync" do
   it "Proxied OneWaySync should sync correctly" do
     ensure_proxy
     Initializer.configuration = deep_copy(proxied_config)
-    Initializer.configuration.sync_options = {
+    
+    Initializer.configuration.options = {
       :committer => :never_commit,
       :syncer => :one_way,
       :direction => :right,
       :delete => true
     }
-
+    
     session = Session.new
     expected_result = {
       :conflict_on_left => record_quantity(session, :conflict, :left),
@@ -98,7 +99,7 @@ describe "Big Sync" do
 
   it "Direct OneWaySync should sync correctly" do
     Initializer.configuration = deep_copy(standard_config)
-    Initializer.configuration.sync_options = {
+    Initializer.configuration.options = {
       :committer => :never_commit,
       :syncer => :one_way,
       :direction => :right,
@@ -122,7 +123,7 @@ describe "Big Sync" do
   it "Proxied TwoWaySync should sync correctly" do
     ensure_proxy
     Initializer.configuration = deep_copy(proxied_config)
-    Initializer.configuration.sync_options = {
+    Initializer.configuration.options = {
       :committer => :never_commit,
       :syncer => :two_way,
       :conflict_handling => :update_left

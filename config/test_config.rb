@@ -4,7 +4,7 @@ database = ENV['RR_TEST_DB'] ? ENV['RR_TEST_DB'] : :postgres
 load File.dirname(__FILE__) + "/#{database}_config.rb"
 
 RR::Initializer::run do |config|
-  config.sync_options = {
+  config.options = {
     :committer => :default,
     :syncer => :two_way,
     :conflict_handling => :update_right

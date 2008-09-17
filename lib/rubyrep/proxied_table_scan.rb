@@ -11,7 +11,7 @@ module RR
     
     # returns block size to use for table scanning
     def block_size
-      @block_size ||= session.configuration.options_for_table(left_table)[:proxy_options][:block_size]
+      @block_size ||= session.configuration.options_for_table(left_table)[:proxy_block_size]
     end
   
     # Creates a new ProxiedTableScan instance
@@ -137,7 +137,7 @@ module RR
       left_cursor = session.left.create_cursor ProxyBlockCursor, self.left_table
       right_cursor = session.right.create_cursor ProxyBlockCursor, self.right_table
       while left_cursor.next?
-        left_to, left_checksum = left_cursor.checksum :block_size => block_size
+        left_to, left_checksum = left_cursor.checksum :proxy_block_size => block_size
 
         # note: I don't actually need right_to; only used to stuff the according return value somewhere
         right_to, right_checksum = right_cursor.checksum :max_row => left_to 

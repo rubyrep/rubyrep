@@ -8,45 +8,32 @@ describe Configuration do
 
   it "initialize should set #left and #right to empty hashes" do
     config = Configuration.new
-    [:left, :right].each do |hash_attr|
-      config.send(hash_attr).should == {}
-    end
+    config.left.should == {}
+    config.right.should == {}
   end
   
-  it "initialize should set #proxy_options to the default proxy options" do
+  it "initialize should set #options to the default options" do
     config = Configuration.new
-    config.proxy_options.should == Configuration::DEFAULT_PROXY_OPTIONS
+    config.options.should == Configuration::DEFAULT_OPTIONS
   end
 
-  it "initialize should set #sync_options to the default sync options" do
+  it "options= should merge the provided into the existing options" do
     config = Configuration.new
-    config.sync_options.should == Configuration::DEFAULT_SYNC_OPTIONS
-  end
-  
-  it "proxy_options= should set the new proxy options after merging them into the default proxy options" do
-    config = Configuration.new
-    config.proxy_options = {:bla => :blub}
-    config.proxy_options.should == Configuration::DEFAULT_PROXY_OPTIONS.merge({:bla => :blub})
+    config.options = {:bla => :bla}
+    config.options = {:bla => :blub}
+    config.options[:bla].should == :blub
   end
 
-  it "sync_options= should set the new syc options after merging them into the default sync options" do
-    config = Configuration.new
-    config.sync_options = {:bla => :blub}
-    config.sync_options.should == Configuration::DEFAULT_SYNC_OPTIONS.merge({:bla => :blub})
-  end
-  
   it "options_for_table should return the general options if there are no table specific options at all" do
     config = Configuration.new
-    config.options_for_table('b').should == {
-      :proxy_options => config.proxy_options,
-      :sync_options => Syncers::TwoWaySyncer.default_options.clone \
-        .merge(config.sync_options)
-    }
+    config.options_for_table('b').should == \
+      Syncers::TwoWaySyncer.default_options.clone.
+      merge(config.options)
   end
 
   it "tables should return the list of added table specifications" do
     config = Configuration.new
-    config.add_tables('a', :sync_options => {:bla => :blub})
+    config.add_tables('a', {:bla => :blub})
     config.add_tables('a, b')
     config.add_tables(/a/)
     config.tables.should == ['a', 'a, b', /a/]
@@ -54,60 +41,55 @@ describe Configuration do
 
   it "options_for_table should return the general options if there are no matching table specific options" do
     config = Configuration.new
-    config.add_tables(/a/, :sync_options => {:bla => :blub})
-    config.options_for_table('b').should == {
-      :proxy_options => config.proxy_options,
-      :sync_options => Syncers::TwoWaySyncer.default_options.clone \
-        .merge(config.sync_options)
-    }
+    config.add_tables(/a/, {:bla => :blub})
+    config.options_for_table('b').should == \
+      Syncers::TwoWaySyncer.default_options.clone.
+      merge(config.options)
   end
 
   it "options_for_table should return table specific options mixed in with default options" do
     config = Configuration.new
-    config.add_tables(/a/, :sync_options => {:bla => :blub})
-    config.options_for_table('a') \
-      .should == {
-      :proxy_options => config.proxy_options, 
-      :sync_options => Syncers::TwoWaySyncer.default_options.clone \
-        .merge(config.sync_options.merge(:bla => :blub))}
+    config.add_tables(/a/, {:bla => :blub})
+    config.options_for_table('a').should == \
+      Syncers::TwoWaySyncer.default_options.clone.
+      merge(config.options).
+      merge(:bla => :blub)
   end
 
   it "options_for_table should return last added version of added options for matching table spec" do
     config = Configuration.new
-    config.add_tables(/a/, :sync_options => {:bla => :blub})
-    config.add_tables('a', :sync_options => {:bla => :blok})
-    config.add_tables(/x/, :sync_options => {:bla => :bar})
-    config.add_tables('y', :sync_options => {:bla => :foo})
-    config.options_for_table('a') \
-      .should == {
-      :proxy_options => config.proxy_options, 
-      :sync_options => Syncers::TwoWaySyncer.default_options.clone \
-        .merge(config.sync_options.merge(:bla => :blok))}
+    config.add_tables(/a/, {:bla => :blub})
+    config.add_tables('a', {:bla => :blok})
+    config.add_tables(/x/, {:bla => :bar})
+    config.add_tables('y', {:bla => :foo})
+    config.options_for_table('a').should == \
+      Syncers::TwoWaySyncer.default_options.clone.
+      merge(config.options).
+      merge(:bla => :blok)
   end
 
   it "add_options_for_table should not create table_spec duplicates" do
     config = Configuration.new
-    config.add_tables(/a/, :sync_options => {:bla => :blub})
-    config.add_tables(/a/, :proxy_options => {:foo => :bar})
-    config.options_for_table('a') \
-      .should == {
-      :proxy_options => config.proxy_options.merge(:foo => :bar), 
-      :sync_options => Syncers::TwoWaySyncer.default_options.clone \
-        .merge(config.sync_options.merge(:bla => :blub))}
+    config.add_tables(/a/, {:bla => :blub})
+    config.add_tables(/a/, {:foo => :bar})
+    config.options_for_table('a').should == \
+      Syncers::TwoWaySyncer.default_options.clone.
+      merge(config.options).
+      merge(:bla => :blub, :foo => :bar)
   end
 
   it "add_options_for_table should include default syncer options" do
     config = Configuration.new
-    config.sync_options = {:syncer => :one_way}
+    config.options = {:syncer => :one_way}
 
     # overwrite one syncer option
-    config.add_tables(/a/, :sync_options => {:delete => true})
+    config.add_tables(/a/, {:delete => true})
 
-    sync_options = config.options_for_table('a')[:sync_options]
+    options = config.options_for_table('a')
     Syncers::OneWaySyncer.default_options.each do |key, value|
-      sync_options[key].should == value unless key == :delete
+      options[key].should == value unless key == :delete
     end
-    sync_options[:delete].should == true
+    options[:delete].should == true
   end
 
 end

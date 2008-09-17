@@ -26,8 +26,8 @@ describe TableSync do
     config = deep_copy(standard_config)
     old_table_specific_options = config.tables_with_options
     begin
-      config.sync_options = {:syncer => :bla}
-      config.add_tables 'scanner_records', :sync_options => {:syncer => :blub}
+      config.options = {:syncer => :bla}
+      config.add_tables 'scanner_records', {:syncer => :blub}
       TableSync.new(Session.new(config), 'scanner_records').sync_options[:syncer] \
         .should == :blub
     ensure
@@ -38,8 +38,8 @@ describe TableSync do
   it "run should synchronize the databases" do
     begin
       config = deep_copy(standard_config)
-      config.sync_options[:committer] = :never_commit
-      config.sync_options[:delete] = true
+      config.options[:committer] = :never_commit
+      config.options[:delete] = true
 
       session = Session.new(config)
       sync = TableSync.new(session, 'scanner_records')

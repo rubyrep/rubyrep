@@ -14,29 +14,16 @@ module RR
     # * +proxy_port+: port on which the proxy is listening
     attr_accessor :right
     
-    # Default #proxy_options for a new Configuration object.
-    DEFAULT_PROXY_OPTIONS = {
-      :block_size => 1000
-    }
-    
-    # Default options for a table sync
-    DEFAULT_SYNC_OPTIONS = {
+    # Default #options for a new Configuration object.
+    DEFAULT_OPTIONS = {
+      :proxy_block_size => 1000,
       :syncer => :two_way,
       :committer => :default
     }
     
-    # General options for the proxy operation mode.
+    # General options.
     # Possible settings:
-    # * :+block_size+: To proxy cursor will calculate the checksum for block_size number of records each.
-    attr_reader :proxy_options
-    
-    # Set the specified +options+ hash as new proxy options +after+ merging them
-    # into the default proxy option hash.
-    def proxy_options=(options)
-      @proxy_options = DEFAULT_PROXY_OPTIONS.clone.merge!(options)
-    end
-    
-    # Table sync options. A hash with the following possible settings:
+    # * :+proxy_block_size+: The proxy cursor will calculate the checksum for block_size number of records each.
     # * :+committer+:
     #   A committer key as registered by Committers#register.
     #   Determines the transaction management to be used during the sync.
@@ -48,12 +35,12 @@ module RR
     #   Each array element consists of a 1 entry hash with
     #   * key: A table name string or a Regexp matching multiple tables.
     #   * values: An hash with sync options as described abobve.
-    attr_reader :sync_options
+    attr_reader :options
     
-    # Set the specified +options+ hash as new sync options +after+ merging them
-    # into the default proxy option hash.
-    def sync_options=(options)
-      @sync_options = DEFAULT_SYNC_OPTIONS.clone.merge!(options)
+    # Merges the specified +options+ hash into the existing options
+    def options=(options)
+      @options ||= {}
+      @options = @options.merge! options
     end
     
     # A list of tables that should be processed (scanned, synced, ...) togehter
@@ -67,7 +54,7 @@ module RR
     end
 
     # Returns an array containing the configured table specifications.
-    # (#add_tables describes the valid table specification formats.)
+    # (#add_tables describes the format of valid table specifications.)
     def tables
       tables_with_options.map {|table_options| table_options[0]}
     end
@@ -77,9 +64,7 @@ module RR
     # * a table name or
     # * a table pair (e. g. "my_left_table, my_right_table")
     # * a regexp matching multiple tables.
-    # +options+ is a multi-element hash with
-    # * key: Designates type of options. Either :proxy_options or :sync_options
-    # * values: The according table specific options as described under #proxy_options or #sync_options
+    # +options+ is hash with possible values as described under #options.
     def add_tables(table_spec, options = {})
       i = nil
       tables_with_options.each_with_index { |table_options, k|
@@ -88,51 +73,43 @@ module RR
       if i
         table_options = tables_with_options[i][1]
       else
-        table_options = {:proxy_options => {}, :sync_options => {}}
+        table_options = {}
         tables_with_options << [table_spec, table_options]
       end
-      table_options[:proxy_options].merge! options[:proxy_options] || {}
-      table_options[:sync_options].merge! options[:sync_options] || {}
+      table_options.merge! options
     end
     
     # Returns an option hash for the given table.
     # Accumulates options for all matching table specs (most recently added options
     # overwrite according options added before).
-    # Refer to #add_tables for the exact format of the returned options.
     #
-    # Note:
-    # The returned sync options also include the default options of the
-    # syncer specified by the :syncer option.
-    # (Specifically provided options overwrite the default sync options.)
+    # Also includes the general options as returned by #options.
+    # (Table specific options overwrite the general options).
+    # 
+    # Possible option values are described under #options.
     def options_for_table(table)
-      table_proxy_options = proxy_options.clone
-      table_sync_options = sync_options.clone
+      resulting_options = options.clone
       tables_with_options.each do |table_options|
-        if table_options[0] === table
-          table_proxy_options.merge! table_options[1][:proxy_options]
-          table_sync_options.merge! table_options[1][:sync_options]
-        end
+        resulting_options.merge! table_options[1] if table_options[0] === table
       end
 
       # Merge the default syncer options in (if syncer has some)
-      syncer_class = Syncers.syncers[table_sync_options[:syncer]]
+      syncer_class = Syncers.syncers[resulting_options[:syncer]]
       if syncer_class.respond_to? :default_options
         default_syncer_options = syncer_class.default_options.clone
       else
         default_syncer_options = {}
       end
-      table_sync_options = default_syncer_options.merge! table_sync_options
+      resulting_options = default_syncer_options.merge! resulting_options
 
-      {:proxy_options => table_proxy_options, :sync_options => table_sync_options}
+      resulting_options
     end
     
-    # initialize attributes with empty hashes
+    # initialize configuration settings
     def initialize
-      [:left, :right].each do |hash_attr|
-        eval "self.#{hash_attr}= {}"
-      end
-      self.proxy_options = DEFAULT_PROXY_OPTIONS.clone
-      self.sync_options = DEFAULT_SYNC_OPTIONS.clone
+      self.left = {}
+      self.right = {}
+      self.options = DEFAULT_OPTIONS.clone
     end
     
   end
