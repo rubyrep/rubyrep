@@ -9,4 +9,5 @@ RR::Initializer::run do |config|
     :syncer => :two_way,
     :conflict_handling => :update_right
   }
+  config.add_tables('scanner_left_records_only')
 end

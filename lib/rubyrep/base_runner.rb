@@ -34,13 +34,15 @@ module RR
 
       parser = OptionParser.new do |opts|
         opts.banner = <<EOS
-Usage: #{$0} [options] table_spec [table_spec] ...
+Usage: #{$0} [options] [table_spec] [table_spec] ...
   table_spec can be either:
     * a specific table name (e. g. 'users') or
     * a pair of (specific) table names (e. g.: 'users,users_backup')
         (In this case the first table in the 'left' database is compared
          with the second table in the 'right' database.)
     * a regular expression (e. g. '/^user/') [case insensitive match]
+  If no table_specs are provided via command line, the one from the
+  configuration file are used.
 EOS
         opts.separator ""
         opts.separator "Specific options:"
@@ -65,7 +67,6 @@ EOS
         if options # this will be +nil+ if the --help option is specified
           options[:table_specs] = unprocessed_args
           raise("Please specify configuration file") unless options.include?(:config_file)
-          raise("Please provide at least one table_spec") if options[:table_specs].empty?
         end
       rescue Exception => e
         $stderr.puts "Command line parsing failed: #{e}"
@@ -100,11 +101,17 @@ EOS
       load options[:config_file]
       session = Session.new Initializer.configuration
       resolver = TableSpecResolver.new session
-      table_specs = resolver.resolve options[:table_specs]
-      table_specs.each do |table_spec|
-        active_printer.scan table_spec[:left_table], table_spec[:right_table] do
+
+      # Use the command line provided table specs if provided. Otherwise the
+      # ones from the configuration file
+      table_specs = options[:table_specs]
+      table_specs = Initializer.configuration.tables if table_specs.empty?
+      
+      table_pairs = resolver.resolve table_specs
+      table_pairs.each do |table_pair|
+        active_printer.scan table_pair[:left_table], table_pair[:right_table] do
           processor = create_processor session,
-            table_spec[:left_table], table_spec[:right_table]
+            table_pair[:left_table], table_pair[:right_table]
           processor.run do |diff_type, row|
             active_printer.report_difference diff_type, row
           end

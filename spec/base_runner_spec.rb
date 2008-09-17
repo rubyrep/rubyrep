@@ -22,14 +22,6 @@ describe BaseRunner do
     status.should == 1
   end
   
-  it "get_options should return options as nil and status as 1 if no table_spec is given" do
-    # also verify that an error message is printed
-    $stderr.should_receive(:puts).any_number_of_times
-    options, status = BaseRunner.new.get_options ["--config=path"]
-    options.should == nil
-    status.should == 1
-  end
-  
   it "get_options should return options as nil and status as 0 if command line includes '--help'" do
     # also verify that the help message is printed
     $stderr.should_receive(:puts)
@@ -103,7 +95,7 @@ describe BaseRunner do
     scan_runner.signal_scanning_completion
   end
   
-  it "execute should scan the specified tables" do
+  it "execute should process the specified tables" do
     org_stdout = $stdout
     $stdout = StringIO.new
     begin
@@ -118,15 +110,40 @@ describe BaseRunner do
       processor = mock("dummy_processor")
       processor.should_receive(:run).twice.and_yield(:left, :dummy_row)
       scan_runner.should_receive(:create_processor).twice.and_return(processor)
-      
+
       # verify that the scanning_completion signal is given to scan report printer
       scan_runner.should_receive :signal_scanning_completion
+
+      scan_runner.execute options
+
+      $stdout.string.should ==
+        "scanner_records / scanner_records 1\n" +
+        "extender_one_record / extender_one_record 1\n"
+    ensure
+      $stdout = org_stdout
+    end
+  end
+
+  it "execute should process the tables from the configuration file if none are provided via command line" do
+    org_stdout = $stdout
+    $stdout = StringIO.new
+    begin
+      scan_runner = BaseRunner.new
+      scan_runner.active_printer = ScanReportPrinters::ScanSummaryReporter.new(nil)
+      options = {
+        :config_file => "#{File.dirname(__FILE__)}/../config/test_config.rb",
+        :table_specs => []
+      }
+
+      # create and install a dummy processor
+      processor = mock("dummy_processor")
+      processor.should_receive(:run).and_yield(:left, :dummy_row)
+      scan_runner.should_receive(:create_processor).and_return(processor)
       
       scan_runner.execute options
       
       $stdout.string.should == 
-        "scanner_records / scanner_records 1\n" +
-        "extender_one_record / extender_one_record 1\n"
+        "scanner_left_records_only / scanner_left_records_only 1\n"
     ensure 
       $stdout = org_stdout
     end
