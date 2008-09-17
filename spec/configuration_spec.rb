@@ -44,6 +44,14 @@ describe Configuration do
     }
   end
 
+  it "tables should return the list of added table specifications" do
+    config = Configuration.new
+    config.add_tables('a', :sync_options => {:bla => :blub})
+    config.add_tables('a, b')
+    config.add_tables(/a/)
+    config.tables.should == ['a', 'a, b', /a/]
+  end
+
   it "options_for_table should return the general options if there are no matching table specific options" do
     config = Configuration.new
     config.add_tables(/a/, :sync_options => {:bla => :blub})

@@ -65,9 +65,18 @@ module RR
     def tables_with_options
       @tables_with_options ||= []
     end
+
+    # Returns an array containing the configured table specifications.
+    # (#add_tables describes the valid table specification formats.)
+    def tables
+      tables_with_options.map {|table_options| table_options[0]}
+    end
     
     # Adds the specified +table_spec+ and it's options (if provided).
-    # A +table_spec+ can be either a table name or a regexp matching multiple tables.
+    # A +table_spec+ can be either
+    # * a table name or
+    # * a table pair (e. g. "my_left_table, my_right_table")
+    # * a regexp matching multiple tables.
     # +options+ is a multi-element hash with
     # * key: Designates type of options. Either :proxy_options or :sync_options
     # * values: The according table specific options as described under #proxy_options or #sync_options
