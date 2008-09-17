@@ -19,7 +19,9 @@ module RR
     # ScanRunner#get_options). Returns an array of table name pairs in Hash form. 
     # E. g. something like 
     # [{:left_table => 'my_table', :right_table => 'my_table_backup'}]
+    # Takes care that a table is only added once.
     def resolve(table_specs)
+      already_resolved_tables = {}
       table_pairs = []
       table_specs.each do |table_spec|
         case table_spec
@@ -27,13 +29,22 @@ module RR
           table_spec = table_spec.sub(/^\/(.*)\/$/,'\1') # remove leading and trailing slash
           matching_tables = tables.grep(Regexp.new(table_spec, Regexp::IGNORECASE, 'U'))
           matching_tables.each do |table|
-            table_pairs << {:left_table => table, :right_table => table}
+            unless already_resolved_tables.include? table
+              table_pairs << {:left_table => table, :right_table => table}
+              already_resolved_tables[table] = true
+            end
           end
         when /.+,.+/ # matches e. g. 'users,users_backup'
           pair = table_spec.match(/(.*),(.*)/)[1..2].map { |str| str.strip }
-          table_pairs << {:left_table  => pair[0], :right_table => pair[1]}
+          unless already_resolved_tables.include? pair[0]
+            table_pairs << {:left_table  => pair[0], :right_table => pair[1]}
+            already_resolved_tables[pair[0]] = true
+          end
         else # everything else: just a normal table
-          table_pairs << {:left_table => table_spec.strip, :right_table => table_spec.strip}
+          unless already_resolved_tables.include? table_spec.strip
+            table_pairs << {:left_table => table_spec.strip, :right_table => table_spec.strip}
+            already_resolved_tables[table_spec.strip] = true
+          end
         end
       end
       table_pairs

@@ -28,7 +28,7 @@ describe TableSpecResolver do
     ]
   end
   
-  it "resolve shold resolve regular expressions correctly" do 
+  it "resolve should resolve regular expressions correctly" do
     @resolver.resolve(['/SCANNER_RECORDS|scanner_text_key/']).sort { |a,b|
       a[:left_table] <=> b[:left_table]
     }.should == [
@@ -37,4 +37,15 @@ describe TableSpecResolver do
     ]
   end
 
+  it "resolve should should not return the same table multiple times" do
+    @resolver.resolve([
+        'scanner_records',
+        'scanner_records',
+        'scanner_records, bla',
+        '/scanner_records/'
+      ]
+    ).should == [
+      {:left_table => 'scanner_records', :right_table => 'scanner_records'}
+    ]
+  end
 end
