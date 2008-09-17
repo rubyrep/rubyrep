@@ -33,14 +33,14 @@ describe ProxiedTableScan do
   
   it "block_size should return the matching table specific option if available" do
     config = Initializer.configuration
-    old_table_specific_options = config.table_specific_options
+    old_table_specific_options = config.tables_with_options
     begin
       config.proxy_options = {:block_size => 2}
-      config.add_options_for_table 'scanner_records', :proxy_options => {:block_size => 3}
+      config.add_tables 'scanner_records', :proxy_options => {:block_size => 3}
       ProxiedTableScan.new(Session.new(config), 'scanner_records').block_size \
         .should == 3
     ensure
-      config.instance_eval {@table_specific_options = old_table_specific_options}
+      config.instance_eval {@tables_with_options = old_table_specific_options}
     end
   end
   
