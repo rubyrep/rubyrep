@@ -21,6 +21,10 @@ module RR
     # Sets the active ScanReportPrinter
     attr_writer :active_printer
 
+    # Returns the default command summary description (nothing).
+    # Should be overwritten by child classes.
+    def summary_description; ""; end
+
     # Parses the given command line parameter array.
     # Returns
     #   * the options hash or nil if command line parsing failed.
@@ -35,17 +39,20 @@ module RR
       parser = OptionParser.new do |opts|
         opts.banner = <<EOS
 Usage: #{$0} [options] [table_spec] [table_spec] ...
+
+  #{summary_description}
+
   table_spec can be either:
     * a specific table name (e. g. 'users') or
     * a pair of (specific) table names (e. g.: 'users,users_backup')
         (In this case the first table in the 'left' database is compared
          with the second table in the 'right' database.)
     * a regular expression (e. g. '/^user/') [case insensitive match]
-  If no table_specs are provided via command line, the one from the
+  If no table_specs are provided via command line, the ones from the
   configuration file are used.
 EOS
         opts.separator ""
-        opts.separator "Specific options:"
+        opts.separator "  Specific options:"
 
         ScanReportPrinters.on_printer_selection(opts) do |printer|
           self.active_printer = printer

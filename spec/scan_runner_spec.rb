@@ -45,4 +45,8 @@ describe ScanRunner do
     scan_runner.create_processor(:dummy_session, "left_table", "right_table").
       should == :dummy_table_scanner
   end
+
+  it "summary_description should return a description" do
+    ScanRunner.new.summary_description.should be_an_instance_of(String)
+  end
 end

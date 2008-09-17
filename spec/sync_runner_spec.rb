@@ -60,4 +60,8 @@ describe SyncRunner do
     sync_runner.create_processor(:dummy_session, "left_table", "right_table").
       should == :dummy_table_sync
   end
+
+  it "summary_description should return a description" do
+    SyncRunner.new.summary_description.should be_an_instance_of(String)
+  end
 end

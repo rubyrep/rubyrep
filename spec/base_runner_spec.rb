@@ -21,7 +21,21 @@ describe BaseRunner do
     options.should == nil
     status.should == 1
   end
-  
+
+  it "get_options should show the summary description (if usage is printed)" do
+    org_stderr = $stderr
+    $stderr = StringIO.new
+    begin
+      base_runner = BaseRunner.new
+      base_runner.should_receive(:summary_description).
+        and_return("my_summary_description")
+      base_runner.get_options ["--help"]
+      $stderr.string.should =~ /my_summary_description/
+    ensure
+      $stderr = org_stderr
+    end
+  end
+
   it "get_options should return options as nil and status as 0 if command line includes '--help'" do
     # also verify that the help message is printed
     $stderr.should_receive(:puts)
