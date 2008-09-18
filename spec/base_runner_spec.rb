@@ -6,51 +6,62 @@ describe BaseRunner do
   before(:each) do
   end
 
-  it "get_options should return options as nil and status as 1 if command line parameters are unknown" do
+  it "process_options should make options as nil and teturn status as 1 if command line parameters are unknown" do
     # also verify that an error message is printed
     $stderr.should_receive(:puts).any_number_of_times
-    options, status = BaseRunner.new.get_options ["--nonsense"]
-    options.should == nil
+    runner = BaseRunner.new
+    status = runner.process_options ["--nonsense"]
+    runner.options.should == nil
     status.should == 1
   end
   
-  it "get_options should return options as nil and status as 1 if config option is not given" do
+  it "process_options should make options as nil and return status as 1 if config option is not given" do
     # also verify that an error message is printed
     $stderr.should_receive(:puts).any_number_of_times
-    options, status = BaseRunner.new.get_options ["table"]
-    options.should == nil
+    runner = BaseRunner.new
+    status = runner.process_options ["table"]
+    runner.options.should == nil
     status.should == 1
   end
 
-  it "get_options should show the summary description (if usage is printed)" do
+  it "process_options should show the summary description (if usage is printed)" do
     org_stderr = $stderr
     $stderr = StringIO.new
     begin
       base_runner = BaseRunner.new
       base_runner.should_receive(:summary_description).
         and_return("my_summary_description")
-      base_runner.get_options ["--help"]
+      base_runner.process_options ["--help"]
       $stderr.string.should =~ /my_summary_description/
     ensure
       $stderr = org_stderr
     end
   end
 
-  it "get_options should return options as nil and status as 0 if command line includes '--help'" do
+  it "process_options should make options as nil and return status as 0 if command line includes '--help'" do
     # also verify that the help message is printed
     $stderr.should_receive(:puts)
-    options, status = BaseRunner.new.get_options ["--help"]
-    options.should == nil
+    runner = BaseRunner.new
+    status = runner.process_options ["--help"]
+    runner.options.should == nil
     status.should == 0
   end
   
-  it "get_options should return the correct options" do
-    options, _ = BaseRunner.new.get_options ["-c", "config_path", "table_spec1", "table_spec2"]
-    options[:config_file].should == 'config_path'
-    options[:table_specs].should == ['table_spec1', 'table_spec2']
+  it "process_options should set the correct options" do
+    runner = BaseRunner.new
+    runner.process_options ["-c", "config_path", "table_spec1", "table_spec2"]
+    runner.options[:config_file].should == 'config_path'
+    runner.options[:table_specs].should == ['table_spec1', 'table_spec2']
+  end
+
+  it "process_options should add runner specific options" do
+    BaseRunner.any_instance_should_receive(:add_specific_options) do
+      runner = BaseRunner.new
+      runner.process_options ["-c", "config_path"]
+    end
   end
   
-  it "get_options should assign the command line specified printer" do
+  it "process_options should assign the command line specified printer" do
     org_printers = ScanReportPrinters.printers
     begin
       ScanReportPrinters.instance_eval { class_variable_set :@@report_printers, nil }
@@ -60,12 +71,25 @@ describe BaseRunner do
       
       ScanReportPrinters.register printer_y, "-y", "--printer_y[=arg]", "description"
       
-      scan_runner = BaseRunner.new
-      scan_runner.get_options ["-c", "config_path", "-y", "arg_for_y", "table_spec"]
-      scan_runner.active_printer.should == :printer_y_instance
+      runner = BaseRunner.new
+      runner.process_options ["-c", "config_path", "-y", "arg_for_y", "table_spec"]
+      runner.active_printer.should == :printer_y_instance
     ensure
       ScanReportPrinters.instance_eval { class_variable_set :@@report_printers, org_printers }
     end
+  end
+
+  it "add_specific_options should not do anything" do
+    BaseRunner.new.add_specific_options nil
+  end
+
+  it "create_processor should not do anything" do
+    BaseRunner.new.create_processor "dummy_left_table", "dummy_right_table"
+  end
+
+  it "prepare_table_pairs should return the provided table pairs unmodied" do
+    BaseRunner.new.prepare_table_pairs(:dummy_session, :dummy_table_pairs).
+      should == :dummy_table_pairs
   end
   
   it "run should not start a scan if the command line is invalid" do
@@ -80,11 +104,11 @@ describe BaseRunner do
       BaseRunner.run(["--config=path", "table"])
     }
   end
-  
+
   it "active_printer should return the printer as assigned by active_printer=" do
-    scan_runner = BaseRunner.new
-    scan_runner.active_printer= :dummy
-    scan_runner.active_printer.should == :dummy
+    runner = BaseRunner.new
+    runner.active_printer= :dummy
+    runner.active_printer.should == :dummy
   end
   
   it "active_printer should return the ScanSummaryReporter if no other printer was chosen" do
@@ -95,27 +119,27 @@ describe BaseRunner do
     printer = mock("printer")
     printer.should_receive(:scanning_finished)
     printer.should_receive(:respond_to?).with(:scanning_finished).and_return(true)
-    scan_runner = BaseRunner.new
-    scan_runner.active_printer = printer
-    scan_runner.signal_scanning_completion
+    runner = BaseRunner.new
+    runner.active_printer = printer
+    runner.signal_scanning_completion
   end
   
   it "signal_scanning_completion should not signal completion if the scan report printer doesn't supports it" do
     printer = mock("printer")
     printer.should_not_receive(:scanning_finished)
     printer.should_receive(:respond_to?).with(:scanning_finished).and_return(false)
-    scan_runner = BaseRunner.new
-    scan_runner.active_printer = printer
-    scan_runner.signal_scanning_completion
+    runner = BaseRunner.new
+    runner.active_printer = printer
+    runner.signal_scanning_completion
   end
-  
+
   it "execute should process the specified tables" do
     org_stdout = $stdout
     $stdout = StringIO.new
     begin
-      scan_runner = BaseRunner.new
-      scan_runner.active_printer = ScanReportPrinters::ScanSummaryReporter.new(nil)
-      options = {
+      runner = BaseRunner.new
+      runner.active_printer = ScanReportPrinters::ScanSummaryReporter.new(nil)
+      runner.options = {
         :config_file => "#{File.dirname(__FILE__)}/../config/test_config.rb",
         :table_specs => ["scanner_records", "extender_one_record"]
       }
@@ -123,12 +147,12 @@ describe BaseRunner do
       # create and install a dummy processor
       processor = mock("dummy_processor")
       processor.should_receive(:run).twice.and_yield(:left, :dummy_row)
-      scan_runner.should_receive(:create_processor).twice.and_return(processor)
+      runner.should_receive(:create_processor).twice.and_return(processor)
 
       # verify that the scanning_completion signal is given to scan report printer
-      scan_runner.should_receive :signal_scanning_completion
+      runner.should_receive :signal_scanning_completion
 
-      scan_runner.execute options
+      runner.execute
 
       $stdout.string.should ==
         "scanner_records / scanner_records 1\n" +
@@ -142,9 +166,9 @@ describe BaseRunner do
     org_stdout = $stdout
     $stdout = StringIO.new
     begin
-      scan_runner = BaseRunner.new
-      scan_runner.active_printer = ScanReportPrinters::ScanSummaryReporter.new(nil)
-      options = {
+      runner = BaseRunner.new
+      runner.active_printer = ScanReportPrinters::ScanSummaryReporter.new(nil)
+      runner.options = {
         :config_file => "#{File.dirname(__FILE__)}/../config/test_config.rb",
         :table_specs => []
       }
@@ -152,9 +176,9 @@ describe BaseRunner do
       # create and install a dummy processor
       processor = mock("dummy_processor")
       processor.should_receive(:run).and_yield(:left, :dummy_row)
-      scan_runner.should_receive(:create_processor).and_return(processor)
+      runner.should_receive(:create_processor).and_return(processor)
       
-      scan_runner.execute options
+      runner.execute
       
       $stdout.string.should == 
         "scanner_left_records_only / scanner_left_records_only 1\n"

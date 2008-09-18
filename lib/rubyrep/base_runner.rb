@@ -12,6 +12,11 @@ module RR
       :table_specs => []
     }
 
+    # Provided options. Possible values:
+    # * +:config_file+: path to config file
+    # * +:table_specs+: array of table specification strings
+    attr_accessor :options
+
     # Returns the active ScanReportPrinter (as selected through the ScanRunner
     # command line options OR if none was selected, the default one).
     def active_printer
@@ -26,15 +31,11 @@ module RR
     def summary_description; ""; end
 
     # Parses the given command line parameter array.
-    # Returns
-    #   * the options hash or nil if command line parsing failed.
-    #     Hash values:
-    #       * +:config_file+: path to config file
-    #       * +:table_specs+: array of table specification strings
-    #   * status (as per UNIX conventions: 1 if parameters were invalid, 0 otherwise)
-    def get_options(args)
+    # Returns the status (as per UNIX conventions: 1 if parameters were invalid,
+    # 0 otherwise)
+    def process_options(args)
       status = 0
-      options = DEFAULT_OPTIONS
+      self.options = DEFAULT_OPTIONS
 
       parser = OptionParser.new do |opts|
         opts.banner = <<EOS
@@ -62,10 +63,12 @@ EOS
           "Mandatory. Path to configuration file.") do |arg|
           options[:config_file] = arg
         end
+        
+        add_specific_options(opts)
 
         opts.on_tail("--help", "Show this message") do
           $stderr.puts opts
-          options = nil
+          self.options = nil
         end
       end
 
@@ -78,11 +81,11 @@ EOS
       rescue Exception => e
         $stderr.puts "Command line parsing failed: #{e}"
         $stderr.puts parser.help
-        options = nil
+        self.options = nil
         status = 1
       end
 
-      return options, status
+      return status
     end
 
     # Signals scan completion to the (active) scan report printer if it supports
@@ -97,16 +100,36 @@ EOS
     # A processor needs to implement a +run+ method that yields for progress
     # reporting purposes pairs of diff_type and row as defined under
     # DirectTableScan#run.
-    # session is the current Session.
-    def create_processor(session, left_table, right_table)
+    def create_processor(left_table, right_table)
       # not implemented in the base class
     end
 
-    # Executes a run based on the given options.
-    # +options+ is a hash as returned by #get_options.
-    def execute(options)
-      load options[:config_file]
-      session = Session.new Initializer.configuration
+    # Intended to be overwritten by derived classes to need to add additional
+    # options to the provided +OptionParser+ object.
+    def add_specific_options(opts)
+    end
+
+    # Intended to be overwritten by derived classes that need to modify the
+    # table_pairs.
+    # * session: the active +Session+
+    # * table_pairs: array of table pairs as returned by TableSpecResolver#resolve
+    # Returns the new table pairs array.
+    def prepare_table_pairs(session, table_pairs)
+      table_pairs
+    end
+    
+    # Returns the active +Session+. 
+    # Loads config file if necessary and creates session if necessary.
+    def session
+      unless @session
+        load options[:config_file]
+        @session = Session.new Initializer.configuration
+      end
+      @session
+    end
+
+    # Executes a run based on the established options.
+    def execute
       resolver = TableSpecResolver.new session
 
       # Use the command line provided table specs if provided. Otherwise the
@@ -115,9 +138,10 @@ EOS
       table_specs = Initializer.configuration.tables if table_specs.empty?
       
       table_pairs = resolver.resolve table_specs
+      table_pairs = prepare_table_pairs(session, table_pairs)
       table_pairs.each do |table_pair|
         active_printer.scan table_pair[:left_table], table_pair[:right_table] do
-          processor = create_processor session,
+          processor = create_processor \
             table_pair[:left_table], table_pair[:right_table]
           processor.run do |diff_type, row|
             active_printer.report_difference diff_type, row
@@ -132,9 +156,9 @@ EOS
     def self.run(args)
       runner = new
 
-      options, status = runner.get_options(args)
-      if options
-        runner.execute options
+      status = runner.process_options(args)
+      if runner.options
+        runner.execute
       end
       status
     end

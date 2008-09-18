@@ -19,12 +19,12 @@ describe ScanRunner do
     begin
       scan_runner = ScanRunner.new
       scan_runner.active_printer = ScanReportPrinters::ScanSummaryReporter.new(nil)
-      options = {
+      scan_runner.options = {
         :config_file => "#{File.dirname(__FILE__)}/../config/test_config.rb",
         :table_specs => ["scanner_records", "extender_one_record"]
       }
-      
-      scan_runner.execute options
+
+      scan_runner.execute
       
       $stdout.string.should == 
         "scanner_records / scanner_records 5\n" +
@@ -42,7 +42,8 @@ describe ScanRunner do
       and_return(:dummy_table_scanner)
     TableScanHelper.should_receive(:scan_class).with(:dummy_session).
       and_return(dummy_scan_class)
-    scan_runner.create_processor(:dummy_session, "left_table", "right_table").
+    scan_runner.should_receive(:session).any_number_of_times.and_return(:dummy_session)
+    scan_runner.create_processor("left_table", "right_table").
       should == :dummy_table_scanner
   end
 

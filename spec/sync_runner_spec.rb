@@ -29,12 +29,12 @@ describe SyncRunner do
     begin
       sync_runner = SyncRunner.new
       sync_runner.active_printer = ScanReportPrinters::ScanSummaryReporter.new(nil)
-      options = {
+      sync_runner.options = {
         :config_file => "#{File.dirname(__FILE__)}/../config/test_config.rb",
         :table_specs => ["scanner_records"]
       }
 
-      sync_runner.execute options
+      sync_runner.execute
 
       $stdout.string.should ==
         "scanner_records / scanner_records 5\n"
@@ -57,11 +57,24 @@ describe SyncRunner do
       with(:dummy_session, "left_table", "right_table").
       and_return(:dummy_table_sync)
     sync_runner = SyncRunner.new
-    sync_runner.create_processor(:dummy_session, "left_table", "right_table").
+    sync_runner.should_receive(:session).and_return(:dummy_session)
+    sync_runner.create_processor("left_table", "right_table").
       should == :dummy_table_sync
   end
 
   it "summary_description should return a description" do
     SyncRunner.new.summary_description.should be_an_instance_of(String)
+  end
+
+  it "add_specific_options should add '--no-table-ordering' option" do
+    runner = SyncRunner.new
+    runner.no_table_ordering.should_not be_true
+
+    opts = mock("dummy option parser")
+    opts.should_receive(:on).with("--no-table-ordering", an_instance_of(String)).
+      and_yield
+    runner.add_specific_options opts
+
+    runner.no_table_ordering.should be_true
   end
 end
