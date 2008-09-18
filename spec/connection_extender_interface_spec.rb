@@ -27,6 +27,15 @@ describe "ConnectionExtender", :shared => true do
     lambda {session.left.primary_key_names('non_existing_table')} \
       .should raise_error(RuntimeError, 'table does not exist')
   end
+
+  it "referenced_tables should identify the correct table dependencies" do
+    session = Session.new
+    referenced_tables = session.left.referenced_tables(['scanner_records', 'referencing_table'])
+    referenced_tables.size.should == 2
+    referenced_tables['scanner_records'].should == []
+    referenced_tables['referencing_table'].sort.
+      should == ["referenced_table", "referenced_table2"]
+  end
   
   it "select_cursor should handle zero result queries" do
     session = Session.new
@@ -60,7 +69,7 @@ describe "ConnectionExtender", :shared => true do
   it "select_cursor should read null values correctly" do
     session = Session.new
     result = session.left.select_cursor(
-       "select first_id, second_id, name from extender_combined_key 
+      "select first_id, second_id, name from extender_combined_key
        where (first_id, second_id) = (3, 1)")
     result.next_row.should == {'first_id' => '3', 'second_id' => '1', 'name' => nil}
   end

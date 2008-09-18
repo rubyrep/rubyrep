@@ -83,6 +83,39 @@ def create_sample_schema(config)
         PRIMARY KEY (first_id, second_id)
     end_sql
 
+    create_table :referenced_table, :id => false do |t|
+      t.column :first_id, :integer
+      t.column :second_id, :integer
+      t.column :name, :string
+    end
+
+    ActiveRecord::Base.connection.execute(<<-end_sql) rescue nil
+      ALTER TABLE referenced_table ADD CONSTRAINT referenced_table_pkey
+        PRIMARY KEY (first_id, second_id)
+    end_sql
+
+    create_table :referenced_table2, :id => true do |t|
+      t.column :name, :string
+    end
+
+    create_table :referencing_table, :id => true do |t|
+      t.column :first_fk, :integer
+      t.column :second_fk, :integer
+      t.column :third_fk, :integer
+    end
+
+    ActiveRecord::Base.connection.execute(<<-end_sql) rescue nil
+      ALTER TABLE referencing_table ADD CONSTRAINT referencing_table_fkey
+        FOREIGN KEY (first_fk, second_fk)
+        REFERENCES referenced_table(first_id, second_id)
+    end_sql
+
+    ActiveRecord::Base.connection.execute(<<-end_sql) rescue nil
+      ALTER TABLE referencing_table ADD CONSTRAINT referencing_table2_fkey
+        FOREIGN KEY (third_fk)
+        REFERENCES referenced_table2(id)
+    end_sql
+
     create_table :extender_inverted_combined_key, :id => false do |t|
       t.column :first_id, :integer
       t.column :second_id, :integer

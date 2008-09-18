@@ -63,6 +63,30 @@ module RR
         columns
       end
 
+      # Returns for each given table, which other tables it references via
+      # foreign key constraints.
+      # * tables: an array of table names
+      # * returns: a hash with
+      #   * key: name of the referencing table
+      #   * value: an array of names of referenced tables
+      def referenced_tables(tables)
+        rows = self.select_all(<<-end_sql)
+          select distinct table_name as referencing_table, referenced_table_name as referenced_table
+          from information_schema.key_column_usage
+          where table_schema = database()
+          and table_name in ('#{tables.join("', '")}')
+        end_sql
+        result = {}
+        rows.each do |row|
+          unless result.include? row['referencing_table']
+            result[row['referencing_table']] = []
+          end
+          if row['referenced_table'] != nil
+            result[row['referencing_table']] << row['referenced_table']
+          end
+        end
+        result
+      end
     end
   end
 end

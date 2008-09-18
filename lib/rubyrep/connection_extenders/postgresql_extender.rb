@@ -73,11 +73,11 @@ module RR
 
         columns = {}
         rows = self.select_all(<<-end_sql)
-              SELECT attnum, attname 
-              FROM pg_class           rel
-              JOIN pg_constraint      cons ON (rel.oid = cons.conrelid)
-              JOIN pg_attribute       attr ON (rel.oid = attr.attrelid and attr.attnum = any (cons.conkey))
-              WHERE cons.contype = 'p' AND rel.relname = '#{table}'
+          SELECT attnum, attname
+          FROM pg_class           rel
+          JOIN pg_constraint      cons ON (rel.oid = cons.conrelid)
+          JOIN pg_attribute       attr ON (rel.oid = attr.attrelid and attr.attnum = any (cons.conkey))
+          WHERE cons.contype = 'p' AND rel.relname = '#{table}'
         end_sql
         sorted_columns = []
         if not rows.nil?
@@ -87,6 +87,32 @@ module RR
         sorted_columns
       end
 
+      # Returns for each given table, which other tables it references via
+      # foreign key constraints.
+      # * tables: an array of table names
+      # * returns: a hash with
+      #   * key: name of the referencing table
+      #   * value: an array of names of referenced tables
+      def referenced_tables(tables)
+        rows = self.select_all(<<-end_sql)
+          select distinct referencing.relname as referencing_table, referenced.relname as referenced_table
+          from pg_class referencing
+          left join pg_constraint on referencing.oid = pg_constraint.conrelid
+          left join pg_class referenced on pg_constraint.confrelid = referenced.oid
+          where referencing.relkind='r'
+          and referencing.relname in ('#{tables.join("', '")}')
+        end_sql
+        result = {}
+        rows.each do |row|
+          unless result.include? row['referencing_table']
+            result[row['referencing_table']] = []
+          end
+          if row['referenced_table'] != nil
+            result[row['referencing_table']] << row['referenced_table']
+          end
+        end
+        result
+      end
     end
   end
 end

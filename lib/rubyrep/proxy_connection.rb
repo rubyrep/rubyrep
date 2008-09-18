@@ -20,7 +20,8 @@ module RR
       :connection, :columns, :quote_column_name, \
       :quote_table_name, :select_cursor, :execute, \
       :select_one, :tables, \
-      :begin_db_transaction, :rollback_db_transaction, :commit_db_transaction
+      :begin_db_transaction, :rollback_db_transaction, :commit_db_transaction, \
+      :referenced_tables
     
     # Caching the primary keys. This is a hash with
     #   * key: table name

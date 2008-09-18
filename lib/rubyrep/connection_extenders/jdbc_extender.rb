@@ -145,6 +145,28 @@ module RR
         key_names = columns.map {|column| column[:column_name]}
         key_names
       end
+
+      # Returns for each given table, which other tables it references via
+      # foreign key constraints.
+      # * tables: an array of table names
+      # * returns: a hash with
+      #   * key: name of the referencing table
+      #   * value: an array of names of referenced tables
+      def referenced_tables(tables)
+        result = {}
+        tables.each do |table|
+          references_of_this_table = []
+          result_set = @connection.connection.getMetaData.getImportedKeys(nil, nil, table)
+          while result_set.next
+            referenced_table = result_set.getString("PKTABLE_NAME")
+            unless references_of_this_table.include? referenced_table
+              references_of_this_table << referenced_table
+            end
+          end
+          result[table] = references_of_this_table
+        end
+        result
+      end
     end
   end
 end
