@@ -39,6 +39,7 @@ lib/rubyrep/syncers/syncers.rb
 lib/rubyrep/syncers/two_way_syncer.rb
 lib/rubyrep/table_scan.rb
 lib/rubyrep/table_scan_helper.rb
+lib/rubyrep/table_sorter.rb
 lib/rubyrep/table_spec_resolver.rb
 lib/rubyrep/table_sync.rb
 lib/rubyrep/type_casting_cursor.rb
@@ -79,6 +80,7 @@ spec/sync_runner_spec.rb
 spec/syncers_spec.rb
 spec/table_scan_helper_spec.rb
 spec/table_scan_spec.rb
+spec/table_sorter_spec.rb
 spec/table_spec_resolver_spec.rb
 spec/table_sync_spec.rb
 spec/two_way_syncer_spec.rb
