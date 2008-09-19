@@ -186,4 +186,17 @@ describe BaseRunner do
       $stdout = org_stdout
     end
   end
+
+  it "execute should prepare the table pairs before processing them" do
+      runner = BaseRunner.new
+      runner.active_printer = ScanReportPrinters::ScanSummaryReporter.new(nil)
+      runner.options = {
+        :config_file => "#{File.dirname(__FILE__)}/../config/test_config.rb",
+        :table_specs => []
+      }
+      dummy_table_pairs = mock("dummy_table_pairs")
+      dummy_table_pairs.should_receive(:each)
+      runner.should_receive(:prepare_table_pairs).and_return(dummy_table_pairs)
+      runner.execute
+  end
 end
