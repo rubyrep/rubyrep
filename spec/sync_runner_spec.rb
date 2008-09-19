@@ -12,6 +12,37 @@ describe SyncRunner do
       load File.dirname(__FILE__) + '/../bin/rrsync.rb'
     }
   end
+  
+  def convert_table_array_to_table_pair_array(tables)
+    tables.map {|table| {:left_table => table, :right_table => table}}
+  end
+
+  it "prepare_table_pairs should sort the tables correctly" do
+
+    table_pairs = convert_table_array_to_table_pair_array([
+      'scanner_records',
+      'referencing_table',
+      'referenced_table',
+      'scanner_text_key',
+    ])
+    sorted_table_pairs = convert_table_array_to_table_pair_array([
+      'scanner_records',
+      'referenced_table',
+      'referencing_table',
+      'scanner_text_key',
+    ])
+
+    session = Session.new standard_config
+    sync_runner = SyncRunner.new
+    sync_runner.should_receive(:session).any_number_of_times.and_return(session)
+    sync_runner.prepare_table_pairs(table_pairs).should == sorted_table_pairs
+  end
+
+  it "prepare_table_pairs should not sort the tables if that was disabled" do
+    sync_runner = SyncRunner.new
+    sync_runner.no_table_ordering = true
+    sync_runner.prepare_table_pairs(:dummy).should == :dummy
+  end
 
   it "execute should sync the specified tables" do
     org_stdout = $stdout
