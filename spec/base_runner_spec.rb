@@ -88,7 +88,7 @@ describe BaseRunner do
   end
 
   it "prepare_table_pairs should return the provided table pairs unmodied" do
-    BaseRunner.new.prepare_table_pairs(:dummy_session, :dummy_table_pairs).
+    BaseRunner.new.prepare_table_pairs(:dummy_table_pairs).
       should == :dummy_table_pairs
   end
   

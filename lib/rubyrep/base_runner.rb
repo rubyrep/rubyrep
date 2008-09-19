@@ -111,10 +111,9 @@ EOS
 
     # Intended to be overwritten by derived classes that need to modify the
     # table_pairs.
-    # * session: the active +Session+
     # * table_pairs: array of table pairs as returned by TableSpecResolver#resolve
     # Returns the new table pairs array.
-    def prepare_table_pairs(session, table_pairs)
+    def prepare_table_pairs(table_pairs)
       table_pairs
     end
     
@@ -138,7 +137,7 @@ EOS
       table_specs = Initializer.configuration.tables if table_specs.empty?
       
       table_pairs = resolver.resolve table_specs
-      table_pairs = prepare_table_pairs(session, table_pairs)
+      table_pairs = prepare_table_pairs(table_pairs)
       table_pairs.each do |table_pair|
         active_printer.scan table_pair[:left_table], table_pair[:right_table] do
           processor = create_processor \
