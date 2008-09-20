@@ -18,7 +18,8 @@ module RR
     DEFAULT_OPTIONS = {
       :proxy_block_size => 1000,
       :syncer => :two_way,
-      :committer => :default
+      :committer => :default,
+      :table_ordering => true,
     }
     
     # General options.
@@ -27,14 +28,14 @@ module RR
     # * :+committer+:
     #   A committer key as registered by Committers#register.
     #   Determines the transaction management to be used during the sync.
+    # * :+table_ordering+:
+    #   If true, sort tables before syncing as per foreign key dependencies.
+    #   (Dependent tables are synced last to reduce risk of foreign key
+    #   constraint violations.)
     # * :+syncer+:
     #   A syncer key as registered by TableSync#register_syncer.
     #   Determines which sync algorithm is used.
     # * further options as defined by each syncer
-    # * :+table_specific+: An array of table specific options.
-    #   Each array element consists of a 1 entry hash with
-    #   * key: A table name string or a Regexp matching multiple tables.
-    #   * values: An hash with sync options as described abobve.
     attr_reader :options
     
     # Merges the specified +options+ hash into the existing options

@@ -18,7 +18,6 @@ describe SyncRunner do
   end
 
   it "prepare_table_pairs should sort the tables correctly" do
-
     table_pairs = convert_table_array_to_table_pair_array([
       'scanner_records',
       'referencing_table',
@@ -34,13 +33,14 @@ describe SyncRunner do
 
     session = Session.new standard_config
     sync_runner = SyncRunner.new
+    sync_runner.should_receive(:table_ordering?).and_return true
     sync_runner.should_receive(:session).any_number_of_times.and_return(session)
     sync_runner.prepare_table_pairs(table_pairs).should == sorted_table_pairs
   end
 
   it "prepare_table_pairs should not sort the tables if that was disabled" do
     sync_runner = SyncRunner.new
-    sync_runner.no_table_ordering = true
+    sync_runner.should_receive(:table_ordering?).and_return false
     sync_runner.prepare_table_pairs(:dummy).should == :dummy
   end
 
@@ -97,15 +97,41 @@ describe SyncRunner do
     SyncRunner.new.summary_description.should be_an_instance_of(String)
   end
 
+  it "table_ordering? should only return true if it is enabled via configuration file and not disabled via command line" do
+    enabled_config = mock("enabled_configuration")
+    enabled_config.stub!(:options).and_return(:table_ordering => true)
+    enabled_session = mock("enabled session")
+    enabled_session.stub!(:configuration).and_return(enabled_config)
+
+    disabled_config = mock("disabled_configuration")
+    disabled_config.stub!(:options).and_return(:table_ordering => false)
+    disabled_session = mock("disabled session")
+    disabled_session.stub!(:configuration).and_return(disabled_config)
+
+    sync_runner = SyncRunner.new
+
+    sync_runner.stub!(:session).and_return(disabled_session)
+    sync_runner.stub!(:options).and_return({})
+    sync_runner.table_ordering?.should be_false
+    sync_runner.stub!(:options).and_return(:no_table_ordering => true)
+    sync_runner.table_ordering?.should be_false
+
+    sync_runner.stub!(:session).and_return(enabled_session)
+    sync_runner.stub!(:options).and_return({})
+    sync_runner.table_ordering?.should be_true
+    sync_runner.stub!(:options).and_return(:no_table_ordering => true)
+    sync_runner.table_ordering?.should be_false
+  end
+
   it "add_specific_options should add '--no-table-ordering' option" do
     runner = SyncRunner.new
-    runner.no_table_ordering.should_not be_true
+    runner.options = {}
 
     opts = mock("dummy option parser")
     opts.should_receive(:on).with("--no-table-ordering", an_instance_of(String)).
       and_yield
     runner.add_specific_options opts
 
-    runner.no_table_ordering.should be_true
+    runner.options[:no_table_ordering].should be_true
   end
 end
