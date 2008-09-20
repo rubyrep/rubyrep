@@ -134,13 +134,11 @@ module RR
     #   * row: for :left or :right cases a hash describing the row; for :conflict an array of left and right row
     def run(&blck)
       left_cursor = right_cursor = nil
-      left_cursor = session.left.create_cursor ProxyBlockCursor, self.left_table
-      right_cursor = session.right.create_cursor ProxyBlockCursor, self.right_table
+      left_cursor = session.left.create_cursor ProxyBlockCursor, left_table
+      right_cursor = session.right.create_cursor ProxyBlockCursor, right_table
       while left_cursor.next?
         left_to, left_checksum = left_cursor.checksum :proxy_block_size => block_size
-
-        # note: I don't actually need right_to; only used to stuff the according return value somewhere
-        right_to, right_checksum = right_cursor.checksum :max_row => left_to 
+        _ , right_checksum = right_cursor.checksum :max_row => left_to
 
         if left_checksum != right_checksum
           compare_blocks left_cursor, right_cursor do |type, row|
