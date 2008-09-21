@@ -4,7 +4,12 @@ include RR
 
 describe ProxiedTableScan do
   before(:each) do
-    Initializer.configuration = proxied_config
+    Initializer.configuration = deep_copy(proxied_config)
+
+    # Small block size necessary to exercize all code paths in ProxiedTableScan
+    # even when only using tables with very small number of records.
+    Initializer.configuration.options[:proxy_block_size] = 2
+
     ensure_proxy
   end
 

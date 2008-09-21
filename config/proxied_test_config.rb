@@ -8,5 +8,4 @@ RR::Initializer::run do |config|
     :proxy_port => '9876',   
   })
 
-  config.options = {:proxy_block_size => 2}
 end
