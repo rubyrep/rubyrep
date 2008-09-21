@@ -28,16 +28,15 @@ describe "Big Scan" do
 
     table_scan_class = TableScanHelper.scan_class(session)
     puts "\nScanning table big_scan (#{number_differences} differences in #{number_records} records) using #{table_scan_class.name}"
-    progress_bar = ProgressBar.new number_differences
 
     scan = table_scan_class.new session, 'big_scan'
+    scan.progress_printer = RR::ScanProgressPrinters::ProgressBar
     benchmark = Benchmark.measure {
       scan.run do |diff_type, row|
-        progress_bar.step
         received_result[diff_type] += 1
       end
     }
-    puts "  time required: #{benchmark}"
+    puts "\n  time required: #{benchmark}"
     
     received_result.should == expected_result
   end

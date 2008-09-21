@@ -47,15 +47,11 @@ describe "Big Sync" do
         record_quantity(session, :right, :right)
 
       puts "\nSyncing (#{Initializer.configuration.options[:syncer]}, #{session.proxied? ? :proxied : :direct}) table big_scan (#{number_differences} differences in #{number_records} records)"
-      progress_bar = ProgressBar.new number_differences
 
       sync = TableSync.new(session, 'big_scan')
-      benchmark = Benchmark.measure {
-        sync.run do |diff_type, row|
-          progress_bar.step
-        end
-      }
-      puts "  time required: #{benchmark}"
+      sync.progress_printer = RR::ScanProgressPrinters::ProgressBar
+      benchmark = Benchmark.measure { sync.run { |diff_type, row| } }
+      puts "\n  time required: #{benchmark}"
 
       {
         :conflict_on_left => record_quantity(session, :conflict, :left),
