@@ -189,9 +189,8 @@ describe BaseRunner do
 
       runner.execute
 
-      $stdout.string.should ==
-        "scanner_records / scanner_records 1\n" +
-        "extender_one_record / extender_one_record 1\n"
+      $stdout.string.should =~ /scanner_records.* 1\n/
+      $stdout.string.should =~ /extender_one_record.* 1\n/
     ensure
       $stdout = org_stdout
     end
@@ -216,8 +215,8 @@ describe BaseRunner do
       
       runner.execute
       
-      $stdout.string.should == 
-        "scanner_left_records_only / scanner_left_records_only 1\n"
+      $stdout.string.should =~
+        /scanner_left_records_only.* 1\n/
     ensure 
       $stdout = org_stdout
     end

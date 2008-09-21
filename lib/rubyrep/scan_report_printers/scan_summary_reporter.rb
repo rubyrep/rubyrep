@@ -36,16 +36,29 @@ module RR::ScanReportPrinters
       self.right_table = right_table
       self.scan_result = {:conflict => 0, :left => 0, :right => 0}
 
+      header = left_table.clone
+      header << " / " << right_table if left_table != right_table
+      $stdout.write "#{header.rjust(36)} "
+
       yield # Give control back so that the actual table scan can be done.
 
-      $stdout.write "#{left_table} / #{right_table} "
       if only_totals
-        $stdout.write "#{scan_result[:conflict] + scan_result[:left] + scan_result[:right]}"
+        $stdout.write \
+          "#{rjust_value(scan_result[:conflict] + scan_result[:left] + scan_result[:right])}"
       else
-        $stdout.write "#{scan_result[:conflict]} #{scan_result[:left]} #{scan_result[:right]}"
+        $stdout.write \
+          "#{rjust_value(scan_result[:conflict])} " +
+          "#{rjust_value(scan_result[:left])} " +
+          "#{rjust_value(scan_result[:right])}"
       end
       $stdout.puts
     end
+
+    # Right adjusts the given number and returns according string.
+    def rjust_value(value)
+      value.to_s.rjust(3)
+    end
+    private :rjust_value
 
     # Each difference is handed to the printer as described in the format
     # as described e. g. in DirectTableScan#run

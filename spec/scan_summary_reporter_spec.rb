@@ -33,7 +33,7 @@ describe ScanReportPrinters::ScanSummaryReporter do
         reporter.report_difference :left, :dummy_row
         reporter.report_difference :right, :dummy_row
       end
-      $stdout.string.should == "left_table / right_table 3\n"
+      $stdout.string.should =~ /left_table \/ right_table [\.\s]*3\n/
     ensure 
       $stdout = org_stdout
     end
@@ -45,7 +45,7 @@ describe ScanReportPrinters::ScanSummaryReporter do
     begin
       reporter = ScanReportPrinters::ScanSummaryReporter.new("detailed")
       
-      reporter.scan('left_table', 'right_table') do 
+      reporter.scan('left_table', 'left_table') do
         reporter.report_difference :conflict, :dummy_row
         reporter.report_difference :left, :dummy_row
         reporter.report_difference :left, :dummy_row
@@ -53,7 +53,7 @@ describe ScanReportPrinters::ScanSummaryReporter do
         reporter.report_difference :right, :dummy_row
         reporter.report_difference :right, :dummy_row
       end
-      $stdout.string.should == "left_table / right_table 1 2 3\n"
+      $stdout.string.should =~ /left_table\s+1\s+2\s+3\n/
     ensure 
       $stdout = org_stdout
     end

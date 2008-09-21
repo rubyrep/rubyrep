@@ -30,8 +30,6 @@ module RR
         @max_markers = MAX_MARKERS
         @steps_per_marker = @max_steps.to_f / @max_markers
         @current_markers = 0
-        puts "\nScanning #{left_table}, #{right_table}"
-        puts "0%>#{'-' * (@max_markers - '0%>'.length - '100%>'.length)}>100%"
       end
   
       # Increases progress by +step_increment+ steps.
@@ -41,7 +39,7 @@ module RR
         if new_markers > @current_markers
           print '.'  * (new_markers - @current_markers)
           @current_markers = new_markers
-          puts if @current_markers == @max_markers
+          putc ' ' if @current_markers == @max_markers
           $stdout.flush
         end
       end

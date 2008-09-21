@@ -26,8 +26,8 @@ describe ScanRunner do
 
       scan_runner.execute
       
-      $stdout.string.should =~ /scanner_records \/ scanner_records 5\n/
-      $stdout.string.should =~ /extender_one_record \/ extender_one_record 0\n/
+      $stdout.string.should =~ /scanner_records.* 5\n/
+      $stdout.string.should =~ /extender_one_record.* 0\n/
     ensure 
       $stdout = org_stdout
     end

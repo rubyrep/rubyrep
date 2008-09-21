@@ -68,7 +68,7 @@ describe SyncRunner do
       sync_runner.execute
 
       $stdout.string.should =~
-        /scanner_records \/ scanner_records 5\n/
+        /scanner_records .* 5\n/
 
       left_records = session.left.connection.select_all("select * from scanner_records order by id")
       right_records = session.right.connection.select_all("select * from scanner_records order by id")

@@ -27,23 +27,13 @@ describe ProgressBar do
       should == ProgressBar
   end
 
-  it "initialize should printer a header line" do
-    ProgressBar.new(1000, 'bla', 'blub')
-    $stdout.string.should =~ /bla.*blub/
-  end
-
-  it "initialize should print a header bar of the correct length" do
-    ProgressBar.new(1000, 'bla', 'blub')
-    $stdout.string.should =~ /0%>-------------------------------->100%\n/
-  end
-
   it "step should print the correct progress" do
     bar = ProgressBar.new(1000, 'bla', 'blub')
     bar.step 200
     bar.step 300
     $stdout.string.should =~ /^\.{20}$/
     bar.step 500
-    $stdout.string.should =~ /^\.{40}\n$/
+    $stdout.string.should =~ /^\.{40}\s*$/
   end
 
 end
