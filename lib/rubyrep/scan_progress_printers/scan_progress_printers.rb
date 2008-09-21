@@ -18,7 +18,7 @@ module RR
   #   # * +right_table+: name of the right database table
   #   def initialize(max_steps, left_table, right_table)
   #
-  #   # Process is advanced by +progress+ number of steps.
+  #   # Progress is advanced by +progress+ number of steps.
   #   def step(progress)
   #
   module ScanProgressPrinters

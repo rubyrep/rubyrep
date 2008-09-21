@@ -17,11 +17,14 @@ module RR
       # Receives the command line argument
       cattr_accessor :arg
 
+      # Returns the length (in characters) of the progress bar.
       def max_markers
         @max_marker ||= arg ? arg.to_i : MAX_MARKERS
       end
 
       # Creates a new progress bar for a task consisting of +max+ steps.
+      # +left_table+ and +right_table+ are the names of the tables that are
+      # getting processed
       def initialize(max_steps, left_table, right_table)
         @max_steps, @current_steps = max_steps, 0
         @max_markers = MAX_MARKERS
