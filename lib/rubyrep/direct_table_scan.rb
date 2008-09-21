@@ -47,10 +47,13 @@ module RR
         when -1
           yield :left, left_row
           left_row = nil
+          update_progress 1
         when 1
           yield :right, right_row
           right_row = nil
+          update_progress 1
         when 0
+          update_progress 2
           if not left_row == right_row
             yield :conflict, [left_row, right_row]
           end

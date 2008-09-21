@@ -124,5 +124,17 @@ describe ProxiedTableScan do
       [:right, {'id' => 6, 'name' => 'Fred - exists in right database only'}]
     ]    
   end
+
+  it "run should update the progress" do
+    # separate test case for left-sided data; right-sided data are already covered in the general test
+    session = Session.new
+    scan = ProxiedTableScan.new session, 'scanner_records'
+    number_steps = 0
+    scan.should_receive(:update_progress).any_number_of_times do |steps|
+      number_steps += steps
+    end
+    scan.run {|_, _|}
+    number_steps.should == 8
+  end
 end
 

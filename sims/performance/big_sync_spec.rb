@@ -80,7 +80,8 @@ describe "Big Sync" do
       :committer => :never_commit,
       :syncer => :one_way,
       :direction => :right,
-      :delete => true
+      :delete => true,
+      :proxy_block_size => 100,
     }
     
     session = Session.new
@@ -126,7 +127,8 @@ describe "Big Sync" do
     Initializer.configuration.options = {
       :committer => :never_commit,
       :syncer => :two_way,
-      :conflict_handling => :update_left
+      :conflict_handling => :update_left,
+      :proxy_block_size => 100,
     }
 
     session = Session.new

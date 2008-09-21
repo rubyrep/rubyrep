@@ -61,21 +61,39 @@ describe BaseRunner do
     end
   end
   
-  it "process_options should assign the command line specified printer" do
+  it "process_options should assign the command line specified report printer" do
     org_printers = ScanReportPrinters.printers
     begin
       ScanReportPrinters.instance_eval { class_variable_set :@@report_printers, nil }
       
-      printer_y = mock("printer_y")
-      printer_y.should_receive(:new).and_return(:printer_y_instance)
+      printer_y_class = mock("printer_y")
+      printer_y_class.should_receive(:new).and_return(:printer_y_instance)
       
-      ScanReportPrinters.register printer_y, "-y", "--printer_y[=arg]", "description"
+      ScanReportPrinters.register printer_y_class, "-y", "--printer_y[=arg]", "description"
       
       runner = BaseRunner.new
       runner.process_options ["-c", "config_path", "-y", "arg_for_y", "table_spec"]
-      runner.active_printer.should == :printer_y_instance
+      runner.report_printer.should == :printer_y_instance
     ensure
       ScanReportPrinters.instance_eval { class_variable_set :@@report_printers, org_printers }
+    end
+  end
+
+  it "process_options should assign the command line specified progress printer class" do
+    org_printers = ScanProgressPrinters.printers
+    begin
+      ScanProgressPrinters.instance_eval { class_variable_set :@@progress_printers, nil }
+
+      printer_y_class = mock("printer_y_class")
+      printer_y_class.should_receive(:arg=)
+
+      ScanProgressPrinters.register :printer_y_key, printer_y_class, "-y", "--printer_y[=arg]", "description"
+
+      runner = BaseRunner.new
+      runner.process_options ["-c", "config_path", "-y", "arg_for_y"]
+      runner.progress_printer.should == printer_y_class
+    ensure
+      ScanProgressPrinters.instance_eval { class_variable_set :@@progress_printers, org_printers }
     end
   end
 
@@ -105,22 +123,34 @@ describe BaseRunner do
     }
   end
 
-  it "active_printer should return the printer as assigned by active_printer=" do
+  it "report_printer should return the printer as assigned by report_printer=" do
     runner = BaseRunner.new
-    runner.active_printer= :dummy
-    runner.active_printer.should == :dummy
+    runner.report_printer= :dummy
+    runner.report_printer.should == :dummy
   end
   
-  it "active_printer should return the ScanSummaryReporter if no other printer was chosen" do
-    BaseRunner.new.active_printer.should be_an_instance_of(ScanReportPrinters::ScanSummaryReporter)
+  it "report_printer should return the ScanSummaryReporter if no other printer was chosen" do
+    BaseRunner.new.report_printer.should be_an_instance_of(ScanReportPrinters::ScanSummaryReporter)
   end
+
+  it "progress_printer should return the config file specified printer if none was give via command line" do
+    runner = BaseRunner.new
+    runner.options = {
+      :config_file => "#{File.dirname(__FILE__)}/../config/test_config.rb",
+      :table_specs => ["scanner_records", "extender_one_record"]
+    }
+    config_specified_printer_key = Session.new(standard_config).configuration.options[:scan_progress_printer]
+    config_specified_printer_class = ScanProgressPrinters.
+      printers[config_specified_printer_key][:printer_class]
+    runner.progress_printer.should == config_specified_printer_class
+    end
   
   it "signal_scanning_completion should signal completion if the scan report printer supports it" do
     printer = mock("printer")
     printer.should_receive(:scanning_finished)
     printer.should_receive(:respond_to?).with(:scanning_finished).and_return(true)
     runner = BaseRunner.new
-    runner.active_printer = printer
+    runner.report_printer = printer
     runner.signal_scanning_completion
   end
   
@@ -129,7 +159,7 @@ describe BaseRunner do
     printer.should_not_receive(:scanning_finished)
     printer.should_receive(:respond_to?).with(:scanning_finished).and_return(false)
     runner = BaseRunner.new
-    runner.active_printer = printer
+    runner.report_printer = printer
     runner.signal_scanning_completion
   end
 
@@ -138,7 +168,7 @@ describe BaseRunner do
     $stdout = StringIO.new
     begin
       runner = BaseRunner.new
-      runner.active_printer = ScanReportPrinters::ScanSummaryReporter.new(nil)
+      runner.report_printer = ScanReportPrinters::ScanSummaryReporter.new(nil)
       runner.options = {
         :config_file => "#{File.dirname(__FILE__)}/../config/test_config.rb",
         :table_specs => ["scanner_records", "extender_one_record"]
@@ -147,6 +177,11 @@ describe BaseRunner do
       # create and install a dummy processor
       processor = mock("dummy_processor")
       processor.should_receive(:run).twice.and_yield(:left, :dummy_row)
+
+      # verify that the scanner receives the progress printer
+      runner.stub!(:progress_printer).and_return(:dummy_printer_class)
+      processor.should_receive(:progress_printer=).twice.with(:dummy_printer_class)
+
       runner.should_receive(:create_processor).twice.and_return(processor)
 
       # verify that the scanning_completion signal is given to scan report printer
@@ -167,7 +202,7 @@ describe BaseRunner do
     $stdout = StringIO.new
     begin
       runner = BaseRunner.new
-      runner.active_printer = ScanReportPrinters::ScanSummaryReporter.new(nil)
+      runner.report_printer = ScanReportPrinters::ScanSummaryReporter.new(nil)
       runner.options = {
         :config_file => "#{File.dirname(__FILE__)}/../config/test_config.rb",
         :table_specs => []
@@ -176,6 +211,7 @@ describe BaseRunner do
       # create and install a dummy processor
       processor = mock("dummy_processor")
       processor.should_receive(:run).and_yield(:left, :dummy_row)
+      processor.should_receive(:progress_printer=)
       runner.should_receive(:create_processor).and_return(processor)
       
       runner.execute
@@ -188,15 +224,15 @@ describe BaseRunner do
   end
 
   it "execute should prepare the table pairs before processing them" do
-      runner = BaseRunner.new
-      runner.active_printer = ScanReportPrinters::ScanSummaryReporter.new(nil)
-      runner.options = {
-        :config_file => "#{File.dirname(__FILE__)}/../config/test_config.rb",
-        :table_specs => []
-      }
-      dummy_table_pairs = mock("dummy_table_pairs")
-      dummy_table_pairs.should_receive(:each)
-      runner.should_receive(:prepare_table_pairs).and_return(dummy_table_pairs)
-      runner.execute
+    runner = BaseRunner.new
+    runner.report_printer = ScanReportPrinters::ScanSummaryReporter.new(nil)
+    runner.options = {
+      :config_file => "#{File.dirname(__FILE__)}/../config/test_config.rb",
+      :table_specs => []
+    }
+    dummy_table_pairs = mock("dummy_table_pairs")
+    dummy_table_pairs.should_receive(:each)
+    runner.should_receive(:prepare_table_pairs).and_return(dummy_table_pairs)
+    runner.execute
   end
 end

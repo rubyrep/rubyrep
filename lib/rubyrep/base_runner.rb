@@ -17,14 +17,28 @@ module RR
     # * +:table_specs+: array of table specification strings
     attr_accessor :options
 
-    # Returns the active ScanReportPrinter (as selected through the ScanRunner
+    # Returns the active ScanReportPrinters instance (as selected through the
     # command line options OR if none was selected, the default one).
-    def active_printer
-      @active_printer ||= ScanReportPrinters::ScanSummaryReporter.new(nil)
+    def report_printer
+      @report_printer ||= ScanReportPrinters::ScanSummaryReporter.new(nil)
     end
 
     # Sets the active ScanReportPrinter
-    attr_writer :active_printer
+    attr_writer :report_printer
+
+    # Returns the command line selected ScanProgressPrinters class
+    attr_accessor :selected_progress_printer
+
+    # Returns the active ScanProgressPrinter class (as selected through the
+    # command line options OR if none was selected, the default one).
+    def progress_printer
+      if selected_progress_printer
+        selected_progress_printer
+      else
+        printer_key = session.configuration.options[:scan_progress_printer]
+        ScanProgressPrinters.printers[printer_key][:printer_class]
+      end
+    end
 
     # Returns the default command summary description (nothing).
     # Should be overwritten by child classes.
@@ -56,7 +70,11 @@ EOS
         opts.separator "  Specific options:"
 
         ScanReportPrinters.on_printer_selection(opts) do |printer|
-          self.active_printer = printer
+          self.report_printer = printer
+        end
+
+        ScanProgressPrinters.on_printer_selection(opts) do |printer|
+          self.selected_progress_printer = printer
         end
 
         opts.on("-c", "--config", "=CONFIG_FILE",
@@ -91,8 +109,8 @@ EOS
     # Signals scan completion to the (active) scan report printer if it supports
     # that method.
     def signal_scanning_completion
-      if active_printer.respond_to? :scanning_finished
-        active_printer.scanning_finished
+      if report_printer.respond_to? :scanning_finished
+        report_printer.scanning_finished
       end
     end
 
@@ -139,11 +157,12 @@ EOS
       table_pairs = resolver.resolve table_specs
       table_pairs = prepare_table_pairs(table_pairs)
       table_pairs.each do |table_pair|
-        active_printer.scan table_pair[:left_table], table_pair[:right_table] do
+        report_printer.scan table_pair[:left_table], table_pair[:right_table] do
           processor = create_processor \
             table_pair[:left_table], table_pair[:right_table]
+          processor.progress_printer = progress_printer
           processor.run do |diff_type, row|
-            active_printer.report_difference diff_type, row
+            report_printer.report_difference diff_type, row
           end
         end
       end

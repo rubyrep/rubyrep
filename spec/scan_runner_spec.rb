@@ -18,7 +18,7 @@ describe ScanRunner do
     $stdout = StringIO.new
     begin
       scan_runner = ScanRunner.new
-      scan_runner.active_printer = ScanReportPrinters::ScanSummaryReporter.new(nil)
+      scan_runner.report_printer = ScanReportPrinters::ScanSummaryReporter.new(nil)
       scan_runner.options = {
         :config_file => "#{File.dirname(__FILE__)}/../config/test_config.rb",
         :table_specs => ["scanner_records", "extender_one_record"]
@@ -26,9 +26,8 @@ describe ScanRunner do
 
       scan_runner.execute
       
-      $stdout.string.should == 
-        "scanner_records / scanner_records 5\n" +
-        "extender_one_record / extender_one_record 0\n"
+      $stdout.string.should =~ /scanner_records \/ scanner_records 5\n/
+      $stdout.string.should =~ /extender_one_record \/ extender_one_record 0\n/
     ensure 
       $stdout = org_stdout
     end

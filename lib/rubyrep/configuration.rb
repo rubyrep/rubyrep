@@ -20,6 +20,7 @@ module RR
       :syncer => :two_way,
       :committer => :default,
       :table_ordering => true,
+      :scan_progress_printer => :progress_bar
     }
     
     # General options.
@@ -32,6 +33,9 @@ module RR
     #   If true, sort tables before syncing as per foreign key dependencies.
     #   (Dependent tables are synced last to reduce risk of foreign key
     #   constraint violations.)
+    # * :+scan_progress_printer+:
+    #   The progress printer key as registered by ScanProgressPrinters#register.
+    #   Determines how the scan progress is visualized.
     # * :+syncer+:
     #   A syncer key as registered by TableSync#register_syncer.
     #   Determines which sync algorithm is used.

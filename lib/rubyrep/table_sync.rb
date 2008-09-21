@@ -40,9 +40,13 @@ module RR
     # See DirectTableScan#run for full description of yielded parameters.
     def run
       success = false
-      helper = SyncHelper.new(self)
+      helper = nil
+
       scan_class = TableScanHelper.scan_class(session)
       scan = scan_class.new(session, left_table, right_table)
+      scan.progress_printer = progress_printer
+
+      helper = SyncHelper.new(self)
       syncer_class = Syncers.syncers[sync_options[:syncer]]
       syncer = syncer_class.new(helper)
 
@@ -52,7 +56,7 @@ module RR
       end
       success = true # considered to be successful if we get till here
     ensure
-      helper.finalize success
+      helper.finalize success if helper
     end
     
   end

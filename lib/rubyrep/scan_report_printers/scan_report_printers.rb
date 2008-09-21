@@ -1,6 +1,7 @@
 module RR
   # Manages scan report printers. Scan report printers implement functionality
   # to report the row differences identified during a scan.
+  # *All* table scans are processed by the *same* printer instance.
   #
   # Scan report printers need to register themselves and their command line options
   # with #register.

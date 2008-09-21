@@ -172,4 +172,26 @@ describe ProxyBlockCursor do
     checksum.should == expected_checksum
   end
   
+  it "checksum called with :proxy_block_size should return the correct row count" do
+    session = ProxyConnection.new proxied_config.left
+
+    cursor = ProxyBlockCursor.new session, 'scanner_records'
+    cursor.prepare_fetch
+
+    _ , _, row_count = cursor.checksum :proxy_block_size => 2
+
+    row_count.should == 2
+  end
+
+  it "checksum called with :max_row should return the correct row count" do
+    session = ProxyConnection.new proxied_config.left
+
+    cursor = ProxyBlockCursor.new session, 'scanner_records'
+    cursor.prepare_fetch
+
+    _ , _, row_count = cursor.checksum :max_row => {'id' => 2}
+
+    row_count.should == 2
+  end
+
 end

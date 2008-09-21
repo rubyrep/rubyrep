@@ -53,4 +53,21 @@ describe TableSync do
       Committers::NeverCommitter.rollback_current_session
     end
   end
+
+#  it "run should hand it's progress reporter to the scan class" do
+#    begin
+#      config = deep_copy(standard_config)
+#      config.options[:committer] = :never_commit
+#      config.options[:delete] = true
+#
+#      session = Session.new(config)
+#      sync = TableSync.new(session, 'scanner_records')
+#
+#      TableScan.any_instance_should_receive(:progress_reporter=) do
+#        sync.run
+#      end
+#    ensure
+#      Committers::NeverCommitter.rollback_current_session
+#    end
+#  end
 end  

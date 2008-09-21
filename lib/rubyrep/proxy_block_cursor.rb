@@ -101,21 +101,24 @@ module RR
     
     # Calculates the checksum from the current row up to the row specified by options.
     # options is a hash including either 
-    #   * :proxy_block_size: The number of rows to scan.
-    #   * :max_row: A row hash of primary key columns specifying the maximum record to scan.
-    # Returns the last row read and the checksum.
+    # * :+proxy_block_size+: The number of rows to scan.
+    # * :+max_row+: A row hash of primary key columns specifying the maximum record to scan.
+    # Returns multiple parameters:
+    # * last row read
+    # * checksum
+    # * number of processed records
     def checksum(options = {})
       reset_checksum
       return_row = row = nil
+      row_count = 0
 
       if options.include? :proxy_block_size
         block_size = options[:proxy_block_size]
         raise ":proxy_block_size must be greater than 0" unless block_size > 0
-        row_index = 0
-        while row_index < block_size and next?
+        while row_count < block_size and next?
           row = next_row
           update_checksum(row)
-          row_index += 1
+          row_count += 1
         end
         return_row = row
       elsif options.include? :max_row
@@ -128,6 +131,7 @@ module RR
             self.last_row = row
             break
           end
+          row_count += 1
           update_checksum(row)
           return_row, row = row, nil
         end  
@@ -135,7 +139,7 @@ module RR
         raise "options must include either :proxy_block_size or :max_row"
       end
       return_keys = return_row.reject {|key, | not primary_key_names.include? key} if return_row
-      return return_keys, current_checksum
+      return return_keys, current_checksum, row_count
     end
   end
 end

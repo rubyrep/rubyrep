@@ -59,7 +59,7 @@ describe SyncRunner do
     $stdout = StringIO.new
     begin
       sync_runner = SyncRunner.new
-      sync_runner.active_printer = ScanReportPrinters::ScanSummaryReporter.new(nil)
+      sync_runner.report_printer = ScanReportPrinters::ScanSummaryReporter.new(nil)
       sync_runner.options = {
         :config_file => "#{File.dirname(__FILE__)}/../config/test_config.rb",
         :table_specs => ["scanner_records"]
@@ -67,8 +67,8 @@ describe SyncRunner do
 
       sync_runner.execute
 
-      $stdout.string.should ==
-        "scanner_records / scanner_records 5\n"
+      $stdout.string.should =~
+        /scanner_records \/ scanner_records 5\n/
 
       left_records = session.left.connection.select_all("select * from scanner_records order by id")
       right_records = session.right.connection.select_all("select * from scanner_records order by id")

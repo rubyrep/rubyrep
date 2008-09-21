@@ -26,6 +26,10 @@ module RR
     
     # Compares the specified left and right rows.
     # +left_cursor+ and +right_cursor+ represent the according ProxyBlockCursor objects.
+    # Yields all identified differences with
+    # * diff_type
+    # * row
+    # #run described the yield parameters in detail.
     def compare_blocks(left_block_cursor, right_block_cursor)
       left_cursor = right_cursor = nil
       
@@ -137,16 +141,23 @@ module RR
       left_cursor = session.left.create_cursor ProxyBlockCursor, left_table
       right_cursor = session.right.create_cursor ProxyBlockCursor, right_table
       while left_cursor.next?
-        left_to, left_checksum = left_cursor.checksum :proxy_block_size => block_size
-        _ , right_checksum = right_cursor.checksum :max_row => left_to
-
+        left_to, left_checksum, left_progress =
+          left_cursor.checksum :proxy_block_size => block_size
+        _ , right_checksum, right_progress =
+          right_cursor.checksum :max_row => left_to
+        combined_progress = left_progress + right_progress
         if left_checksum != right_checksum
           compare_blocks left_cursor, right_cursor do |type, row|
+            steps = type == :conflict ? 2 : 1
+            update_progress steps
+            combined_progress -= steps
             yield type, row
           end
         end
+        update_progress combined_progress
       end
       while right_cursor.next?
+        update_progress 1
         yield :right, right_cursor.next_row
       end
     ensure
