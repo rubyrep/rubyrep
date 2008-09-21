@@ -21,8 +21,8 @@ module RR
     
     # Returns an array of checksums for each encounters row.
     # Each array element is a Hash with the following elements:
-    #   * +:row_keys+: A primary key => value hash identifying the row
-    #   * +:checksum+: the checksum for this row
+    # * +:row_keys+: A primary key => value hash identifying the row
+    # * +:checksum+: the checksum for this row
     attr_accessor :row_checksums
     
     # The maximum total size (in bytes) up to which rows will be cached
@@ -35,8 +35,8 @@ module RR
     attr_accessor :row_cache
         
     # Creates a new cursor
-    #   * session: the current proxy session
-    #   * table: table_name
+    # * session: the current proxy session
+    # * table: table_name
     def initialize(session, table)
       self.max_row_cache_size = 1000000 # this size should be sufficient as long as table doesn't contain blobs
       super
@@ -67,7 +67,7 @@ module RR
       row_dumps
     end
     
-    # Updates block / row checksums and row cache
+    # Updates block / row checksums and row cache with the given +row+.
     def update_checksum(row)
       dump = Marshal.dump(row)
       
