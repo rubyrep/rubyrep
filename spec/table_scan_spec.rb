@@ -37,7 +37,7 @@ describe TableScan do
     progress_printer_class = mock("progress printer class")
     progress_printer = mock("progress printer")
     progress_printer_class.should_receive(:new).
-      with(1, 'extender_one_record', 'extender_no_record').
+      with(1, scan.session, 'extender_one_record', 'extender_no_record').
       and_return(progress_printer)
     progress_printer.should_receive(:step).with(2)
     progress_printer.should_receive(:step).with(3)

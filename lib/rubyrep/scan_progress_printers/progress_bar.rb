@@ -22,10 +22,13 @@ module RR
         @max_marker ||= arg ? arg.to_i : MAX_MARKERS
       end
 
-      # Creates a new progress bar for a task consisting of +max+ steps.
-      # +left_table+ and +right_table+ are the names of the tables that are
-      # getting processed
-      def initialize(max_steps, left_table, right_table)
+      # Creates a new progress bar.
+      # * +max_steps+: number of steps at completion
+      # * +session+: the current Session
+      # * +left_table+: name of the left database table
+      # * +right_table+: name of the right database table
+      def initialize(max_steps, session, left_table, right_table)
+        @use_ansi = session.configuration.options_for_table(left_table)[:use_ansi]
         @max_steps, @current_steps = max_steps, 0
         @max_markers = MAX_MARKERS
         @steps_per_marker = @max_steps.to_f / @max_markers
@@ -37,6 +40,15 @@ module RR
         @current_steps+= step_increment
         new_markers = (@current_steps / @steps_per_marker).to_i
         if new_markers > @current_markers
+
+          if @use_ansi
+            # This part uses ANSI escape sequences to show a running percentage
+            # to the left of the progress bar
+            print "\e[1D" * (@current_markers + 5) if @current_markers != 0 # go left
+            print "#{@current_steps * 100 / @max_steps}%".rjust(4) << " "
+            print "\e[1C" * (@current_markers) if @current_markers != 0 # go back right
+          end
+
           print '.'  * (new_markers - @current_markers)
           @current_markers = new_markers
           putc ' ' if @current_markers == @max_markers

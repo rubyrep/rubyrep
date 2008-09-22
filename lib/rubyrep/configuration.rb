@@ -20,7 +20,8 @@ module RR
       :syncer => :two_way,
       :committer => :default,
       :table_ordering => true,
-      :scan_progress_printer => :progress_bar
+      :scan_progress_printer => :progress_bar,
+      :use_ansi => true
     }
     
     # General options.
@@ -36,6 +37,7 @@ module RR
     # * :+scan_progress_printer+:
     #   The progress printer key as registered by ScanProgressPrinters#register.
     #   Determines how the scan progress is visualized.
+    # * :+use_ansi+: Only use ANSI codes for text output if +true+.
     # * :+syncer+:
     #   A syncer key as registered by TableSync#register_syncer.
     #   Determines which sync algorithm is used.

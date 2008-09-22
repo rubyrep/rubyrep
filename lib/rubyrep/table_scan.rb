@@ -27,7 +27,7 @@ module RR
         total_records =
           session.left.select_one("select count(*) as n from #{left_table}")['n'].to_i +
           session.right.select_one("select count(*) as n from #{right_table}")['n'].to_i
-        @progress_printer_instance = progress_printer.new(total_records, left_table, right_table)
+        @progress_printer_instance = progress_printer.new(total_records, session, left_table, right_table)
       end
       @progress_printer_instance.step(steps)
     end

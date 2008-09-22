@@ -14,6 +14,7 @@ module RR
   #
   #   # Creation of a new ScanProgressPrinter.
   #   # * +max_steps+: number of steps at completion
+  #   # * +session+: the current Session
   #   # * +left_table+: name of the left database table
   #   # * +right_table+: name of the right database table
   #   def initialize(max_steps, left_table, right_table)
