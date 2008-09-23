@@ -32,23 +32,26 @@ module RR
         @max_steps, @current_steps = max_steps, 0
         @max_markers = MAX_MARKERS
         @steps_per_marker = @max_steps.to_f / @max_markers
-        @current_markers = 0
+        @current_markers, @current_percentage = 0, 0
       end
   
       # Increases progress by +step_increment+ steps.
       def step(step_increment = 1)
         @current_steps+= step_increment
         new_markers = (@current_steps / @steps_per_marker).to_i
+
+        new_percentage = @current_steps * 100 / @max_steps
+        if @use_ansi and new_percentage != @current_percentage
+          # This part uses ANSI escape sequences to show a running percentage
+          # to the left of the progress bar
+          print "\e[1D" * (@current_markers + 5) if @current_percentage != 0 # go left
+          print "#{new_percentage}%".rjust(4) << " "
+          print "\e[1C" * @current_markers if @current_markers != 0 # go back right
+          $stdout.flush
+          @current_percentage = new_percentage
+        end
+
         if new_markers > @current_markers
-
-          if @use_ansi
-            # This part uses ANSI escape sequences to show a running percentage
-            # to the left of the progress bar
-            print "\e[1D" * (@current_markers + 5) if @current_markers != 0 # go left
-            print "#{@current_steps * 100 / @max_steps}%".rjust(4) << " "
-            print "\e[1C" * (@current_markers) if @current_markers != 0 # go back right
-          end
-
           print '.'  * (new_markers - @current_markers)
           @current_markers = new_markers
           putc ' ' if @current_markers == @max_markers
