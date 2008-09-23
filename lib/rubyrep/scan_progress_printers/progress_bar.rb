@@ -4,7 +4,7 @@ module RR
     # A helper class to print a text progress bar.
     class ProgressBar
 
-      MAX_MARKERS = 40 #length of the progress bar (in characters)
+      MAX_MARKERS = 25 #length of the progress bar (in characters)
 
       # Register ProgressBar with the given command line options.
       # (Command line format as specified by OptionParser#on.)
