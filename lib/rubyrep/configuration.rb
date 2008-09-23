@@ -77,7 +77,9 @@ module RR
     # * a table name or
     # * a table pair (e. g. "my_left_table, my_right_table")
     # * a regexp matching multiple tables.
-    # +options+ is hash with possible values as described under #options.
+    # +options+ is hash with possible generic values as described under #options.
+    # Additional table specific options:
+    # * :+primary_key_names+: array of primary key names
     def add_tables(table_spec, options = {})
       i = nil
       tables_with_options.each_with_index { |table_options, k|
@@ -99,11 +101,17 @@ module RR
     # Also includes the general options as returned by #options.
     # (Table specific options overwrite the general options).
     # 
-    # Possible option values are described under #options.
+    # Possible option values are described under #add_tables.
     def options_for_table(table)
       resulting_options = options.clone
       tables_with_options.each do |table_options|
-        resulting_options.merge! table_options[1] if table_options[0] === table
+        match = false
+        if table_options[0].kind_of? Regexp
+          match = (table_options[0] =~ table)
+        else
+          match = (table_options[0].sub(/(^.*),.*/,'\1').strip == table)
+        end
+        resulting_options.merge! table_options[1] if match
       end
 
       # Merge the default syncer options in (if syncer has some)

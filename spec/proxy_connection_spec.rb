@@ -78,6 +78,12 @@ describe ProxyConnection do
     @connection.primary_key_names('scanner_records').should == ['id']
   end
 
+  it "primary_key_names should return the manual primary keys if they exist" do
+    @connection.stub!(:manual_primary_keys).
+      and_return({'scanner_records' => ['manual_key']})
+    @connection.primary_key_names('scanner_records').should == ['manual_key']
+  end
+
   it "primary_key_names should cache the primary primary keys" do
     @connection.connection.should_receive(:primary_key_names) \
       .with('dummy_table').once.and_return(['dummy_key'])

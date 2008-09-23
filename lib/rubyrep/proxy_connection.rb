@@ -39,6 +39,11 @@ module RR
     
     # Hash of table_name => array of column names pairs.
     attr_accessor :table_column_names
+
+    # A hash of manually overwritten primary keys:
+    # * key: table_name
+    # * value: array of primary key names
+    attr_accessor :manual_primary_keys
     
     # Returns an array of primary key names for the given +table_name+.
     # Caches the result for future calls.
@@ -46,7 +51,8 @@ module RR
       self.primary_key_names_cache ||= {}
       result = primary_key_names_cache[table_name]
       unless result
-        result = primary_key_names_cache[table_name] = connection.primary_key_names(table_name)
+        result = manual_primary_keys[table_name] || connection.primary_key_names(table_name)
+        primary_key_names_cache[table_name] = result
       end
       result
     end
@@ -65,6 +71,7 @@ module RR
     # +config+ is a hash as described by ActiveRecord::Base#establish_connection
     def initialize(config)
       self.connection = ConnectionExtenders.db_connect config
+      self.manual_primary_keys = {}
     end
     
     # Destroys the session

@@ -68,6 +68,24 @@ describe Configuration do
       merge(:bla => :blok)
   end
 
+  it "options_for_table should match against table pair specs" do
+    config = Configuration.new
+    config.add_tables('a, b', {:bla => :blub})
+    config.options_for_table('a')[:bla].should == :blub
+  end
+
+  it "options_for_table should match against regular expression specs" do
+    config = Configuration.new
+    config.add_tables(/a/, {:bla => :blub})
+    config.options_for_table('a')[:bla].should == :blub
+  end
+
+  it "options_for_table should match against pure table name specs" do
+    config = Configuration.new
+    config.add_tables('a', {:bla => :blub})
+    config.options_for_table('a')[:bla].should == :blub
+  end
+
   it "add_options_for_table should not create table_spec duplicates" do
     config = Configuration.new
     config.add_tables(/a/, {:bla => :blub})

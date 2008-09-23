@@ -209,9 +209,9 @@ describe BaseRunner do
 
       # create and install a dummy processor
       processor = mock("dummy_processor")
-      processor.should_receive(:run).and_yield(:left, :dummy_row)
-      processor.should_receive(:progress_printer=)
-      runner.should_receive(:create_processor).and_return(processor)
+      processor.stub!(:run).and_yield(:left, :dummy_row)
+      processor.stub!(:progress_printer=)
+      runner.stub!(:create_processor).and_return(processor)
       
       runner.execute
       

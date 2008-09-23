@@ -147,6 +147,11 @@ def create_sample_schema(config)
       t.column :binary_test, :binary
       t.column :text_test, :text
     end rescue nil
+
+    create_table :table_with_manual_key, :id => false do |t|
+      t.column :id, :integer
+      t.column :name, :string
+    end
   end
 end
 

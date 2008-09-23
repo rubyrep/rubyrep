@@ -64,7 +64,8 @@ def mock_active_record(number_of_calls)
   dummy_connection = Object.new
   # We have a spec testing behaviour for non-existing extenders.
   # So extend might not be called in all cases
-  dummy_connection.should_receive(:extend).any_number_of_times
+  dummy_connection.stub!(:extend)
+  dummy_connection.stub!(:tables).and_return([])
     
   ConnectionExtenders::DummyActiveRecord.should_receive(:connection).send(number_of_calls) \
     .and_return {dummy_connection}

@@ -31,6 +31,27 @@ module RR
     
     # Hash to hold under either :left or :right the according Drb / direct DatabaseProxy
     attr_accessor :proxies
+
+    # Creates a hash of manual primary key names as can be specified with
+    # Configuration#add_tables for the given database arm.
+    # * +db_arm: should be either :left or :right
+    #
+    # Returns the identified manual primary keys. This is a hash with
+    # * key: table_name
+    # * value: array of primary key names
+    def manual_primary_keys(db_arm)
+      manual_primary_keys = {}
+      resolver = TableSpecResolver.new self
+      table_pairs = resolver.resolve configuration.tables
+      table_pairs.each do |table_pair|
+        key_names = configuration.options_for_table(table_pair[:left_table])[:primary_key_names]
+        if key_names
+          table_name = db_arm == :left ? table_pair[:left_table] : table_pair[:right_table]
+          manual_primary_keys[table_name] = key_names
+        end
+      end
+      manual_primary_keys
+    end
     
     # Does the actual work of establishing a database connection
     # db_arm:: should be either :left or :right
@@ -76,6 +97,7 @@ module RR
       
       # Connect the left database / proxy
       self.send connection_method, :left, configuration
+      left.manual_primary_keys = manual_primary_keys(:left)
       
       # If both database configurations point to the same database
       # then don't create the database connection twice
@@ -83,6 +105,7 @@ module RR
         self.right = self.left
       else
         self.send connection_method, :right, configuration
+        right.manual_primary_keys = manual_primary_keys(:right)
       end  
     end
   end
