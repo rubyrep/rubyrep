@@ -14,6 +14,12 @@ module RR
     # * +proxy_port+: port on which the proxy is listening
     attr_accessor :right
     
+    # Returns true unless running on windows...
+    def self.true_unless_running_on_windows
+      # Not using RUBY_PLATFORM as it should also work under JRuby
+      not ENV['OS'] =~ /windows/i
+    end
+
     # Default #options for a new Configuration object.
     DEFAULT_OPTIONS = {
       :proxy_block_size => 1000,
@@ -21,7 +27,7 @@ module RR
       :committer => :default,
       :table_ordering => true,
       :scan_progress_printer => :progress_bar,
-      :use_ansi => true
+      :use_ansi => true_unless_running_on_windows,
     }
     
     # General options.
@@ -111,7 +117,7 @@ module RR
 
       resulting_options
     end
-    
+
     # initialize configuration settings
     def initialize
       self.left = {}
