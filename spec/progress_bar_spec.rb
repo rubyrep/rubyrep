@@ -54,4 +54,18 @@ describe ProgressBar do
     $stdout.string.count('.').should == ProgressBar::MAX_MARKERS
   end
 
+  it "if max_steps is 0, any step call should go to 100% progress" do
+    config = deep_copy(standard_config)
+    config.options[:use_ansi] = true
+    bar = ProgressBar.new(0, Session.new(config), 'bla', 'blub')
+    bar.step
+    $stdout.string.count('.').should == ProgressBar::MAX_MARKERS
+    $stdout.string.should =~ /100%/
+
+    # Ensure we don't go over 100%
+    $stdout = StringIO.new
+    bar.step
+    $stdout.string.should == ''
+  end
+
 end

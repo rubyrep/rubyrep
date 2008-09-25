@@ -131,7 +131,6 @@ describe ProxiedTableScan do
   end
 
   it "run should update the progress" do
-    # separate test case for left-sided data; right-sided data are already covered in the general test
     session = Session.new
     scan = ProxiedTableScan.new session, 'scanner_records'
     number_steps = 0
@@ -140,6 +139,13 @@ describe ProxiedTableScan do
     end
     scan.run {|_, _|}
     number_steps.should == 8
+  end
+
+  it "run should update the progress even if there are no records" do
+    # it should do that to ensure the progress bar is printed
+    scan = ProxiedTableScan.new Session.new, 'extender_no_record'
+    scan.should_receive(:update_progress).at_least(:once)
+    scan.run {|_, _|}
   end
 end
 

@@ -38,9 +38,9 @@ module RR
       # Increases progress by +step_increment+ steps.
       def step(step_increment = 1)
         @current_steps+= step_increment
-        new_markers = (@current_steps / @steps_per_marker).to_i
+        new_markers = @max_steps != 0 ? (@current_steps / @steps_per_marker).to_i : @max_markers
 
-        new_percentage = @current_steps * 100 / @max_steps
+        new_percentage = @max_steps != 0 ? @current_steps * 100 / @max_steps : 100
         if @use_ansi and new_percentage != @current_percentage
           # This part uses ANSI escape sequences to show a running percentage
           # to the left of the progress bar

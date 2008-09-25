@@ -140,6 +140,7 @@ module RR
       left_cursor = right_cursor = nil
       left_cursor = session.left.create_cursor ProxyBlockCursor, left_table
       right_cursor = session.right.create_cursor ProxyBlockCursor, right_table
+      update_progress 0 # ensures progress bar is printed even if there are no records
       while left_cursor.next?
         left_to, left_checksum, left_progress =
           left_cursor.checksum :proxy_block_size => block_size

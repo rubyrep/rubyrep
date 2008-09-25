@@ -37,6 +37,7 @@ module RR
       right_cursor = TypeCastingCursor.new(session.right, right_table, 
         session.right.select_cursor(session.left.table_select_query(right_table))) 
       left_row = right_row = nil
+      update_progress 0 # ensures progress bar is printed even if there are no records
       while left_row or right_row or left_cursor.next? or right_cursor.next?
         # if there is no current left row, _try_ to load the next one
         left_row ||= left_cursor.next_row if left_cursor.next?
