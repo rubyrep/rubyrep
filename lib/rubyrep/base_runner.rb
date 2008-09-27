@@ -157,9 +157,9 @@ EOS
       table_pairs = resolver.resolve table_specs
       table_pairs = prepare_table_pairs(table_pairs)
       table_pairs.each do |table_pair|
-        report_printer.scan table_pair[:left_table], table_pair[:right_table] do
+        report_printer.scan table_pair[:left], table_pair[:right] do
           processor = create_processor \
-            table_pair[:left_table], table_pair[:right_table]
+            table_pair[:left], table_pair[:right]
           processor.progress_printer = progress_printer
           processor.run do |diff_type, row|
             report_printer.report_difference diff_type, row

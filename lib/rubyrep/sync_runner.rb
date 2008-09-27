@@ -31,11 +31,11 @@ module RR
     def prepare_table_pairs(table_pairs)
       sorted_table_pairs = table_pairs
       if table_ordering?
-        left_tables = table_pairs.map {|table_pair| table_pair[:left_table]}
+        left_tables = table_pairs.map {|table_pair| table_pair[:left]}
         sorted_left_tables = TableSorter.new(session, left_tables).sort
         sorted_table_pairs = sorted_left_tables.map do |left_table|
           table_pairs.find do |table_pair|
-            table_pair[:left_table] == left_table
+            table_pair[:left] == left_table
           end
         end
       end

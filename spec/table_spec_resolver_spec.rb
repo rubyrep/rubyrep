@@ -17,32 +17,32 @@ describe TableSpecResolver do
   
   it "resolve should resolve direct table names correctly" do
     @resolver.resolve(['bla', 'blub']).should == [
-      {:left_table => 'bla', :right_table => 'bla'},
-      {:left_table => 'blub', :right_table => 'blub'}
+      {:left => 'bla', :right => 'bla'},
+      {:left => 'blub', :right => 'blub'}
     ]
   end
   
   it "resolve should resolve table name pairs correctly" do
     @resolver.resolve(['my_left_table , my_right_table']).should == [
-      {:left_table => 'my_left_table', :right_table => 'my_right_table'}
+      {:left => 'my_left_table', :right => 'my_right_table'}
     ]
   end
   
   it "resolve should resolve string in form of regular expression correctly" do
     @resolver.resolve(['/SCANNER_RECORDS|scanner_text_key/']).sort { |a,b|
-      a[:left_table] <=> b[:left_table]
+      a[:left] <=> b[:left]
     }.should == [
-      {:left_table => 'scanner_records', :right_table => 'scanner_records'},
-      {:left_table => 'scanner_text_key', :right_table => 'scanner_text_key'}
+      {:left => 'scanner_records', :right => 'scanner_records'},
+      {:left => 'scanner_text_key', :right => 'scanner_text_key'}
     ]
   end
 
   it "resolve should resolve regular expressions correctly" do
     @resolver.resolve([/SCANNER_RECORDS|scanner_text_key/]).sort { |a,b|
-      a[:left_table] <=> b[:left_table]
+      a[:left] <=> b[:left]
     }.should == [
-      {:left_table => 'scanner_records', :right_table => 'scanner_records'},
-      {:left_table => 'scanner_text_key', :right_table => 'scanner_text_key'}
+      {:left => 'scanner_records', :right => 'scanner_records'},
+      {:left => 'scanner_text_key', :right => 'scanner_text_key'}
     ]
   end
 
@@ -54,7 +54,7 @@ describe TableSpecResolver do
         '/scanner_records/'
       ]
     ).should == [
-      {:left_table => 'scanner_records', :right_table => 'scanner_records'}
+      {:left => 'scanner_records', :right => 'scanner_records'}
     ]
   end
 end

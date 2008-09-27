@@ -44,9 +44,9 @@ module RR
       resolver = TableSpecResolver.new self
       table_pairs = resolver.resolve configuration.tables
       table_pairs.each do |table_pair|
-        key_names = configuration.options_for_table(table_pair[:left_table])[:primary_key_names]
+        key_names = configuration.options_for_table(table_pair[:left])[:primary_key_names]
         if key_names
-          table_name = db_arm == :left ? table_pair[:left_table] : table_pair[:right_table]
+          table_name = table_pair[db_arm]
           manual_primary_keys[table_name] = key_names
         end
       end

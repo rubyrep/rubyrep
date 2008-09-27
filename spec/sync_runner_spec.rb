@@ -14,7 +14,7 @@ describe SyncRunner do
   end
   
   def convert_table_array_to_table_pair_array(tables)
-    tables.map {|table| {:left_table => table, :right_table => table}}
+    tables.map {|table| {:left => table, :right => table}}
   end
 
   it "prepare_table_pairs should sort the tables correctly" do

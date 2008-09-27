@@ -21,7 +21,7 @@ module RR
     # * actual regular expressions
     # Returns an array of table name pairs in Hash form.
     # For example something like
-    #   [{:left_table => 'my_table', :right_table => 'my_table_backup'}]
+    #   [{:left => 'my_table', :right => 'my_table_backup'}]
     # Takes care that a table is only returned once.
     def resolve(table_specs)
       table_pairs = []
@@ -35,13 +35,13 @@ module RR
           table_spec = table_spec.sub(/^\/(.*)\/$/,'\1') # remove leading and trailing slash
           matching_tables = tables.grep(Regexp.new(table_spec, Regexp::IGNORECASE, 'U'))
           matching_tables.each do |table|
-            table_pairs << {:left_table => table, :right_table => table}
+            table_pairs << {:left => table, :right => table}
           end
         when /.+,.+/ # matches e. g. 'users,users_backup'
           pair = table_spec.match(/(.*),(.*)/)[1..2].map { |str| str.strip }
-          table_pairs << {:left_table  => pair[0], :right_table => pair[1]}
+          table_pairs << {:left  => pair[0], :right => pair[1]}
         else # everything else: just a normal table
-          table_pairs << {:left_table => table_spec.strip, :right_table => table_spec.strip}
+          table_pairs << {:left => table_spec.strip, :right => table_spec.strip}
         end
       end
       remove_duplicate_table_pairs(table_pairs)
@@ -57,9 +57,9 @@ module RR
       processed_left_tables = {}
       resulting_table_pairs = []
       table_pairs.each do |table_pair|
-        unless processed_left_tables.include? table_pair[:left_table]
+        unless processed_left_tables.include? table_pair[:left]
           resulting_table_pairs << table_pair
-          processed_left_tables[table_pair[:left_table]] = true
+          processed_left_tables[table_pair[:left]] = true
         end
       end
       resulting_table_pairs
