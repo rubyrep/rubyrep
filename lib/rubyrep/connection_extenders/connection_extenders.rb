@@ -58,8 +58,12 @@ module RR
       else
         raise "No ConnectionExtender available for :#{config[:adapter]}"
       end
-      mod = ConnectionExtenders.extenders[extender]
-      connection.extend mod
+      connection_module = ConnectionExtenders.extenders[extender]
+      connection.extend connection_module
+
+      replication_module = ReplicationExtenders.extenders[config[:adapter].to_sym]
+      connection.extend replication_module if replication_module
+      
       connection
     end
     

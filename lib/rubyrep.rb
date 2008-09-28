@@ -9,7 +9,7 @@ require 'active_record'
 require 'configuration'
 require 'initializer'
 require 'session'
-require 'connection_extenders/registration'
+require 'connection_extenders/connection_extenders'
 require 'table_scan_helper'
 require 'table_scan'
 require 'type_casting_cursor'
@@ -36,9 +36,16 @@ require 'syncers/syncers'
 require 'syncers/two_way_syncer'
 require 'sync_runner'
 
-Dir["#{File.dirname(__FILE__)}/rubyrep/connection_extenders/*.rb"].each do |extender| 
+Dir["#{File.dirname(__FILE__)}/rubyrep/connection_extenders/*.rb"].each do |extender|
   # jdbc_extender.rb is only loaded if we are running on jruby
   require extender unless extender =~ /jdbc/ and not RUBY_PLATFORM =~ /java/
+end
+
+require 'replication_initializer'
+require 'replication_extenders/replication_extenders'
+
+Dir["#{File.dirname(__FILE__)}/rubyrep/replication_extenders/*.rb"].each do |extender|
+  require extender
 end
 
 module RR

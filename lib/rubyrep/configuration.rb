@@ -28,6 +28,9 @@ module RR
       :table_ordering => true,
       :scan_progress_printer => :progress_bar,
       :use_ansi => true_unless_running_on_windows,
+
+      :rep_prefix => 'rr',
+      :key_sep => '|',
     }
     
     # General options.
@@ -48,6 +51,9 @@ module RR
     #   A syncer key as registered by TableSync#register_syncer.
     #   Determines which sync algorithm is used.
     # * further options as defined by each syncer
+    # Replication specific settings:
+    # * :+rep_prefix+: the prefix that is put in front of all created database objects
+    # * :+key_sep+: which string separates columns in the key column of the change log table
     attr_reader :options
     
     # Merges the specified +options+ hash into the existing options

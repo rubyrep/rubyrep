@@ -6,7 +6,7 @@ include RR
 extenders = [:mysql, :postgres]
 
 extenders.each do |extender|
-  describe "#{extender.to_s.capitalize} Extender" do
+  describe "#{extender.to_s.capitalize} Replication Extender" do
     before(:each) do
       @org_test_db = ENV['RR_TEST_DB']
       ENV['RR_TEST_DB'] = extender.to_s
@@ -27,7 +27,7 @@ extenders.each do |extender|
       it_should_behave_like "ConnectionExtender"
     rescue Exception => e
       at_exit do
-        puts "#{__FILE__}:#{__LINE__}: DB Connection failed with '#{e}' ==> #{extender.to_s.capitalize} not tested"
+        puts "#{__FILE__}:#{__LINE__}: DB Connection failed with '#{e}' ==> #{extender.to_s.capitalize} connection extender not tested"
       end
     end
   end

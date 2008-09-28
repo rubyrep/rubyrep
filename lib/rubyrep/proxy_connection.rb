@@ -21,7 +21,8 @@ module RR
       :quote_table_name, :select_cursor, :execute, \
       :select_one, :tables, \
       :begin_db_transaction, :rollback_db_transaction, :commit_db_transaction, \
-      :referenced_tables
+      :referenced_tables, \
+      :create_replication_trigger
     
     # Caching the primary keys. This is a hash with
     #   * key: table name

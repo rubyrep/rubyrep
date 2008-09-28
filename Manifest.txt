@@ -16,10 +16,10 @@ lib/rubyrep.rb
 lib/rubyrep/base_runner.rb
 lib/rubyrep/committers/committers.rb
 lib/rubyrep/configuration.rb
+lib/rubyrep/connection_extenders/connection_extenders.rb
 lib/rubyrep/connection_extenders/jdbc_extender.rb
 lib/rubyrep/connection_extenders/mysql_extender.rb
 lib/rubyrep/connection_extenders/postgresql_extender.rb
-lib/rubyrep/connection_extenders/registration.rb
 lib/rubyrep/database_proxy.rb
 lib/rubyrep/direct_table_scan.rb
 lib/rubyrep/initializer.rb
@@ -29,6 +29,9 @@ lib/rubyrep/proxy_connection.rb
 lib/rubyrep/proxy_cursor.rb
 lib/rubyrep/proxy_row_cursor.rb
 lib/rubyrep/proxy_runner.rb
+lib/rubyrep/replication_extenders/postgresql_replication.rb
+lib/rubyrep/replication_extenders/replication_extenders.rb
+lib/rubyrep/replication_initializer.rb
 lib/rubyrep/scan_progress_printers/progress_bar.rb
 lib/rubyrep/scan_progress_printers/scan_progress_printers.rb
 lib/rubyrep/scan_report_printers/scan_report_printers.rb
@@ -61,7 +64,8 @@ spec/connection_extender_interface_spec.rb
 spec/connection_extenders_registration_spec.rb
 spec/database_proxy_spec.rb
 spec/database_rake_spec.rb
-spec/db_specific_extender_spec.rb
+spec/db_specific_connection_extenders_spec.rb
+spec/db_specific_replication_extenders_spec.rb
 spec/direct_table_scan_spec.rb
 spec/initializer_spec.rb
 spec/progress_bar_spec.rb
@@ -71,6 +75,9 @@ spec/proxy_connection_spec.rb
 spec/proxy_cursor_spec.rb
 spec/proxy_row_cursor_spec.rb
 spec/proxy_runner_spec.rb
+spec/replication_extender_interface_spec.rb
+spec/replication_extenders_spec.rb
+spec/replication_initializer_spec.rb
 spec/rubyrep_spec.rb
 spec/scan_progress_printers_spec.rb
 spec/scan_report_printers_spec.rb

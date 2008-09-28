@@ -152,6 +152,28 @@ def create_sample_schema(config)
       t.column :id, :integer
       t.column :name, :string
     end
+
+    create_table :rr_change_log do |t|
+      t.column :change_table, :string
+      t.column :change_key, :string
+      t.column :change_type, :string
+      t.column :change_time, :timestamp
+    end
+
+    create_table :rr_active, :id => false do |t|
+      t.column :active, :integer
+    end
+
+    create_table :trigger_test, :id => false do |t|
+      t.column :first_id, :integer
+      t.column :second_id, :integer
+      t.column :name, :string
+    end
+
+    ActiveRecord::Base.connection.execute(<<-end_sql) rescue nil
+      ALTER TABLE trigger_test ADD CONSTRAINT trigger_test_pkey
+        PRIMARY KEY (first_id, second_id)
+    end_sql
   end
 end
 
@@ -169,8 +191,15 @@ def drop_sample_schema(config)
     drop_table :extender_inverted_combined_key rescue nil
     drop_table :extender_combined_key rescue nil
     drop_table :scanner_left_records_only rescue nil
-    drop_table :scanner rescue nil
+    drop_table :scanner_records rescue nil
     drop_table :scanner_text_key rescue nil
+    drop_table :referencing_table rescue nil
+    drop_table :referenced_table rescue nil
+    drop_table :referenced_table2 rescue nil
+    drop_table :table_with_manual_key
+    drop_table :rr_change_log rescue nil
+    drop_table :rr_active rescue nil
+    drop_table :trigger_test rescue nil
   end  
 
   ActiveRecord::Base.connection.disconnect!

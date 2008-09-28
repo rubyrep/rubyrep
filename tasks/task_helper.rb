@@ -3,8 +3,8 @@
 module CreateWithKey
   def self.included(base)
     base.extend(ClassMethods)
-  end  
-  
+  end
+
   module ClassMethods
     # The standard "create" method ignores primary key attributes
     # This method set's _all_ attributes as provided
