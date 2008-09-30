@@ -63,7 +63,7 @@ module RR
           end_sql
 
           # The created triggers can handle the case where the trigger procedure
-          # is updated (that is: temporarily delated and recreated) while the
+          # is updated (that is: temporarily deleted and recreated) while the
           # trigger is running.
           # For that an MySQL internal exception is raised if the trigger
           # procedure cannot be found. The exception is caught by an trigger
