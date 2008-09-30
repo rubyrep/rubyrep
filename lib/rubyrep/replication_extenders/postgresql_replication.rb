@@ -42,8 +42,8 @@ module RR
                 INSERT INTO #{params[:log_table]}(change_table, change_key, change_type, change_time) 
                   SELECT '#{params[:table]}', #{key_clause('OLD', params)}, 'D', now();
               ELSIF (TG_OP = 'UPDATE') THEN
-                INSERT INTO #{params[:log_table]}(change_table, change_key, change_type, change_time)
-                  SELECT '#{params[:table]}', #{key_clause('NEW', params)}, 'U', now();
+                INSERT INTO #{params[:log_table]}(change_table, change_key, change_org_key, change_type, change_time)
+                  SELECT '#{params[:table]}', #{key_clause('NEW', params)}, #{key_clause('OLD', params)}, 'U', now();
               ELSIF (TG_OP = 'INSERT') THEN
                 INSERT INTO #{params[:log_table]}(change_table, change_key, change_type, change_time)
                   SELECT '#{params[:table]}', #{key_clause('NEW', params)}, 'I', now();

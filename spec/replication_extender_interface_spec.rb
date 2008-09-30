@@ -30,14 +30,10 @@ describe "ReplicationExtender", :shared => true do
         'second_id' => 2,
         'name' => 'bla'
       }
-      session.left.update_record 'trigger_test', {
-        'first_id' => 1,
-        'second_id' => 2,
-        'name' => 'blub'
-      }
+      session.left.execute "update trigger_test set second_id = 9 where first_id = 1 and second_id = 2"
       session.left.delete_record 'trigger_test', {
         'first_id' => 1,
-        'second_id' => 2,
+        'second_id' => 9,
       }
 
       rows = session.left.connection.select_all("select * from rr_change_log order by id")
@@ -50,13 +46,13 @@ describe "ReplicationExtender", :shared => true do
 
       rows.each {|row| row.delete 'id'; row.delete 'change_time'}
       rows.should == [
-        {'change_table' => 'trigger_test', 'change_key' => 'first_id|1|second_id|2', 'change_type' => 'I'},
-        {'change_table' => 'trigger_test', 'change_key' => 'first_id|1|second_id|2', 'change_type' => 'U'},
-        {'change_table' => 'trigger_test', 'change_key' => 'first_id|1|second_id|2', 'change_type' => 'D'},
+        {'change_table' => 'trigger_test', 'change_key' => 'first_id|1|second_id|2', 'change_org_key' => nil, 'change_type' => 'I'},
+        {'change_table' => 'trigger_test', 'change_key' => 'first_id|1|second_id|9', 'change_org_key' => 'first_id|1|second_id|2', 'change_type' => 'U'},
+        {'change_table' => 'trigger_test', 'change_key' => 'first_id|1|second_id|9', 'change_org_key' => nil, 'change_type' => 'D'},
       ]
     ensure
-      session.left.execute 'delete from trigger_test'
-      session.left.execute 'delete from rr_change_log'
+      session.left.execute 'delete from trigger_test' if session
+      session.left.execute 'delete from rr_change_log' if session
       session.left.rollback_db_transaction if session
     end
   end
@@ -97,11 +93,12 @@ describe "ReplicationExtender", :shared => true do
       rows.should == [{
           'change_table' => 'trigger_test',
           'change_key' => 'first_id|1|second_id|3',
+          'change_org_key' => nil,
           'change_type' => 'I'
         }]
     ensure
-      session.left.execute 'delete from trigger_test'
-      session.left.execute 'delete from rr_change_log'
+      session.left.execute 'delete from trigger_test' if session
+      session.left.execute 'delete from rr_change_log' if session
       session.left.rollback_db_transaction if session
     end
   end

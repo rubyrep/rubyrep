@@ -53,9 +53,12 @@ describe ReplicationInitializer do
       row.should == {
         'change_table' => 'trigger_test',
         'change_key' => 'first_id|1|second_id|2',
+        'change_org_key' => nil,
         'change_type' => 'I'
       }
     ensure
+      session.left.execute 'delete from trigger_test' if session
+      session.left.execute 'delete from rr_change_log' if session
       session.left.rollback_db_transaction if session
     end
   end

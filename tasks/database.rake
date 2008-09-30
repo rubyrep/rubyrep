@@ -156,6 +156,7 @@ def create_sample_schema(config)
     create_table :rr_change_log do |t|
       t.column :change_table, :string
       t.column :change_key, :string
+      t.column :change_org_key, :string
       t.column :change_type, :string
       t.column :change_time, :timestamp
     end

@@ -24,11 +24,11 @@ module RR
         end
 
         execute(<<-end_sql)
-          CREATE PROCEDURE #{params[:trigger_name]}(change_key varchar(2000), change_type varchar(1))
+          CREATE PROCEDURE #{params[:trigger_name]}(change_key varchar(2000), change_org_key varchar(2000), change_type varchar(1))
           p: BEGIN
             #{activity_check}
-            INSERT INTO #{params[:log_table]}(change_table, change_key, change_type, change_time)
-              VALUES('#{params[:table]}', change_key, change_type, now());
+            INSERT INTO #{params[:log_table]}(change_table, change_key, change_org_key, change_type, change_time)
+              VALUES('#{params[:table]}', change_key, change_org_key, change_type, now());
           END;
         end_sql
         
@@ -58,7 +58,6 @@ module RR
         create_or_replace_replication_trigger_function params
 
         %w(insert update delete).each do |action|
-          trigger_var = action == 'delete' ? 'OLD' : 'NEW'
           execute(<<-end_sql)
             DROP TRIGGER IF EXISTS #{params[:trigger_name]}_#{action};
           end_sql
@@ -71,6 +70,13 @@ module RR
           # internal handler. 
           # The handler causes the trigger to retry calling the
           # trigger procedure several times with short breaks in between.
+
+          trigger_var = action == 'delete' ? 'OLD' : 'NEW'
+          if action == 'update'
+            call_statement = "CALL rr_trigger_test(#{key_clause('NEW', params)}, #{key_clause('OLD', params)}, '#{action[0,1].upcase}');"
+          else
+            call_statement = "CALL rr_trigger_test(#{key_clause(trigger_var, params)}, null, '#{action[0,1].upcase}');"
+          end
           execute(<<-end_sql)
             CREATE TRIGGER #{params[:trigger_name]}_#{action}
               AFTER #{action} ON #{params[:table]} FOR EACH ROW BEGIN
@@ -84,7 +90,7 @@ module RR
                 END;
                 REPEAT
                   SET failed = 0;
-                  CALL rr_trigger_test(#{key_clause(trigger_var, params)}, '#{action[0,1].upcase}');
+                  #{call_statement}
                 UNTIL failed = 0 OR number_attempts >= 40 END REPEAT;
               END;
           end_sql
