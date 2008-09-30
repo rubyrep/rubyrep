@@ -6,15 +6,14 @@ module RR
       RR::ReplicationExtenders.register :postgresql => self
 
       # Returns the key clause that is used in the trigger function.
-      # * +trigger_var+: should be either 'NEW' or 'FALSE'
-      # * +args+: the argument hash as described in #create_rep_trigger
-      def key_clause(trigger_var, args)
-        args[:keys].
-          map { |key| "'#{key}#{args[:key_sep]}' || #{trigger_var}.#{key}"}.
-          join(" || '#{args[:key_sep]}' || ")
+      # * +trigger_var+: should be either 'NEW' or 'OLD'
+      # * +params+: the parameter hash as described in #create_rep_trigger
+      def key_clause(trigger_var, params)
+        params[:keys].
+          map { |key| "'#{key}#{params[:key_sep]}' || #{trigger_var}.#{key}"}.
+          join(" || '#{params[:key_sep]}' || ")
       end
       private :key_clause
-
 
       # Creates or replaces the replication trigger function.
       # See #create_replication_trigger for a descriptions of the +params+ hash.

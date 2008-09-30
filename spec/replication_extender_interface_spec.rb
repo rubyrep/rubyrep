@@ -55,6 +55,8 @@ describe "ReplicationExtender", :shared => true do
         {'change_table' => 'trigger_test', 'change_key' => 'first_id|1|second_id|2', 'change_type' => 'D'},
       ]
     ensure
+      session.left.execute 'delete from trigger_test'
+      session.left.execute 'delete from rr_change_log'
       session.left.rollback_db_transaction if session
     end
   end
@@ -98,6 +100,8 @@ describe "ReplicationExtender", :shared => true do
           'change_type' => 'I'
         }]
     ensure
+      session.left.execute 'delete from trigger_test'
+      session.left.execute 'delete from rr_change_log'
       session.left.rollback_db_transaction if session
     end
   end
