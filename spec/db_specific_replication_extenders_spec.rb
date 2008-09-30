@@ -2,6 +2,7 @@ require File.dirname(__FILE__) + '/spec_helper.rb'
 require 'yaml'
 
 require 'replication_extender_interface_spec.rb'
+require 'postgresql_replication_spec.rb'
 
 include RR
 
@@ -27,6 +28,7 @@ extenders.each do |extender|
         Session.new read_config(extender)
       end
       it_should_behave_like "ReplicationExtender"
+      it_should_behave_like "PostgreSQLReplication" if extender == :postgres
     rescue Exception => e
       at_exit do
         puts "#{__FILE__}:#{__LINE__}: DB Connection failed with '#{e}' ==> #{extender.to_s.capitalize} replication extender not tested"

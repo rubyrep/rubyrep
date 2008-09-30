@@ -19,7 +19,7 @@ module RR
     def_delegators \
       :connection, :columns, :quote_column_name, \
       :quote_table_name, :select_cursor, :execute, \
-      :select_one, :tables, \
+      :select_one, :select_all, :tables, \
       :begin_db_transaction, :rollback_db_transaction, :commit_db_transaction, \
       :referenced_tables, \
       :create_replication_trigger
