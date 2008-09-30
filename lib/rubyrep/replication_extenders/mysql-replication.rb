@@ -74,14 +74,14 @@ module RR
                   -- :exclude_rr_activity mode.
                   -- To handle this: wait a little bit and try again to call the
                   -- procedure.
-                  SELECT SLEEP(0.1) INTO dummy;
+                  SELECT SLEEP(0.05) INTO dummy;
                   SET failed = 1;
                   SET number_attempts = number_attempts + 1;
                 END;
                 REPEAT
                   SET failed = 0;
                   CALL rr_trigger_test(#{key_clause(trigger_var, params)}, '#{action[0,1].upcase}');
-                UNTIL failed = 0 OR number_attempts >= 5 END REPEAT;
+                UNTIL failed = 0 OR number_attempts >= 40 END REPEAT;
               END;
           end_sql
         end
