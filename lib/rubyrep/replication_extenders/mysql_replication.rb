@@ -11,6 +11,7 @@ module RR
         execute(<<-end_sql)
           DROP PROCEDURE IF EXISTS #{params[:trigger_name]};
         end_sql
+        
         activity_check = ""
         if params[:exclude_rr_activity] then
           activity_check = <<-end_sql
