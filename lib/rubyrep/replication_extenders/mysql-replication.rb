@@ -68,9 +68,12 @@ module RR
                 DECLARE failed INT;
                 DECLARE dummy INT;
                 DECLARE CONTINUE HANDLER FOR 1305 BEGIN
-                  -- Trigger procedure could not be found.
-                  -- This might be because it is currently being updated
-                  -- Wait a little bit and try again to call the procedure
+                  -- Exception is raised if trigger procedure cannot be found.
+                  -- There is a chance for this to happen, if the trigger
+                  -- function is updated to changed to or from
+                  -- :exclude_rr_activity mode.
+                  -- To handle this: wait a little bit and try again to call the
+                  -- procedure.
                   SELECT SLEEP(0.1) INTO dummy;
                   SET failed = 1;
                   SET number_attempts = number_attempts + 1;
