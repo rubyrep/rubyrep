@@ -61,6 +61,15 @@ module RR
           execute(<<-end_sql)
             DROP TRIGGER IF EXISTS #{params[:trigger_name]}_#{action};
           end_sql
+
+          # The created triggers can handle the case where the trigger procedure
+          # is updated (that is: temporarily delated and recreated) while the
+          # trigger is running.
+          # For that an MySQL internal exception is raised if the trigger
+          # procedure cannot be found. The exception is caught by an trigger
+          # internal handler. 
+          # The handler causes the trigger to retry calling the
+          # trigger procedure several times with short breaks in between.
           execute(<<-end_sql)
             CREATE TRIGGER #{params[:trigger_name]}_#{action}
               AFTER #{action} ON #{params[:table]} FOR EACH ROW BEGIN
@@ -68,12 +77,6 @@ module RR
                 DECLARE failed INT;
                 DECLARE dummy INT;
                 DECLARE CONTINUE HANDLER FOR 1305 BEGIN
-                  -- Exception is raised if trigger procedure cannot be found.
-                  -- There is a chance for this to happen, if the trigger
-                  -- function is updated to changed to or from
-                  -- :exclude_rr_activity mode.
-                  -- To handle this: wait a little bit and try again to call the
-                  -- procedure.
                   SELECT SLEEP(0.05) INTO dummy;
                   SET failed = 1;
                   SET number_attempts = number_attempts + 1;
