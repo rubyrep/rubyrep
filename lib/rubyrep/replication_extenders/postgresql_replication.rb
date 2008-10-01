@@ -87,7 +87,14 @@ module RR
       # * +trigger_name+: name of the trigger
       # * +table_name+: name of the table
       def replication_trigger_exists?(trigger_name, table_name)
-        !select_all("select 1 from information_schema.triggers where trigger_name = '#{trigger_name}' and event_object_table = '#{table_name}'").empty?
+        search_path = select_one("show search_path")['search_path']
+        schemas = search_path.split(/,/).map { |p| quote(p) }.join(',')
+        !select_all(<<-end_sql).empty?
+          select 1 from information_schema.triggers
+          where event_object_schema in (#{schemas})
+          and trigger_name = '#{trigger_name}'
+          and event_object_table = '#{table_name}'
+        end_sql
       end
     end
   end
