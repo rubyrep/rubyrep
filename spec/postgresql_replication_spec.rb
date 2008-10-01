@@ -14,7 +14,7 @@ describe "PostgreSQLReplication", :shared => true do
       session = Session.new
       session.left.begin_db_transaction
       unless session.left.select_all("select lanname from pg_language where lanname = 'plpgsql'").empty?
-        execute "DROP LANGUAGE plpgsql"
+        session.left.execute "DROP LANGUAGE plpgsql"
       end
       params = {
         :trigger_name => 'rr_trigger_test',
