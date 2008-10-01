@@ -102,4 +102,37 @@ describe "ReplicationExtender", :shared => true do
       session.left.rollback_db_transaction if session
     end
   end
+
+  it "created triggers should work with tables having non-combined primary keys" do
+    session = nil
+    begin
+      session = Session.new
+      session.left.begin_db_transaction
+      params = {
+        :trigger_name => 'rr_trigger_test',
+        :table => 'trigger_test',
+        :keys => ['first_id'],
+        :log_table => 'rr_change_log',
+        :key_sep => '|',
+      }
+      session.left.create_replication_trigger params
+      session.left.insert_record 'trigger_test', {
+        'first_id' => 1,
+        'second_id' => 2,
+        'name' => 'bla'
+      }
+      rows = session.left.connection.select_all("select * from rr_change_log order by id")
+      rows.each {|row| row.delete 'id'; row.delete 'change_time'}
+      rows.should == [{
+          'change_table' => 'trigger_test',
+          'change_key' => 'first_id|1',
+          'change_org_key' => nil,
+          'change_type' => 'I'
+        }]
+    ensure
+      session.left.execute 'delete from trigger_test' if session
+      session.left.execute 'delete from rr_change_log' if session
+      session.left.rollback_db_transaction if session
+    end
+  end
 end
