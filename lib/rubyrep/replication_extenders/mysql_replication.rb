@@ -112,7 +112,7 @@ module RR
       # * +trigger_name+: name of the trigger
       # * +table_name+: name of the table
       def replication_trigger_exists?(trigger_name, table_name)
-        !select_all("select 1 from information_schema.triggers where trigger_name = '#{trigger_name}_insert' and event_object_table = '#{table_name}'").empty?
+        !select_all("select 1 from information_schema.triggers where trigger_schema = database() and trigger_name = '#{trigger_name}_insert' and event_object_table = '#{table_name}'").empty?
       end
     end
   end
