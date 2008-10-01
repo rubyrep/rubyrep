@@ -1,7 +1,7 @@
 module RR
   module ReplicationExtenders
 
-    # Provides PostgreSQL specific functionality for database replication
+    # Provides Mysql specific functionality for database replication
     module MysqlReplication
       RR::ReplicationExtenders.register :mysql => self
 
