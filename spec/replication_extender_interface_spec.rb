@@ -135,4 +135,31 @@ describe "ReplicationExtender", :shared => true do
       session.left.rollback_db_transaction if session
     end
   end
+
+  it "replication_trigger_exists? and drop_replication_trigger should work correctly" do
+    session = nil
+    begin
+      session = Session.new
+      if session.left.replication_trigger_exists?('rr_trigger_test', 'trigger_test')
+        session.left.drop_replication_trigger('rr_trigger_test', 'trigger_test')
+      end
+      session.left.begin_db_transaction
+      params = {
+        :trigger_name => 'rr_trigger_test',
+        :table => 'trigger_test',
+        :keys => ['first_id'],
+        :log_table => 'rr_change_log',
+        :key_sep => '|',
+      }
+      session.left.create_replication_trigger params
+
+      session.left.replication_trigger_exists?('rr_trigger_test', 'trigger_test').
+        should be_true
+      session.left.drop_replication_trigger('rr_trigger_test', 'trigger_test')
+      session.left.replication_trigger_exists?('rr_trigger_test', 'trigger_test').
+        should be_false
+    ensure
+      session.left.rollback_db_transaction if session
+    end
+  end
 end

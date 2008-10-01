@@ -74,6 +74,21 @@ module RR
               FOR EACH ROW EXECUTE PROCEDURE #{params[:trigger_name]}();
         end_sql
       end
+
+      # Removes a trigger and related trigger procedure.
+      # * +trigger_name+: name of the trigger
+      # * +table_name+: name of the table for which the trigger exists
+      def drop_replication_trigger(trigger_name, table_name)
+        execute "DROP TRIGGER #{trigger_name} ON #{table_name};"
+        execute "DROP FUNCTION #{trigger_name}();"
+      end
+
+      # Returns +true+ if the named trigger exists for the named table.
+      # * +trigger_name+: name of the trigger
+      # * +table_name+: name of the table
+      def replication_trigger_exists?(trigger_name, table_name)
+        !select_all("select 1 from information_schema.triggers where trigger_name = '#{trigger_name}' and event_object_table = '#{table_name}'").empty?
+      end
     end
   end
 end

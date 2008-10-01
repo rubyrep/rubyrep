@@ -22,7 +22,7 @@ module RR
       :select_one, :select_all, :tables, \
       :begin_db_transaction, :rollback_db_transaction, :commit_db_transaction, \
       :referenced_tables, \
-      :create_replication_trigger
+      :create_replication_trigger, :drop_replication_trigger, :replication_trigger_exists?
     
     # Caching the primary keys. This is a hash with
     #   * key: table name
