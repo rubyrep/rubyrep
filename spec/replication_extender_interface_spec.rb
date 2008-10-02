@@ -109,28 +109,27 @@ describe "ReplicationExtender", :shared => true do
       session = Session.new
       session.left.begin_db_transaction
       params = {
-        :trigger_name => 'rr_trigger_test',
-        :table => 'trigger_test',
-        :keys => ['first_id'],
+        :trigger_name => 'rr_extender_no_record',
+        :table => 'extender_no_record',
+        :keys => ['id'],
         :log_table => 'rr_change_log',
         :key_sep => '|',
       }
       session.left.create_replication_trigger params
-      session.left.insert_record 'trigger_test', {
-        'first_id' => 1,
-        'second_id' => 2,
+      session.left.insert_record 'extender_no_record', {
+        'id' => 9,
         'name' => 'bla'
       }
       rows = session.left.connection.select_all("select * from rr_change_log order by id")
       rows.each {|row| row.delete 'id'; row.delete 'change_time'}
       rows.should == [{
-          'change_table' => 'trigger_test',
-          'change_key' => 'first_id|1',
+          'change_table' => 'extender_no_record',
+          'change_key' => 'id|9',
           'change_org_key' => nil,
           'change_type' => 'I'
         }]
     ensure
-      session.left.execute 'delete from trigger_test' if session
+      session.left.execute 'delete from extender_no_record' if session
       session.left.execute 'delete from rr_change_log' if session
       session.left.rollback_db_transaction if session
     end

@@ -73,9 +73,9 @@ module RR
 
           trigger_var = action == 'delete' ? 'OLD' : 'NEW'
           if action == 'update'
-            call_statement = "CALL rr_trigger_test(#{key_clause('NEW', params)}, #{key_clause('OLD', params)}, '#{action[0,1].upcase}');"
+            call_statement = "CALL #{params[:trigger_name]}(#{key_clause('NEW', params)}, #{key_clause('OLD', params)}, '#{action[0,1].upcase}');"
           else
-            call_statement = "CALL rr_trigger_test(#{key_clause(trigger_var, params)}, null, '#{action[0,1].upcase}');"
+            call_statement = "CALL #{params[:trigger_name]}(#{key_clause(trigger_var, params)}, null, '#{action[0,1].upcase}');"
           end
           execute(<<-end_sql)
             CREATE TRIGGER #{params[:trigger_name]}_#{action}
