@@ -82,9 +82,8 @@ module RR
               AFTER #{action} ON #{params[:table]} FOR EACH ROW BEGIN
                 DECLARE number_attempts INT DEFAULT 0;
                 DECLARE failed INT;
-                DECLARE dummy INT;
                 DECLARE CONTINUE HANDLER FOR 1305 BEGIN
-                  SELECT SLEEP(0.05) INTO dummy;
+                  DO SLEEP(0.05);
                   SET failed = 1;
                   SET number_attempts = number_attempts + 1;
                 END;
