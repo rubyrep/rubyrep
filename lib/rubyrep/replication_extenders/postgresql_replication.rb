@@ -96,6 +96,35 @@ module RR
           and event_object_table = '#{table_name}'
         end_sql
       end
+
+      # Ensures that the sequences of the named table (normally the primary key
+      # column) are generated with the correct increment and offset.
+      # * table_name: name of the table
+      # * increment: increment of the sequence
+      # * offset: offset
+      # E. g. an increment of 2 and offset of 1 will lead to generation of odd
+      # numbers.
+      def ensure_sequence_setup(table_name, increment, offset)
+        sequence_names = select_all(<<-end_sql).map { |row| row['relname'] }
+          select s.relname
+          from pg_class as t
+          join pg_depend as r on t.oid = r.refobjid
+          join pg_class as s on r.objid = s.oid
+          and s.relkind = 'S'
+          and t.relname = '#{table_name}'
+        end_sql
+        sequence_names.each do |sequence_name|
+          val1 = select_one("select nextval('#{sequence_name}')")['nextval'].to_i
+          val2 = select_one("select nextval('#{sequence_name}')")['nextval'].to_i
+          unless val2 == val1 and val2 % increment == offset
+            buffer =  10 # number of records to advance the sequence to avoid conflicts with concurrent updates
+            new_start = val2 - (val2 % increment) + buffer * increment + offset
+            execute(<<-end_sql)
+              alter sequence "#{sequence_name}" increment by #{increment} restart with #{new_start}
+            end_sql
+          end
+        end
+      end
     end
   end
 end

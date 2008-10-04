@@ -175,6 +175,10 @@ def create_sample_schema(config)
       ALTER TABLE trigger_test ADD CONSTRAINT trigger_test_pkey
         PRIMARY KEY (first_id, second_id)
     end_sql
+
+    create_table :sequence_test do |t|
+      t.column :name, :string
+    end
   end
 end
 
@@ -201,6 +205,7 @@ def drop_sample_schema(config)
     drop_table :rr_change_log rescue nil
     drop_table :rr_active rescue nil
     drop_table :trigger_test rescue nil
+    drop_table :sequence_test rescue nil
   end  
 
   ActiveRecord::Base.connection.disconnect!

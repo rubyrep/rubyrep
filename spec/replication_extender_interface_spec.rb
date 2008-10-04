@@ -161,4 +161,37 @@ describe "ReplicationExtender", :shared => true do
       session.left.rollback_db_transaction if session
     end
   end
+
+  # Inserts two records into 'sequence_test' and returns the generated id values
+  def get_example_sequence_values(session)
+    session.left.insert_record 'sequence_test', { 'name' => 'bla' }
+    id1 = session.left.select_one("select max(id) as id from sequence_test")['id'].to_i
+    session.left.insert_record 'sequence_test', { 'name' => 'blub' }
+    id2 = session.left.select_one("select max(id) as id from sequence_test")['id'].to_i
+    return id1, id2
+  end
+
+  it "ensure_sequence should ensure that a table's auto generated ID values have the correct increment and offset" do
+    session = nil
+    begin
+      session = Session.new
+      session.left.begin_db_transaction
+
+      # Note:
+      # Calling ensure_sequence_setup twice with different values to ensure that
+      # it is actually does something.
+
+      session.left.ensure_sequence_setup 'sequence_test', 1, 0
+      id1, id2 = get_example_sequence_values(session)
+      (id2 - id1).should == 1
+
+      session.left.ensure_sequence_setup 'sequence_test', 5, 2
+      id1, id2 = get_example_sequence_values(session)
+      (id2 - id1).should == 5
+      (id1 % 5).should == 2
+    ensure
+      session.left.execute "delete from sequence_test"
+      session.left.rollback_db_transaction if session
+    end
+  end
 end
