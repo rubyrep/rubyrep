@@ -113,6 +113,84 @@ module RR
       def replication_trigger_exists?(trigger_name, table_name)
         !select_all("select 1 from information_schema.triggers where trigger_schema = database() and trigger_name = '#{trigger_name}_insert' and event_object_table = '#{table_name}'").empty?
       end
+
+      # Ensures that the sequences of the named table (normally the primary key
+      # column) are generated with the correct increment and offset.
+      # * rep_prefix:
+      #   The prefix put in front of all replication related database objects as
+      #   specified via Configuration#options.
+      #   Is used to create the sequences table.
+      # * table_name: name of the table
+      # * increment: increment of the sequence
+      # * offset: offset
+      # E. g. an increment of 2 and offset of 1 will lead to generation of odd
+      # numbers.
+      def ensure_sequence_setup(rep_prefix, table_name, increment, offset)
+        # check if the table has an auto_increment column, return if not
+        sequence_row = select_one(<<-end_sql)
+          show columns from #{table_name} where extra = 'auto_increment'
+        end_sql
+        return unless sequence_row
+        column_name = sequence_row['Field']
+
+        # check if the sequences table exists, create if necessary
+        sequence_table_name = "#{rep_prefix}_sequences"
+        unless tables.include?(sequence_table_name)
+          create_table "#{sequence_table_name}".to_sym,
+            :id => false, :options => 'ENGINE=MyISAM' do |t|
+            t.column :name, :string
+            t.column :current_value, :integer
+            t.column :increment, :integer
+            t.column :offset, :integer
+          end
+          ActiveRecord::Base.connection.execute(<<-end_sql) rescue nil
+            ALTER TABLE "#{sequence_table_name}"
+            ADD CONSTRAINT #{sequence_table_name}_pkey
+            PRIMARY KEY (name)
+          end_sql
+        end
+
+        # check the sequence setting, update if necessary,
+        # create sequence trigger if necessary
+        buffer =  10 # number of records to advance the sequence to avoid conflicts with concurrent updates
+        sequence_row = select_one("select current_value, increment, offset from #{sequence_table_name} where name = '#{table_name}'")
+        if sequence_row == nil
+          # no sequence exists yet for the table, create it and the according
+          # sequence trigger
+          current_max = select_one(<<-end_sql)[:current_max].to_i
+            select max(#{column_name}) as current_max from #{table_name}
+          end_sql
+          new_start = current_max - (current_max % increment) + buffer * increment + offset
+          execute(<<-end_sql)
+            insert into #{sequence_table_name}(name, current_value, increment, offset)
+            values('#{table_name}', #{new_start}, #{increment}, #{offset})
+          end_sql
+          trigger_name = "#{rep_prefix}_#{table_name}_sequence"
+          execute(<<-end_sql)
+            DROP TRIGGER IF EXISTS #{trigger_name};
+          end_sql
+          execute(<<-end_sql)
+            CREATE TRIGGER #{trigger_name}
+              BEFORE INSERT ON #{table_name} FOR EACH ROW BEGIN
+                IF NEW.#{column_name} = 0 THEN
+                  UPDATE #{sequence_table_name}
+                    SET current_value = LAST_INSERT_ID(current_value + increment);
+                  SET NEW.#{column_name} = LAST_INSERT_ID();
+                END IF;
+              END;
+          end_sql
+        elsif sequence_row['increment'].to_i != increment or sequence_row['offset'].to_i != offset
+          # sequence exists but with incorrect values; update it
+          current_max = sequence_row['current_value'].to_i
+          new_start = current_max - (current_max % increment) + buffer * increment + offset
+          execute(<<-end_sql)
+            update #{sequence_table_name}
+            set current_value = #{new_start},
+            increment = #{increment}, offset = #{offset}
+            where name = '#{table_name}'
+          end_sql
+        end
+      end
     end
   end
 end

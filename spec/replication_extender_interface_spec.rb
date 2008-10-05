@@ -181,11 +181,11 @@ describe "ReplicationExtender", :shared => true do
       # Calling ensure_sequence_setup twice with different values to ensure that
       # it is actually does something.
 
-      session.left.ensure_sequence_setup 'sequence_test', 1, 0
+      session.left.ensure_sequence_setup 'rr', 'sequence_test', 1, 0
       id1, id2 = get_example_sequence_values(session)
       (id2 - id1).should == 1
 
-      session.left.ensure_sequence_setup 'sequence_test', 5, 2
+      session.left.ensure_sequence_setup 'rr', 'sequence_test', 5, 2
       id1, id2 = get_example_sequence_values(session)
       (id2 - id1).should == 5
       (id1 % 5).should == 2

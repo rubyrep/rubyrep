@@ -99,12 +99,13 @@ module RR
 
       # Ensures that the sequences of the named table (normally the primary key
       # column) are generated with the correct increment and offset.
+      # * rep_prefix: not used (necessary) for the Postgres
       # * table_name: name of the table
       # * increment: increment of the sequence
       # * offset: offset
       # E. g. an increment of 2 and offset of 1 will lead to generation of odd
       # numbers.
-      def ensure_sequence_setup(table_name, increment, offset)
+      def ensure_sequence_setup(rep_prefix, table_name, increment, offset)
         sequence_names = select_all(<<-end_sql).map { |row| row['relname'] }
           select s.relname
           from pg_class as t
