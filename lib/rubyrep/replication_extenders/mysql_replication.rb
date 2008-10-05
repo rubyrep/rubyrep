@@ -116,13 +116,13 @@ module RR
 
       # Ensures that the sequences of the named table (normally the primary key
       # column) are generated with the correct increment and offset.
-      # * rep_prefix:
+      # * +rep_prefix+:
       #   The prefix put in front of all replication related database objects as
       #   specified via Configuration#options.
       #   Is used to create the sequences table.
-      # * table_name: name of the table
-      # * increment: increment of the sequence
-      # * offset: offset
+      # * +table_name+: name of the table
+      # * +increment+: increment of the sequence
+      # * +offset+: offset
       # E. g. an increment of 2 and offset of 1 will lead to generation of odd
       # numbers.
       def ensure_sequence_setup(rep_prefix, table_name, increment, offset)
@@ -195,8 +195,8 @@ module RR
 
       # Removes the custom sequence setup for the specified table.
       # If no more rubyrep sequences are left, removes the sequence table.
-      # * rep_prefix: not used (necessary) for the Postgres
-      # * table_name: name of the table
+      # * +rep_prefix+: not used (necessary) for the Postgres
+      # * +table_name+: name of the table
       def clear_sequence_setup(rep_prefix, table_name)
         sequence_table_name = "#{rep_prefix}_sequences"
         if tables.include?(sequence_table_name)

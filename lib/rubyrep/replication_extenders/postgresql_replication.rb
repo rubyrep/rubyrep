@@ -99,10 +99,10 @@ module RR
 
       # Ensures that the sequences of the named table (normally the primary key
       # column) are generated with the correct increment and offset.
-      # * rep_prefix: not used (necessary) for the Postgres
-      # * table_name: name of the table
-      # * increment: increment of the sequence
-      # * offset: offset
+      # * +rep_prefix+: not used (necessary) for the Postgres
+      # * +table_name+: name of the table
+      # * +increment+: increment of the sequence
+      # * +offset+: offset
       # E. g. an increment of 2 and offset of 1 will lead to generation of odd
       # numbers.
       def ensure_sequence_setup(rep_prefix, table_name, increment, offset)
@@ -130,8 +130,8 @@ module RR
       # Restores the original sequence settings.
       # (Actually it sets the sequence increment to 1. If before, it had a
       # different value, then the restoration will not be correct.)
-      # * rep_prefix: not used (necessary) for the Postgres
-      # * table_name: name of the table
+      # * +rep_prefix+: not used (necessary) for the Postgres
+      # * +table_name+: name of the table
       def clear_sequence_setup(rep_prefix, table_name)
         sequence_names = select_all(<<-end_sql).map { |row| row['relname'] }
           select s.relname
