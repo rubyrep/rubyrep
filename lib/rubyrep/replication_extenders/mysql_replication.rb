@@ -169,6 +169,7 @@ module RR
           execute(<<-end_sql)
             DROP TRIGGER IF EXISTS #{trigger_name};
           end_sql
+
           execute(<<-end_sql)
             CREATE TRIGGER #{trigger_name}
               BEFORE INSERT ON #{table_name} FOR EACH ROW BEGIN
