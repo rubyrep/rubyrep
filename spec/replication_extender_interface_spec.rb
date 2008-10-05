@@ -171,7 +171,7 @@ describe "ReplicationExtender", :shared => true do
     return id1, id2
   end
 
-  it "ensure_sequence should ensure that a table's auto generated ID values have the correct increment and offset" do
+  it "ensure_sequence_setup should ensure that a table's auto generated ID values have the correct increment and offset" do
     session = nil
     begin
       session = Session.new
@@ -190,7 +190,24 @@ describe "ReplicationExtender", :shared => true do
       (id2 - id1).should == 5
       (id1 % 5).should == 2
     ensure
-      session.left.execute "delete from sequence_test"
+      session.left.clear_sequence_setup 'rr', 'sequence_test' if session
+      session.left.execute "delete from sequence_test" if session
+      session.left.rollback_db_transaction if session
+    end
+  end
+
+  it "clear_sequence_setup should remove custom sequence settings" do
+    session = nil
+    begin
+      session = Session.new
+      session.left.begin_db_transaction
+      session.left.ensure_sequence_setup 'rr', 'sequence_test', 5, 2
+      session.left.clear_sequence_setup 'rr', 'sequence_test'
+      id1, id2 = get_example_sequence_values(session)
+      (id2 - id1).should == 1
+    ensure
+      session.left.clear_sequence_setup 'rr', 'sequence_test' if session
+      session.left.execute "delete from sequence_test" if session
       session.left.rollback_db_transaction if session
     end
   end

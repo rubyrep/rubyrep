@@ -126,6 +126,27 @@ module RR
           end
         end
       end
+
+      # Restores the original sequence settings.
+      # (Actually it sets the sequence increment to 1. If before, it had a
+      # different value, then the restoration will not be correct.)
+      # * rep_prefix: not used (necessary) for the Postgres
+      # * table_name: name of the table
+      def clear_sequence_setup(rep_prefix, table_name)
+        sequence_names = select_all(<<-end_sql).map { |row| row['relname'] }
+          select s.relname
+          from pg_class as t
+          join pg_depend as r on t.oid = r.refobjid
+          join pg_class as s on r.objid = s.oid
+          and s.relkind = 'S'
+          and t.relname = '#{table_name}'
+        end_sql
+        sequence_names.each do |sequence_name|
+          execute(<<-end_sql)
+              alter sequence "#{sequence_name}" increment by 1
+          end_sql
+        end
+      end
     end
   end
 end

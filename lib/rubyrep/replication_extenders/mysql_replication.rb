@@ -191,6 +191,30 @@ module RR
           end_sql
         end
       end
+
+      # Removes the custom sequence setup for the specified table.
+      # If no more rubyrep sequences are left, removes the sequence table.
+      # * rep_prefix: not used (necessary) for the Postgres
+      # * table_name: name of the table
+      def clear_sequence_setup(rep_prefix, table_name)
+        sequence_table_name = "#{rep_prefix}_sequences"
+        if tables.include?(sequence_table_name)
+          trigger_name = "#{rep_prefix}_#{table_name}_sequence"
+          trigger_row = select_one(<<-end_sql)
+            select * from information_schema.triggers
+            where trigger_schema = database()
+            and trigger_name = '#{trigger_name}'
+          end_sql
+          if trigger_row
+            execute "DROP TRIGGER #{trigger_name}"
+            execute "delete from #{sequence_table_name} where name = '#{table_name}'"
+            unless select_one("select * from #{sequence_table_name}")
+              # no more sequences left --> delete sequence table
+              drop_table sequence_table_name.to_sym
+            end
+          end
+        end
+      end
     end
   end
 end
