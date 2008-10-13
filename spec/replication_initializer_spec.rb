@@ -41,7 +41,7 @@ describe ReplicationInitializer do
       initializer = ReplicationInitializer.new(session)
       initializer.create_trigger(:left, 'trigger_test')
 
-      create_row session.left.connection, 'trigger_test', {
+      session.left.insert_record 'trigger_test', {
         'first_id' => 1,
         'second_id' => 2,
         'name' => 'bla'
