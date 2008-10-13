@@ -44,6 +44,15 @@ module RR
       session.send(database).create_replication_trigger params
     end
 
+    def trigger_exists?(database, table)
+      trigger_name = "#{options(table)[:rep_prefix]}_#{table}"
+      session.send(database).replication_trigger_exists? trigger_name, table
+    end
+
+    def drop_trigger(database, table)
+      trigger_name = "#{options(table)[:rep_prefix]}_#{table}"
+      session.send(database).drop_replication_trigger trigger_name, table
+    end
   end
   
 end

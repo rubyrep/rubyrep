@@ -62,4 +62,32 @@ describe ReplicationInitializer do
       session.left.rollback_db_transaction if session
     end
   end
+
+  it "trigger_exists? and drop_trigger should work correctly" do
+    session = nil
+    begin
+      session = Session.new
+      initializer = ReplicationInitializer.new(session)
+      if initializer.trigger_exists?(:left, 'trigger_test')
+        initializer.drop_trigger(:left, 'trigger_test')
+      end
+      session.left.begin_db_transaction
+      params = {
+        :trigger_name => 'rr_trigger_test',
+        :table => 'trigger_test',
+        :keys => ['first_id'],
+        :log_table => 'rr_change_log',
+        :key_sep => '|',
+      }
+      initializer.create_trigger :left, 'trigger_test'
+
+      initializer.trigger_exists?(:left, 'trigger_test').
+        should be_true
+      initializer.drop_trigger(:left, 'trigger_test')
+      initializer.trigger_exists?(:left, 'trigger_test').
+        should be_false
+    ensure
+      session.left.rollback_db_transaction if session
+    end
+  end
 end
