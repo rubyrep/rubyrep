@@ -162,15 +162,6 @@ describe "ReplicationExtender", :shared => true do
     end
   end
 
-  # Inserts two records into 'sequence_test' and returns the generated id values
-  def get_example_sequence_values(session)
-    session.left.insert_record 'sequence_test', { 'name' => 'bla' }
-    id1 = session.left.select_one("select max(id) as id from sequence_test")['id'].to_i
-    session.left.insert_record 'sequence_test', { 'name' => 'blub' }
-    id2 = session.left.select_one("select max(id) as id from sequence_test")['id'].to_i
-    return id1, id2
-  end
-
   it "ensure_sequence_setup should ensure that a table's auto generated ID values have the correct increment and offset" do
     session = nil
     begin

@@ -90,4 +90,44 @@ describe ReplicationInitializer do
       session.left.rollback_db_transaction if session
     end
   end
+
+  it "ensure_sequence_setup should ensure that a table's auto generated ID values have the correct increment and offset" do
+    session = nil
+    begin
+      session = Session.new
+      initializer = ReplicationInitializer.new(session)
+      session.left.begin_db_transaction
+
+      # Note:
+      # Calling ensure_sequence_setup twice with different values to ensure that
+      # it is actually does something.
+
+      initializer.ensure_sequence_setup :left, 'sequence_test', 3, 2
+      initializer.ensure_sequence_setup :left, 'sequence_test', 5, 2
+      id1, id2 = get_example_sequence_values(session)
+      (id2 - id1).should == 5
+      (id1 % 5).should == 2
+    ensure
+      initializer.clear_sequence_setup :left, 'sequence_test' if session
+      session.left.execute "delete from sequence_test" if session
+      session.left.rollback_db_transaction if session
+    end
+  end
+
+  it "clear_sequence_setup should remove custom sequence settings" do
+    session = nil
+    begin
+      session = Session.new
+      initializer = ReplicationInitializer.new(session)
+      session.left.begin_db_transaction
+      initializer.ensure_sequence_setup :left, 'sequence_test', 5, 2
+      initializer.clear_sequence_setup :left, 'sequence_test'
+      id1, id2 = get_example_sequence_values(session)
+      (id2 - id1).should == 1
+    ensure
+      initializer.clear_sequence_setup :left, 'sequence_test' if session
+      session.left.execute "delete from sequence_test" if session
+      session.left.rollback_db_transaction if session
+    end
+  end
 end

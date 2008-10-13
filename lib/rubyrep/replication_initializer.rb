@@ -59,6 +59,31 @@ module RR
       trigger_name = "#{options(table)[:rep_prefix]}_#{table}"
       session.send(database).drop_replication_trigger trigger_name, table
     end
+
+    # Ensures that the sequences of the named table (normally the primary key
+    # column) are generated with the correct increment and offset.
+    # * database: either :+left+ or :+right+
+    # * +table_name+: name of the table
+    # * +increment+: increment of the sequence
+    # * +offset+: offset
+    # E. g. an increment of 2 and offset of 1 will lead to generation of odd
+    # numbers.
+    def ensure_sequence_setup(database, table, increment, offset)
+      session.send(database).ensure_sequence_setup(
+        options(table)[:rep_prefix], table, increment, offset
+      )
+    end
+
+    # Restores the original sequence settings for the named table.
+    # (Actually it sets the sequence increment to 1. If before, it had a
+    # different value, then the restoration will not be correct.)
+    # * database: either :+left+ or :+right+
+    # * +table_name+: name of the table
+    def clear_sequence_setup(database, table)
+      session.send(database).clear_sequence_setup(
+        options(table)[:rep_prefix], table
+      )
+    end
   end
 
 end
