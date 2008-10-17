@@ -84,6 +84,39 @@ module RR
         options(table)[:rep_prefix], table
       )
     end
+
+    # Returns +true+ if the replication log exists in the specified database.
+    # * database: either :+left+ or :+right+
+    def replication_log_exists?(database)
+      session.send(database).tables.include? "#{options[:rep_prefix]}_change_log"
+    end
+
+    # Drops the replication log table in the specified database
+    # * database: either :+left+ or :+right+
+    def drop_replication_log(database)
+      session.send(database).drop_table "#{options[:rep_prefix]}_change_log"
+    end
+
+    # Creates the replication log table in the specified database
+    # * database: either :+left+ or :+right+
+    def create_replication_log(database)
+      if session.configuration.send(database)[:adapter] =~ /postgres/
+        # suppress the postgres stderr output about creation of indexes
+        old_message_level = session.send(database).
+          select_one("show client_min_messages")['client_min_messages']
+        session.send(database).execute "set client_min_messages = warning"
+      end
+      session.send(database).create_table "#{options[:rep_prefix]}_change_log" do |t|
+        t.column :change_table, :string
+        t.column :change_key, :string
+        t.column :change_org_key, :string
+        t.column :change_type, :string
+        t.column :change_time, :timestamp
+      end
+      if session.configuration.send(database)[:adapter] =~ /postgres/
+        session.send(database).execute "set client_min_messages = #{old_message_level}"
+      end
+    end
   end
 
 end

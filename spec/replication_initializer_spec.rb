@@ -130,4 +130,27 @@ describe ReplicationInitializer do
       session.left.rollback_db_transaction if session
     end
   end
+
+  it "replication_log_exists? should return true if replication log exists" do
+    config = deep_copy(standard_config)
+    initializer = ReplicationInitializer.new(Session.new(config))
+    initializer.replication_log_exists?(:left).should be_true
+    config.options[:rep_prefix] = 'r2'
+    initializer = ReplicationInitializer.new(Session.new(config))
+    initializer.replication_log_exists?(:left).should be_false
+  end
+
+  it "create_replication_log / drop_replication_log should create / drop the replication log" do
+    config = deep_copy(standard_config)
+    config.options[:rep_prefix] = 'r2'
+    initializer = ReplicationInitializer.new(Session.new(config))
+    initializer.drop_replication_log(:left) if initializer.replication_log_exists?(:left)
+
+    $stderr.stub! :write
+    initializer.replication_log_exists?(:left).should be_false
+    initializer.create_replication_log(:left)
+    initializer.replication_log_exists?(:left).should be_true
+    initializer.drop_replication_log(:left)
+    initializer.replication_log_exists?(:left).should be_false
+  end
 end
