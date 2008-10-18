@@ -3,25 +3,22 @@ require File.dirname(__FILE__) + '/spec_helper.rb'
 include RR
 
 describe TableSync do
-  before(:each) do
-    @old_syncers = TableSync.send :class_variable_get, :@@syncers rescue nil
-    TableSync.send :class_variable_set, :@@syncers, nil
+  it "syncer_class should return the correct syncer as per :syncer option, if both :syncer and :replicator is configured" do
+    config = deep_copy(standard_config)
+    config.options[:syncer] = :two_way
+    config.options[:replicator] = :key2
+    session = Session.new(config)
+    TableSync.new(session, 'scanner_records').syncer_class.should == Syncers::TwoWaySyncer
+  end
+  
+  it "syncer_class should return the correct syncer as per :replicator option if no :syncer option is provided" do
+    config = deep_copy(standard_config)
+    config.options[:replicator] = :two_way
+    config.options.delete :syncer
+    session = Session.new(config)
+    TableSync.new(session, 'scanner_records').syncer_class.should == Syncers::TwoWaySyncer
   end
 
-  after(:each) do
-    TableSync.send :class_variable_set, :@@syncers, @old_syncers
-  end
-  
-  it "syncers should return empty hash if empty" do
-    TableSync.syncers.should == {}
-  end
-  
-  it "register_syncer should register, syncer return the registerred syncers" do
-    TableSync.register_syncer :key1 => :dummy_syncer1
-    TableSync.register_syncer :key2 => :dummy_syncer2
-    TableSync.syncers.should == {:key1 => :dummy_syncer1, :key2 => :dummy_syncer2}
-  end
-  
   it "sync_options should return the correct table specific sync options" do
     config = deep_copy(standard_config)
     old_table_specific_options = config.tables_with_options

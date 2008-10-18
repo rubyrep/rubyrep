@@ -3,22 +3,6 @@ module RR
   # Synchronizes the data of two tables.
   class TableSync < TableScan
 
-    # Registers the specifies syncers.
-    # +syncer_hash+ contains one or multiple syncers with
-    #   * +:key+: identifier for the syncer
-    #   * +:value+: the syncer class
-    def self.register_syncer(syncer_hash)
-      syncers.merge! syncer_hash
-    end
-    
-    # Returns a hash of currently registered syncers. Construction of hash:
-    #   * +:key+: identifier for the syncer
-    #   * +:value+: the syncer class
-    def self.syncers
-      @@syncers ||= {}
-      @@syncers
-    end
-    
     # Returns a hash of sync options for this table sync.
     def sync_options
       @sync_options ||= session.configuration.options_for_table(left_table)
@@ -30,6 +14,13 @@ module RR
     #   * right_table: name of the table in the right database. If not given, same like left_table
     def initialize(session, left_table, right_table = nil)
       super
+    end
+
+    # Returns the correct syncer class as per active configuration
+    def syncer_class
+      syncer_id = sync_options[:syncer] 
+      syncer_id ||= sync_options[:replicator]
+      Syncers.syncers[syncer_id]
     end
     
     # Executes the table sync. If a block is given, yields each difference with
@@ -47,7 +38,6 @@ module RR
       scan.progress_printer = progress_printer
 
       helper = SyncHelper.new(self)
-      syncer_class = Syncers.syncers[sync_options[:syncer]]
       syncer = syncer_class.new(helper)
 
       scan.run do |type, row|

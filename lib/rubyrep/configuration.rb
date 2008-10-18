@@ -54,6 +54,12 @@ module RR
     # Replication specific settings:
     # * :+rep_prefix+: the prefix that is put in front of all created database objects
     # * :+key_sep+: which string separates columns in the key column of the change log table
+    # * :+replicator+:
+    #   Determines which replicator algorithm to use.
+    #   For each replicator must also exist a corresponding +:syncer+. (It is
+    #   used for the initial sync of a table.)
+    #   If no +:syncer+ option is specified, than a syncer as named by this
+    #   option is used.
     attr_reader :options
     
     # Merges the specified +options+ hash into the existing options
