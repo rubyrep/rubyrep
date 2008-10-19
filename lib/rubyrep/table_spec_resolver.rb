@@ -19,14 +19,27 @@ module RR
     # Table specifications are either
     # * strings as produced by BaseRunner#get_options or
     # * actual regular expressions
+    # If +excluded_table_specs+ is provided, removes all tables that match it
+    # (even if otherwise matching +included_table_specs+).
     # Returns an array of table name pairs in Hash form.
     # For example something like
     #   [{:left => 'my_table', :right => 'my_table_backup'}]
     # Takes care that a table is only returned once.
-    def resolve(table_specs)
+    def resolve(included_table_specs, excluded_table_specs = [])
+      table_pairs = expand_table_specs(included_table_specs)
+      table_pairs = table_pairs_without_duplicates(table_pairs)
+      table_pairs_without_excluded(table_pairs, excluded_table_specs)
+    end
+
+    # Helper for #resolve
+    # Takes the specified table_specifications and expands it into an array of
+    # according table pairs.
+    # Returns the result
+    # Refer to #resolve for a full description of parameters and result.
+    def expand_table_specs(table_specs)
       table_pairs = []
       table_specs.each do |table_spec|
-        
+
         # If it is a regexp, convert it in an according string
         table_spec = table_spec.inspect if table_spec.kind_of? Regexp
 
@@ -44,16 +57,32 @@ module RR
           table_pairs << {:left => table_spec.strip, :right => table_spec.strip}
         end
       end
-      remove_duplicate_table_pairs(table_pairs)
+      table_pairs
     end
+    private :expand_table_specs
+
+    # Helper for #resolve
+    # Takes given table_pairs and removes all tables that are excluded.
+    # Returns the result.
+    # Both the given and the returned table_pairs is an array of hashes with
+    # * :+left+: name of the left table
+    # * :+right+: name of the corresponding right table
+    # +excluded_table_specs+ is the array of table specifications to be excluded.
+    def table_pairs_without_excluded(table_pairs, excluded_table_specs)
+      excluded_tables = expand_table_specs(excluded_table_specs).map do |table_pair|
+        table_pair[:left]
+      end
+      table_pairs.select {|table_pair| not excluded_tables.include? table_pair[:left]}
+    end
+    private :table_pairs_without_excluded
 
     # Helper for #resolve
     # Takes given table_pairs and removes all duplicates.
     # Returns the result.
     # Both the given and the returned table_pairs is an array of hashes with
-    # * :+left_table+: name of the left table
-    # * :+right_table+: name of the corresponding right table
-    def remove_duplicate_table_pairs(table_pairs)
+    # * :+left+: name of the left table
+    # * :+right+: name of the corresponding right table
+    def table_pairs_without_duplicates(table_pairs)
       processed_left_tables = {}
       resulting_table_pairs = []
       table_pairs.each do |table_pair|
@@ -64,6 +93,6 @@ module RR
       end
       resulting_table_pairs
     end
-    private :remove_duplicate_table_pairs
+    private :table_pairs_without_duplicates
   end
 end

@@ -72,8 +72,8 @@ describe Session do
 
   it "initialize should assign manual primary keys to the proxy connections" do
     config = deep_copy(standard_config)
-    config.tables_with_options.clear
-    config.add_tables "table_with_manual_key, extender_without_key", :primary_key_names => ['id']
+    config.included_table_specs.clear
+    config.include_tables "table_with_manual_key, extender_without_key", :primary_key_names => ['id']
     session = Session.new config
     session.left.manual_primary_keys.should == {'table_with_manual_key'=>['id']}
     session.right.manual_primary_keys.should == {'extender_without_key'=>['id']}
@@ -81,8 +81,8 @@ describe Session do
 
   it "manual_primary_keys should return the correct primary keys" do
     config = deep_copy(standard_config)
-    config.tables_with_options.clear
-    config.add_tables "table_with_manual_key, extender_without_key", :primary_key_names => ['id']
+    config.included_table_specs.clear
+    config.include_tables "table_with_manual_key, extender_without_key", :primary_key_names => ['id']
     session = Session.new config
     session.manual_primary_keys(:left).should == {'table_with_manual_key'=>['id']}
     session.manual_primary_keys(:right).should == {'extender_without_key'=>['id']}

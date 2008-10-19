@@ -31,17 +31,31 @@ describe Configuration do
       merge(config.options)
   end
 
-  it "tables should return the list of added table specifications" do
+  it "included_table_specs should return the list of included table specifications" do
     config = Configuration.new
-    config.add_tables('a', {:bla => :blub})
-    config.add_tables('a, b')
-    config.add_tables(/a/)
-    config.tables.should == ['a', 'a, b', /a/]
+    config.include_tables('a', {:bla => :blub})
+    config.include_tables('a, b')
+    config.include_tables(/a/)
+    config.included_table_specs.should == ['a', 'a, b', /a/]
+  end
+
+  it "included_table_specs should save the options if provided" do
+    config = Configuration.new
+    config.include_tables('a', {:bla => :blub})
+    config.options_for_table('a')[:bla].should == :blub
+  end
+
+  it "excluded_table_specs should return the list of excluded table specifications" do
+    config = Configuration.new
+    config.exclude_tables('a')
+    config.exclude_tables('a, b')
+    config.exclude_tables(/a/)
+    config.excluded_table_specs.should == ['a', 'a, b', /a/]
   end
 
   it "options_for_table should return the general options if there are no matching table specific options" do
     config = Configuration.new
-    config.add_tables(/a/, {:bla => :blub})
+    config.include_tables(/a/, {:bla => :blub})
     config.options_for_table('b').should == \
       Syncers::TwoWaySyncer.default_options.clone.
       merge(config.options)
@@ -49,7 +63,7 @@ describe Configuration do
 
   it "options_for_table should return table specific options mixed in with default options" do
     config = Configuration.new
-    config.add_tables(/a/, {:bla => :blub})
+    config.include_tables(/a/, {:bla => :blub})
     config.options_for_table('a').should == \
       Syncers::TwoWaySyncer.default_options.clone.
       merge(config.options).
@@ -58,10 +72,10 @@ describe Configuration do
 
   it "options_for_table should return last added version of added options for matching table spec" do
     config = Configuration.new
-    config.add_tables(/a/, {:bla => :blub})
-    config.add_tables('a', {:bla => :blok})
-    config.add_tables(/x/, {:bla => :bar})
-    config.add_tables('y', {:bla => :foo})
+    config.include_tables(/a/, {:bla => :blub})
+    config.include_tables('a', {:bla => :blok})
+    config.include_tables(/x/, {:bla => :bar})
+    config.include_tables('y', {:bla => :foo})
     config.options_for_table('a').should == \
       Syncers::TwoWaySyncer.default_options.clone.
       merge(config.options).
@@ -70,38 +84,38 @@ describe Configuration do
 
   it "options_for_table should match against table pair specs" do
     config = Configuration.new
-    config.add_tables('a, b', {:bla => :blub})
+    config.add_table_options('a, b', {:bla => :blub})
     config.options_for_table('a')[:bla].should == :blub
   end
 
   it "options_for_table should match against regular expression specs" do
     config = Configuration.new
-    config.add_tables(/a/, {:bla => :blub})
+    config.add_table_options(/a/, {:bla => :blub})
     config.options_for_table('a')[:bla].should == :blub
   end
 
   it "options_for_table should match against pure table name specs" do
     config = Configuration.new
-    config.add_tables('a', {:bla => :blub})
+    config.add_table_options('a', {:bla => :blub})
     config.options_for_table('a')[:bla].should == :blub
   end
 
-  it "add_options_for_table should not create table_spec duplicates" do
+  it "add_table_options should not create table_spec duplicates" do
     config = Configuration.new
-    config.add_tables(/a/, {:bla => :blub})
-    config.add_tables(/a/, {:foo => :bar})
+    config.add_table_options(/a/, {:bla => :blub})
+    config.add_table_options(/a/, {:foo => :bar})
     config.options_for_table('a').should == \
       Syncers::TwoWaySyncer.default_options.clone.
       merge(config.options).
       merge(:bla => :blub, :foo => :bar)
   end
 
-  it "add_options_for_table should include default syncer options" do
+  it "add_table_options should include default syncer options" do
     config = Configuration.new
     config.options = {:syncer => :one_way}
 
     # overwrite one syncer option
-    config.add_tables(/a/, {:delete => true})
+    config.add_table_options(/a/, {:delete => true})
 
     options = config.options_for_table('a')
     Syncers::OneWaySyncer.default_options.each do |key, value|
@@ -109,5 +123,4 @@ describe Configuration do
     end
     options[:delete].should == true
   end
-
 end

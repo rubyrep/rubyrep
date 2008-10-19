@@ -24,7 +24,7 @@ describe TableSync do
     old_table_specific_options = config.tables_with_options
     begin
       config.options = {:syncer => :bla}
-      config.add_tables 'scanner_records', {:syncer => :blub}
+      config.include_tables 'scanner_records', {:syncer => :blub}
       TableSync.new(Session.new(config), 'scanner_records').sync_options[:syncer] \
         .should == :blub
     ensure

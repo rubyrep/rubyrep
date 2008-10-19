@@ -41,7 +41,7 @@ describe ProxiedTableScan do
     old_table_specific_options = config.tables_with_options
     begin
       config.options = {:proxy_block_size => 2}
-      config.add_tables 'scanner_records', {:proxy_block_size => 3}
+      config.include_tables 'scanner_records', {:proxy_block_size => 3}
       ProxiedTableScan.new(Session.new(config), 'scanner_records').block_size \
         .should == 3
     ensure

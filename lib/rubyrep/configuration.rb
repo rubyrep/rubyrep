@@ -67,32 +67,54 @@ module RR
       @options ||= {}
       @options = @options.merge! options
     end
+
+    # Array of table specifications for tables that should be processed
+    # Refer to #add_table_options for what constitutes a valid table specification.
+    def included_table_specs
+      @included_table_specs ||= []
+    end
+
+    # Array of table specifications for tables that should *not* be processed
+    # Refer to #add_table_options for what constitutes a valid table specification.
+    def excluded_table_specs
+      @excluded_table_specs ||= []
+    end
     
-    # A list of tables that should be processed (scanned, synced, ...) togehter
-    # with the table specific options.
+    # A list of tables having table specific options that should be considered
+    # during processing (scanned, synced, ...)
     # +tables_with_options+ is a 2 element array with
     # * first element: A +table_spec+ (either a table name or a regexp matching multiple tables)
     # * second element: The +options+ hash (detailed format described in #add_tables
-    # Should only be accessed via #add_tables and #options_for_table
+    # Should only be accessed via #add_table_options and #options_for_table
     def tables_with_options
       @tables_with_options ||= []
     end
 
-    # Returns an array containing the configured table specifications.
-    # (#add_tables describes the format of valid table specifications.)
-    def tables
-      tables_with_options.map {|table_options| table_options[0]}
+    # Adds the specified tables to the list of tables that should be processed.
+    # If options are provided, store them for future processing.
+    # Refer to #add_table_options for detailed description of parameters.
+    def include_tables(table_spec, options = nil)
+      included_table_specs << table_spec unless included_table_specs.include?(table_spec)
+      add_table_options(table_spec, options) if options
+    end
+
+    # Excludes the specified table from the list of tables that should be
+    # processed.
+    # Refer to #add_table_options for detailed description of what constitutes a
+    # valid table specification.
+    def exclude_tables(table_spec)
+      excluded_table_specs << table_spec unless excluded_table_specs.include?(table_spec)
     end
     
-    # Adds the specified +table_spec+ and it's options (if provided).
+    # Adds the specified options for the provided +table_spec+.
     # A +table_spec+ can be either
     # * a table name or
     # * a table pair (e. g. "my_left_table, my_right_table")
     # * a regexp matching multiple tables.
     # +options+ is hash with possible generic values as described under #options.
-    # Additional table specific options:
+    # Additional, exclusively table specific options:
     # * :+primary_key_names+: array of primary key names
-    def add_tables(table_spec, options = {})
+    def add_table_options(table_spec, options)
       i = nil
       tables_with_options.each_with_index { |table_options, k|
         i = k if table_options[0] == table_spec

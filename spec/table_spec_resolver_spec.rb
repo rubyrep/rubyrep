@@ -57,4 +57,13 @@ describe TableSpecResolver do
       {:left => 'scanner_records', :right => 'scanner_records'}
     ]
   end
+
+  it "resolve should not return tables that are excluded" do
+    @resolver.resolve(
+      [/SCANNER_RECORDS|scanner_text_key/],
+      [/scanner_text/]
+    ).should == [
+      {:left => 'scanner_records', :right => 'scanner_records'},
+    ]
+  end
 end

@@ -151,10 +151,12 @@ EOS
 
       # Use the command line provided table specs if provided. Otherwise the
       # ones from the configuration file
-      table_specs = options[:table_specs]
-      table_specs = Initializer.configuration.tables if table_specs.empty?
+      included_table_specs = options[:table_specs]
+      included_table_specs = Initializer.configuration.included_table_specs if included_table_specs.empty?
       
-      table_pairs = resolver.resolve table_specs
+      table_pairs = resolver.resolve \
+        included_table_specs,
+        Initializer.configuration.excluded_table_specs
       table_pairs = prepare_table_pairs(table_pairs)
       table_pairs.each do |table_pair|
         report_printer.scan table_pair[:left], table_pair[:right] do
