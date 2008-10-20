@@ -157,7 +157,7 @@ module RR
         if sequence_row == nil
           # no sequence exists yet for the table, create it and the according
           # sequence trigger
-          current_max = select_one(<<-end_sql)[:current_max].to_i
+          current_max = select_one(<<-end_sql)['current_max'].to_i
             select max(#{column_name}) as current_max from #{table_name}
           end_sql
           new_start = current_max - (current_max % increment) + buffer * increment + offset

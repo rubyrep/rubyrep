@@ -172,6 +172,7 @@ describe "ReplicationExtender", :shared => true do
       # Calling ensure_sequence_setup twice with different values to ensure that
       # it is actually does something.
 
+      session.left.execute 'delete from sequence_test'
       session.left.ensure_sequence_setup 'rr', 'sequence_test', 1, 0
       id1, id2 = get_example_sequence_values(session)
       (id2 - id1).should == 1
@@ -180,6 +181,23 @@ describe "ReplicationExtender", :shared => true do
       id1, id2 = get_example_sequence_values(session)
       (id2 - id1).should == 5
       (id1 % 5).should == 2
+    ensure
+      session.left.clear_sequence_setup 'rr', 'sequence_test' if session
+      session.left.execute "delete from sequence_test" if session
+      session.left.rollback_db_transaction if session
+    end
+  end
+
+  it "ensure_sequence_setup shoud set the sequence up correctly if the table is not empty" do
+    session = nil
+    begin
+      session = Session.new
+      session.left.begin_db_transaction
+      session.left.execute 'delete from sequence_test'
+      session.left.insert_record 'sequence_test', { 'name' => 'whatever' }
+      session.left.ensure_sequence_setup 'rr', 'sequence_test', 2, 0
+      id1, id2 = get_example_sequence_values(session)
+      (id2 - id1).should == 2
     ensure
       session.left.clear_sequence_setup 'rr', 'sequence_test' if session
       session.left.execute "delete from sequence_test" if session
