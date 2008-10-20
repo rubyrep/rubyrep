@@ -145,19 +145,24 @@ EOS
       @session
     end
 
-    # Executes a run based on the established options.
-    def execute
+    # Returns the table pairs that should be processed.
+    # Refer to TableSpecRsolver#resolve for format of return value.
+    def table_pairs
       resolver = TableSpecResolver.new session
 
       # Use the command line provided table specs if provided. Otherwise the
       # ones from the configuration file
       included_table_specs = options[:table_specs]
       included_table_specs = Initializer.configuration.included_table_specs if included_table_specs.empty?
-      
-      table_pairs = resolver.resolve \
+
+      pairs = resolver.resolve \
         included_table_specs,
         Initializer.configuration.excluded_table_specs
-      table_pairs = prepare_table_pairs(table_pairs)
+      prepare_table_pairs(pairs)
+    end
+
+    # Executes a run based on the established options.
+    def execute
       table_pairs.each do |table_pair|
         report_printer.scan table_pair[:left], table_pair[:right] do
           processor = create_processor \

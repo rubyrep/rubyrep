@@ -143,7 +143,7 @@ describe BaseRunner do
     config_specified_printer_class = ScanProgressPrinters.
       printers[config_specified_printer_key][:printer_class]
     runner.progress_printer.should == config_specified_printer_class
-    end
+  end
   
   it "signal_scanning_completion should signal completion if the scan report printer supports it" do
     printer = mock("printer")
@@ -196,42 +196,38 @@ describe BaseRunner do
     end
   end
 
-  it "execute should process the tables from the configuration file if none are provided via command line" do
-    org_stdout = $stdout
-    $stdout = StringIO.new
-    begin
-      runner = BaseRunner.new
-      runner.report_printer = ScanReportPrinters::ScanSummaryReporter.new(nil)
-      runner.options = {
-        :config_file => "#{File.dirname(__FILE__)}/../config/test_config.rb",
-        :table_specs => []
-      }
-
-      # create and install a dummy processor
-      processor = mock("dummy_processor")
-      processor.stub!(:run).and_yield(:left, :dummy_row)
-      processor.stub!(:progress_printer=)
-      runner.stub!(:create_processor).and_return(processor)
-      
-      runner.execute
-      
-      $stdout.string.should =~
-        /scanner_left_records_only.* 1\n/
-    ensure 
-      $stdout = org_stdout
-    end
-  end
-
-  it "execute should prepare the table pairs before processing them" do
+  it "table_pairs should return the table pairs as per command line specified table specs" do
     runner = BaseRunner.new
-    runner.report_printer = ScanReportPrinters::ScanSummaryReporter.new(nil)
     runner.options = {
       :config_file => "#{File.dirname(__FILE__)}/../config/test_config.rb",
       :table_specs => []
     }
-    dummy_table_pairs = mock("dummy_table_pairs")
-    dummy_table_pairs.should_receive(:each)
-    runner.should_receive(:prepare_table_pairs).and_return(dummy_table_pairs)
-    runner.execute
+    runner.table_pairs.should == [
+      {:left => 'scanner_left_records_only', :right => 'scanner_left_records_only'},
+      {:left => 'table_with_manual_key', :right => 'table_with_manual_key'}
+    ]
+  end
+
+  it "table_pairs should return the table pairs as per configuration file if none are provided via command line" do
+    runner = BaseRunner.new
+    runner.options = {
+      :config_file => "#{File.dirname(__FILE__)}/../config/test_config.rb",
+      :table_specs => ['scanner_records']
+    }
+    runner.table_pairs.should == [
+      {:left => 'scanner_records', :right => 'scanner_records'},
+    ]
+  end
+
+  it "table_pairs should return the prepared table pairs" do
+    runner = BaseRunner.new
+    runner.options = {
+      :config_file => "#{File.dirname(__FILE__)}/../config/test_config.rb",
+      :table_specs => ['scanner_records']
+    }
+    runner.should_receive(:prepare_table_pairs).with([
+      {:left => 'scanner_records', :right => 'scanner_records'},
+    ]).and_return(:dummy_table_pairs)
+    runner.table_pairs.should == :dummy_table_pairs
   end
 end
