@@ -117,7 +117,7 @@ module RR
         sequence_names.each do |sequence_name|
           val1 = select_one("select nextval('#{sequence_name}')")['nextval'].to_i
           val2 = select_one("select nextval('#{sequence_name}')")['nextval'].to_i
-          unless val2 == val1 and val2 % increment == offset
+          unless val2 - val1 == increment and val2 % increment == offset
             buffer =  10 # number of records to advance the sequence to avoid conflicts with concurrent updates
             new_start = val2 - (val2 % increment) + buffer * increment + offset
             execute(<<-end_sql)
