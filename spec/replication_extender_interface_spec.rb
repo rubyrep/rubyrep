@@ -162,7 +162,57 @@ describe "ReplicationExtender", :shared => true do
     end
   end
 
-  it "ensure_sequence_setup should ensure that a table's auto generated ID values have the correct increment and offset" do
+  it "outdated_sequence_values should return an empty hash if table has no sequences" do
+    session = Session.new
+    session.left.outdated_sequence_values('rr', 'scanner_text_key', 2, 0).
+      should == {}
+  end
+
+  it "outdated_sequence_values should return empty hash if sequence is up-to-date" do
+    session = nil
+    begin
+      session = Session.new
+      session.left.begin_db_transaction
+      session.left.execute 'delete from sequence_test'
+      left_sequence_values = session.left.outdated_sequence_values \
+        'rr', 'sequence_test', 2, 0
+      right_sequence_values = session.right.outdated_sequence_values \
+        'rr', 'sequence_test', 2, 0
+      session.left.update_sequences \
+        'rr', 'sequence_test', 2, 0,
+        left_sequence_values, right_sequence_values, 5
+      session.left.outdated_sequence_values('rr', 'sequence_test', 2, 0).
+        should == {}
+    ensure
+      session.left.clear_sequence_setup 'rr', 'sequence_test' if session
+      session.left.execute "delete from sequence_test" if session
+      session.left.rollback_db_transaction if session
+    end
+  end
+
+  it "outdated_sequence_values should return the current sequence value for outdated sequences" do
+    session = nil
+    begin
+      session = Session.new
+      session.left.begin_db_transaction
+      session.left.execute 'delete from sequence_test'
+      left_sequence_values = session.left.outdated_sequence_values \
+        'rr', 'sequence_test', 2, 0
+      right_sequence_values = session.right.outdated_sequence_values \
+        'rr', 'sequence_test', 2, 0
+      session.left.update_sequences \
+        'rr', 'sequence_test', 2, 0,
+        left_sequence_values, right_sequence_values, 5
+      session.left.outdated_sequence_values('rr', 'sequence_test', 3, 0).size.
+        should == 1
+    ensure
+      session.left.clear_sequence_setup 'rr', 'sequence_test' if session
+      session.left.execute "delete from sequence_test" if session
+      session.left.rollback_db_transaction if session
+    end
+  end
+
+  it "update_sequences should ensure that a table's auto generated ID values have the correct increment and offset" do
     session = nil
     begin
       session = Session.new
@@ -173,11 +223,23 @@ describe "ReplicationExtender", :shared => true do
       # it is actually does something.
 
       session.left.execute 'delete from sequence_test'
-      session.left.ensure_sequence_setup 'rr', 'sequence_test', 1, 0
+      left_sequence_values = session.left.outdated_sequence_values \
+        'rr', 'sequence_test', 1, 0
+      right_sequence_values = session.right.outdated_sequence_values \
+        'rr', 'sequence_test', 1, 0
+      session.left.update_sequences \
+        'rr', 'sequence_test', 1, 0,
+        left_sequence_values, right_sequence_values, 5
       id1, id2 = get_example_sequence_values(session)
       (id2 - id1).should == 1
 
-      session.left.ensure_sequence_setup 'rr', 'sequence_test', 5, 2
+      left_sequence_values = session.left.outdated_sequence_values \
+        'rr', 'sequence_test', 5, 2
+      right_sequence_values = session.right.outdated_sequence_values \
+        'rr', 'sequence_test', 5, 2
+      session.left.update_sequences \
+        'rr', 'sequence_test', 5, 2,
+        left_sequence_values, right_sequence_values, 5
       id1, id2 = get_example_sequence_values(session)
       (id2 - id1).should == 5
       (id1 % 5).should == 2
@@ -188,14 +250,20 @@ describe "ReplicationExtender", :shared => true do
     end
   end
 
-  it "ensure_sequence_setup shoud set the sequence up correctly if the table is not empty" do
+  it "update_sequences shoud set the sequence up correctly if the table is not empty" do
     session = nil
     begin
       session = Session.new
       session.left.begin_db_transaction
       session.left.execute 'delete from sequence_test'
       session.left.insert_record 'sequence_test', { 'name' => 'whatever' }
-      session.left.ensure_sequence_setup 'rr', 'sequence_test', 2, 0
+      left_sequence_values = session.left.outdated_sequence_values \
+        'rr', 'sequence_test', 2, 0
+      right_sequence_values = session.right.outdated_sequence_values \
+        'rr', 'sequence_test', 2, 0
+      session.left.update_sequences \
+        'rr', 'sequence_test', 2, 0,
+        left_sequence_values, right_sequence_values, 5
       id1, id2 = get_example_sequence_values(session)
       (id2 - id1).should == 2
     ensure
@@ -210,7 +278,13 @@ describe "ReplicationExtender", :shared => true do
     begin
       session = Session.new
       session.left.begin_db_transaction
-      session.left.ensure_sequence_setup 'rr', 'sequence_test', 5, 2
+      left_sequence_values = session.left.outdated_sequence_values \
+        'rr', 'sequence_test', 2, 0
+      right_sequence_values = session.right.outdated_sequence_values \
+        'rr', 'sequence_test', 2, 0
+      session.left.update_sequences \
+        'rr', 'sequence_test', 2, 0,
+        left_sequence_values, right_sequence_values, 5
       session.left.clear_sequence_setup 'rr', 'sequence_test'
       id1, id2 = get_example_sequence_values(session)
       (id2 - id1).should == 1

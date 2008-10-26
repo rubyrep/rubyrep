@@ -97,20 +97,23 @@ describe ReplicationInitializer do
       session = Session.new
       initializer = ReplicationInitializer.new(session)
       session.left.begin_db_transaction
+      session.right.begin_db_transaction
 
       # Note:
       # Calling ensure_sequence_setup twice with different values to ensure that
       # it is actually does something.
 
-      initializer.ensure_sequence_setup :left, 'sequence_test', 3, 2
-      initializer.ensure_sequence_setup :left, 'sequence_test', 5, 2
+      initializer.ensure_sequence_setup 'sequence_test', 3, 2
+      initializer.ensure_sequence_setup 'sequence_test', 5, 2
       id1, id2 = get_example_sequence_values(session)
       (id2 - id1).should == 5
       (id1 % 5).should == 2
     ensure
-      initializer.clear_sequence_setup :left, 'sequence_test' if session
-      session.left.execute "delete from sequence_test" if session
-      session.left.rollback_db_transaction if session
+      [:left, :right].each do |database|
+        initializer.clear_sequence_setup database, 'sequence_test' if session
+        session.send(database).execute "delete from sequence_test" if session
+        session.send(database).rollback_db_transaction if session
+      end
     end
   end
 
@@ -120,14 +123,17 @@ describe ReplicationInitializer do
       session = Session.new
       initializer = ReplicationInitializer.new(session)
       session.left.begin_db_transaction
-      initializer.ensure_sequence_setup :left, 'sequence_test', 5, 2
+      session.right.begin_db_transaction
+      initializer.ensure_sequence_setup 'sequence_test', 5, 2
       initializer.clear_sequence_setup :left, 'sequence_test'
       id1, id2 = get_example_sequence_values(session)
       (id2 - id1).should == 1
     ensure
-      initializer.clear_sequence_setup :left, 'sequence_test' if session
-      session.left.execute "delete from sequence_test" if session
-      session.left.rollback_db_transaction if session
+      [:left, :right].each do |database|
+        initializer.clear_sequence_setup database, 'sequence_test' if session
+        session.send(database).execute "delete from sequence_test" if session
+        session.send(database).rollback_db_transaction if session
+      end
     end
   end
 

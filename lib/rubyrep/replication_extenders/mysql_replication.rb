@@ -114,8 +114,8 @@ module RR
         !select_all("select 1 from information_schema.triggers where trigger_schema = database() and trigger_name = '#{trigger_name}_insert' and event_object_table = '#{table_name}'").empty?
       end
 
-      # Ensures that the sequences of the named table (normally the primary key
-      # column) are generated with the correct increment and offset.
+      # Returns all unadjusted sequences of the given table.
+      # Parameters:
       # * +rep_prefix+:
       #   The prefix put in front of all replication related database objects as
       #   specified via Configuration#options.
@@ -123,14 +123,15 @@ module RR
       # * +table_name+: name of the table
       # * +increment+: increment of the sequence
       # * +offset+: offset
-      # E. g. an increment of 2 and offset of 1 will lead to generation of odd
-      # numbers.
-      def ensure_sequence_setup(rep_prefix, table_name, increment, offset)
+      # Return value: a hash with
+      # * key: sequence name
+      # * value: current sequence value
+      def outdated_sequence_values(rep_prefix, table_name, increment, offset)
         # check if the table has an auto_increment column, return if not
         sequence_row = select_one(<<-end_sql)
           show columns from #{table_name} where extra = 'auto_increment'
         end_sql
-        return unless sequence_row
+        return {} unless sequence_row
         column_name = sequence_row['Field']
 
         # check if the sequences table exists, create if necessary
@@ -150,9 +151,7 @@ module RR
           end_sql
         end
 
-        # check the sequence setting, update if necessary,
-        # create sequence trigger if necessary
-        buffer =  10 # number of records to advance the sequence to avoid conflicts with concurrent updates
+        current_max = 0
         sequence_row = select_one("select current_value, increment, offset from #{sequence_table_name} where name = '#{table_name}'")
         if sequence_row == nil
           # no sequence exists yet for the table, create it and the according
@@ -160,7 +159,46 @@ module RR
           current_max = select_one(<<-end_sql)['current_max'].to_i
             select max(#{column_name}) as current_max from #{table_name}
           end_sql
-          new_start = current_max - (current_max % increment) + buffer * increment + offset
+          return {column_name => current_max}
+        elsif sequence_row['increment'].to_i != increment or sequence_row['offset'].to_i != offset
+          # sequence exists but with incorrect values; update it
+          current_max = sequence_row['current_value'].to_i
+          return {column_name => current_max}
+        end
+        return {}
+      end
+
+      # Ensures that the sequences of the named table (normally the primary key
+      # column) are generated with the correct increment and offset.
+      # * +rep_prefix+: not used (necessary) for the Postgres
+      # * +table_name+: name of the table (not used for Postgres)
+      # * +increment+: increment of the sequence
+      # * +offset+: offset
+      # * +left_sequence_values+:
+      #    hash as returned by #outdated_sequence_values for the left database
+      # * +right_sequence_values+:
+      #    hash as returned by #outdated_sequence_values for the right database
+      # * +adjustment_buffer+:
+      #    the "gap" that is created during sequence update to avoid concurrency problems
+      # E. g. an increment of 2 and offset of 1 will lead to generation of odd
+      # numbers.
+      def update_sequences(
+          rep_prefix, table_name, increment, offset,
+          left_sequence_values, right_sequence_values, adjustment_buffer)
+        return if left_sequence_values.empty?
+        column_name = left_sequence_values.keys[0]
+
+        # check if the sequences table exists, create if necessary
+        sequence_table_name = "#{rep_prefix}_sequences"
+        current_max =
+          [left_sequence_values[column_name], right_sequence_values[column_name]].max +
+          adjustment_buffer
+        new_start = current_max - (current_max % increment) + offset
+
+        sequence_row = select_one("select current_value, increment, offset from #{sequence_table_name} where name = '#{table_name}'")
+        if sequence_row == nil
+          # no sequence exists yet for the table, create it and the according
+          # sequence trigger
           execute(<<-end_sql)
             insert into #{sequence_table_name}(name, current_value, increment, offset)
             values('#{table_name}', #{new_start}, #{increment}, #{offset})
@@ -182,8 +220,6 @@ module RR
           end_sql
         elsif sequence_row['increment'].to_i != increment or sequence_row['offset'].to_i != offset
           # sequence exists but with incorrect values; update it
-          current_max = sequence_row['current_value'].to_i
-          new_start = current_max - (current_max % increment) + buffer * increment + offset
           execute(<<-end_sql)
             update #{sequence_table_name}
             set current_value = #{new_start},
@@ -207,16 +243,16 @@ module RR
             and trigger_name = '#{trigger_name}'
           end_sql
           if trigger_row
-            execute "DROP TRIGGER #{trigger_name}"
-            execute "delete from #{sequence_table_name} where name = '#{table_name}'"
-            unless select_one("select * from #{sequence_table_name}")
-              # no more sequences left --> delete sequence table
-              drop_table sequence_table_name.to_sym
-            end
+          execute "DROP TRIGGER #{trigger_name}"
+          execute "delete from #{sequence_table_name} where name = '#{table_name}'"
+          unless select_one("select * from #{sequence_table_name}")
+            # no more sequences left --> delete sequence table
+            drop_table sequence_table_name.to_sym
           end
         end
       end
     end
   end
+end
 end
 

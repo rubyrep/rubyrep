@@ -31,6 +31,7 @@ module RR
 
       :rep_prefix => 'rr',
       :key_sep => '|',
+      :sequence_adjustment_buffer => 10,
     }
     
     # General options.
@@ -60,6 +61,9 @@ module RR
     #   used for the initial sync of a table.)
     #   If no +:syncer+ option is specified, than a syncer as named by this
     #   option is used.
+    # *:+sequence_adjustement_buffer+:
+    #   When updating a sequence, this is the additional gap to avoid sequence
+    #   conflicts to appear due to concurrent record insertions.
     attr_reader :options
     
     # Merges the specified +options+ hash into the existing options

@@ -62,16 +62,24 @@ module RR
 
     # Ensures that the sequences of the named table (normally the primary key
     # column) are generated with the correct increment and offset.
-    # * database: either :+left+ or :+right+
+    # The sequence is always updated in both databases.
     # * +table_name+: name of the table
     # * +increment+: increment of the sequence
     # * +offset+: offset
     # E. g. an increment of 2 and offset of 1 will lead to generation of odd
     # numbers.
-    def ensure_sequence_setup(database, table, increment, offset)
-      session.send(database).ensure_sequence_setup(
-        options(table)[:rep_prefix], table, increment, offset
-      )
+    def ensure_sequence_setup(table, increment, offset)
+      table_options = options(table)
+      rep_prefix = table_options[:rep_prefix]
+      left_sequence_values = session.left.outdated_sequence_values \
+        rep_prefix, table, increment, offset
+      right_sequence_values = session.right.outdated_sequence_values \
+        rep_prefix, table, increment, offset
+      [:left, :right].each do |database|
+        session.send(database).update_sequences \
+          rep_prefix, table, increment, offset,
+          left_sequence_values, right_sequence_values, table_options[:sequence_adjustment_buffer]
+      end
     end
 
     # Restores the original sequence settings for the named table.

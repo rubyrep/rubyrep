@@ -97,15 +97,17 @@ module RR
         end_sql
       end
 
-      # Ensures that the sequences of the named table (normally the primary key
-      # column) are generated with the correct increment and offset.
+      # Returns all unadjusted sequences of the given table.
+      # Parameters:
       # * +rep_prefix+: not used (necessary) for the Postgres
       # * +table_name+: name of the table
       # * +increment+: increment of the sequence
       # * +offset+: offset
-      # E. g. an increment of 2 and offset of 1 will lead to generation of odd
-      # numbers.
-      def ensure_sequence_setup(rep_prefix, table_name, increment, offset)
+      # Return value: a hash with
+      # * key: sequence name
+      # * value: current sequence value
+      def outdated_sequence_values(rep_prefix, table_name, increment, offset)
+        sequence_values = {}
         sequence_names = select_all(<<-end_sql).map { |row| row['relname'] }
           select s.relname
           from pg_class as t
@@ -118,12 +120,37 @@ module RR
           val1 = select_one("select nextval('#{sequence_name}')")['nextval'].to_i
           val2 = select_one("select nextval('#{sequence_name}')")['nextval'].to_i
           unless val2 - val1 == increment and val2 % increment == offset
-            buffer =  10 # number of records to advance the sequence to avoid conflicts with concurrent updates
-            new_start = val2 - (val2 % increment) + buffer * increment + offset
-            execute(<<-end_sql)
-              alter sequence "#{sequence_name}" increment by #{increment} restart with #{new_start}
-            end_sql
+            sequence_values[sequence_name] = val2
           end
+        end
+        sequence_values
+      end
+
+      # Ensures that the sequences of the named table (normally the primary key
+      # column) are generated with the correct increment and offset.
+      # * +rep_prefix+: not used (necessary) for the Postgres
+      # * +table_name+: name of the table (not used for Postgres)
+      # * +increment+: increment of the sequence
+      # * +offset+: offset
+      # * +left_sequence_values+:
+      #    hash as returned by #outdated_sequence_values for the left database
+      # * +right_sequence_values+:
+      #    hash as returned by #outdated_sequence_values for the right database
+      # * +adjustment_buffer+:
+      #    the "gap" that is created during sequence update to avoid concurrency problems
+      # E. g. an increment of 2 and offset of 1 will lead to generation of odd
+      # numbers.
+      def update_sequences(
+          rep_prefix, table_name, increment, offset,
+          left_sequence_values, right_sequence_values, adjustment_buffer)
+        left_sequence_values.each do |sequence_name, left_current_value|
+          max_current_value =
+            [left_current_value, right_sequence_values[sequence_name]].max +
+            adjustment_buffer
+          new_start = max_current_value - (max_current_value % increment) + offset
+          execute(<<-end_sql)
+            alter sequence "#{sequence_name}" increment by #{increment} restart with #{new_start}
+          end_sql
         end
       end
 

@@ -23,7 +23,7 @@ module RR
       :begin_db_transaction, :rollback_db_transaction, :commit_db_transaction, \
       :referenced_tables, \
       :create_replication_trigger, :drop_replication_trigger, :replication_trigger_exists?,
-      :ensure_sequence_setup, :clear_sequence_setup,
+      :outdated_sequence_values, :update_sequences, :clear_sequence_setup,
       :create_table, :drop_table
     
     # Caching the primary keys. This is a hash with
