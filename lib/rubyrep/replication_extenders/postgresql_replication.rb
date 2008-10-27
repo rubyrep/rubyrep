@@ -174,6 +174,23 @@ module RR
           end_sql
         end
       end
+
+      # Adds a big (8 byte value), auto-incrementing primary key column to the
+      # specified table.
+      # * table_name: name of the target table
+      # * key_name: name of the primary key column
+      def add_big_primary_key(table_name, key_name)
+        old_message_level = select_one("show client_min_messages")['client_min_messages']
+        execute "set client_min_messages = warning"
+        execute(<<-end_sql)
+          alter table "#{table_name}" add column #{key_name} bigserial
+        end_sql
+        execute(<<-end_sql)
+          alter table "#{table_name}" add constraint #{table_name}_#{key_name}_pkey primary key (#{key_name})
+        end_sql
+      ensure
+        execute "set client_min_messages = #{old_message_level}"
+      end
     end
   end
 end

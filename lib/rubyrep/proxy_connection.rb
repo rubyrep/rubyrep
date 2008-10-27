@@ -24,7 +24,7 @@ module RR
       :referenced_tables, \
       :create_replication_trigger, :drop_replication_trigger, :replication_trigger_exists?,
       :outdated_sequence_values, :update_sequences, :clear_sequence_setup,
-      :create_table, :drop_table
+      :create_table, :drop_table, :add_big_primary_key
     
     # Caching the primary keys. This is a hash with
     #   * key: table name

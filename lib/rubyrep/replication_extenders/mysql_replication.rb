@@ -251,6 +251,16 @@ module RR
           end
         end
       end
+
+      # Adds a big (8 byte value), auto-incrementing primary key column to the
+      # specified table.
+      # * table_name: name of the target table
+      # * key_name: name of the primary key column
+      def add_big_primary_key(table_name, key_name)
+        execute(<<-end_sql)
+          alter table #{table_name} add column #{key_name} bigint not null auto_increment primary key
+        end_sql
+      end
     end
   end
 end

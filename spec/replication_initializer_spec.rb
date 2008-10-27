@@ -149,13 +149,23 @@ describe ReplicationInitializer do
   it "create_replication_log / drop_replication_log should create / drop the replication log" do
     config = deep_copy(standard_config)
     config.options[:rep_prefix] = 'r2'
-    initializer = ReplicationInitializer.new(Session.new(config))
+    session = Session.new(config)
+    initializer = ReplicationInitializer.new(session)
     initializer.drop_replication_log(:left) if initializer.replication_log_exists?(:left)
 
     $stderr.stub! :write
     initializer.replication_log_exists?(:left).should be_false
     initializer.create_replication_log(:left)
     initializer.replication_log_exists?(:left).should be_true
+
+    # verify that replication log has 8 byte, auto-generating primary key
+    session.left.insert_record 'r2_change_log', {'change_key' => 'bla'}
+    session.left.select_one("select id from r2_change_log where change_key = 'bla'")['id'].
+      to_i.should > 0
+    session.left.insert_record 'r2_change_log', {'id' => 1e18.to_i, 'change_key' => 'blub'}
+    session.left.select_one("select id from r2_change_log where change_key = 'blub'")['id'].
+      to_i.should == 1e18.to_i
+
     initializer.drop_replication_log(:left)
     initializer.replication_log_exists?(:left).should be_false
   end

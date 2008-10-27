@@ -294,4 +294,26 @@ describe "ReplicationExtender", :shared => true do
       session.left.rollback_db_transaction if session
     end
   end
+
+  it "add_big_primary_key should add a 8 byte, auto incrementing primary key" do
+    session = nil
+    begin
+      session = Session.new
+      session.left.drop_table 'big_key_test' if session.left.tables.include? 'big_key_test'
+      session.left.create_table 'big_key_test'.to_sym, :id => false do |t|
+        t.column :name, :string
+      end
+      session.left.add_big_primary_key 'big_key_test', 'id'
+
+      # should auto generate the primary key if not manually specified
+      session.left.insert_record 'big_key_test', {'name' => 'bla'}
+      session.left.select_one("select id from big_key_test where name = 'bla'")['id'].
+        to_i.should > 0
+
+      # should allow 8 byte values
+      session.left.insert_record 'big_key_test', {'id' => 1e18.to_i, 'name' => 'blub'}
+      session.left.select_one("select id from big_key_test where name = 'blub'")['id'].
+        to_i.should == 1e18.to_i
+    end
+  end
 end

@@ -114,13 +114,14 @@ module RR
           select_one("show client_min_messages")['client_min_messages']
         session.send(database).execute "set client_min_messages = warning"
       end
-      session.send(database).create_table "#{options[:rep_prefix]}_change_log" do |t|
+      session.send(database).create_table "#{options[:rep_prefix]}_change_log", :id => false do |t|
         t.column :change_table, :string
         t.column :change_key, :string
         t.column :change_org_key, :string
         t.column :change_type, :string
         t.column :change_time, :timestamp
       end
+      session.send(database).add_big_primary_key "#{options[:rep_prefix]}_change_log", 'id'
       if session.configuration.send(database)[:adapter] =~ /postgres/
         session.send(database).execute "set client_min_messages = #{old_message_level}"
       end
