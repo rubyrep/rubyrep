@@ -132,5 +132,18 @@ describe Session do   # here database connection caching is _not_ disabled
 
     Session.new.sort_table_pairs(table_pairs).should == sorted_table_pairs
   end
+
+  it "sort_table_pairs should not sort the tables if table_ordering is not enabled in the configuration" do
+    table_pairs = convert_table_array_to_table_pair_array([
+      'scanner_records',
+      'referencing_table',
+      'referenced_table',
+      'scanner_text_key',
+    ])
+    config = deep_copy(standard_config)
+    config.options[:table_ordering] = false
+    session = Session.new config
+    session.sort_table_pairs(table_pairs).should == table_pairs
+  end
 end
 

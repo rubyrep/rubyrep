@@ -13,7 +13,7 @@ describe SyncRunner do
     }
   end
   
-  it "prepare_table_pairs should sort the tables if that was enabled" do
+  it "prepare_table_pairs should sort the tables" do
     session = Session.new standard_config
     session.should_receive(:sort_table_pairs).
       with(:dummy_table_pairs).
@@ -21,15 +21,8 @@ describe SyncRunner do
 
     sync_runner = SyncRunner.new
     sync_runner.stub!(:session).and_return(session)
-    sync_runner.should_receive(:table_ordering?).and_return true
 
     sync_runner.prepare_table_pairs(:dummy_table_pairs).should == :sorted_dummy_table_pairs
-  end
-
-  it "prepare_table_pairs should not sort the tables if that was disabled" do
-    sync_runner = SyncRunner.new
-    sync_runner.should_receive(:table_ordering?).and_return false
-    sync_runner.prepare_table_pairs(:dummy).should == :dummy
   end
 
   it "execute should sync the specified tables" do
@@ -109,17 +102,5 @@ describe SyncRunner do
     sync_runner.table_ordering?.should be_true
     sync_runner.stub!(:options).and_return(:no_table_ordering => true)
     sync_runner.table_ordering?.should be_false
-  end
-
-  it "add_specific_options should add '--no-table-ordering' option" do
-    runner = SyncRunner.new
-    runner.options = {}
-
-    opts = mock("dummy option parser")
-    opts.should_receive(:on).with("--no-table-ordering", an_instance_of(String)).
-      and_yield
-    runner.add_specific_options opts
-
-    runner.options[:no_table_ordering].should be_true
   end
 end

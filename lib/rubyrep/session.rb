@@ -97,17 +97,21 @@ module RR
 
     # Orders the array of table pairs as per primary key / foreign key relations
     # of the tables. Returns the result.
+    # Only sorts if the configuration has set option :+table_ordering+.
     # Refer to TableSpecResolver#resolve for a detailed description of the
     # parameter and return value.
     def sort_table_pairs(table_pairs)
-      left_tables = table_pairs.map {|table_pair| table_pair[:left]}
-      sorted_left_tables = TableSorter.new(self, left_tables).sort
-      sorted_table_pairs = sorted_left_tables.map do |left_table|
-        table_pairs.find do |table_pair|
-          table_pair[:left] == left_table
+      if configuration.options[:table_ordering]
+        left_tables = table_pairs.map {|table_pair| table_pair[:left]}
+        sorted_left_tables = TableSorter.new(self, left_tables).sort
+        sorted_left_tables.map do |left_table|
+          table_pairs.find do |table_pair|
+            table_pair[:left] == left_table
+          end
         end
+      else
+        table_pairs
       end
-      sorted_table_pairs
     end
         
     # Creates a new rubyrep session with the provided Configuration

@@ -122,7 +122,7 @@ EOS
       # not implemented in the base class
     end
 
-    # Intended to be overwritten by derived classes to need to add additional
+    # Intended to be overwritten by derived classes that need to add additional
     # options to the provided +OptionParser+ object.
     def add_specific_options(opts)
     end
