@@ -136,7 +136,7 @@ EOS
     end
     
     # Returns the active +Session+. 
-    # Loads config file if necessary and creates session if necessary.
+    # Loads config file and creates session if necessary.
     def session
       unless @session
         load options[:config_file]
