@@ -196,29 +196,6 @@ describe BaseRunner do
     end
   end
 
-  it "table_pairs should return the table pairs as per command line specified table specs" do
-    runner = BaseRunner.new
-    runner.options = {
-      :config_file => "#{File.dirname(__FILE__)}/../config/test_config.rb",
-      :table_specs => []
-    }
-    runner.table_pairs.should == [
-      {:left => 'scanner_left_records_only', :right => 'scanner_left_records_only'},
-      {:left => 'table_with_manual_key', :right => 'table_with_manual_key'}
-    ]
-  end
-
-  it "table_pairs should return the table pairs as per configuration file if none are provided via command line" do
-    runner = BaseRunner.new
-    runner.options = {
-      :config_file => "#{File.dirname(__FILE__)}/../config/test_config.rb",
-      :table_specs => ['scanner_records']
-    }
-    runner.table_pairs.should == [
-      {:left => 'scanner_records', :right => 'scanner_records'},
-    ]
-  end
-
   it "table_pairs should return the prepared table pairs" do
     runner = BaseRunner.new
     runner.options = {

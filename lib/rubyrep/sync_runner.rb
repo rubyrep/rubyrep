@@ -29,17 +29,8 @@ module RR
     # Reorders the table pairs to avoid foreign key conflicts.
     # More information on this methods at BaseRunner#prepare_table_pairs.
     def prepare_table_pairs(table_pairs)
-      sorted_table_pairs = table_pairs
-      if table_ordering?
-        left_tables = table_pairs.map {|table_pair| table_pair[:left]}
-        sorted_left_tables = TableSorter.new(session, left_tables).sort
-        sorted_table_pairs = sorted_left_tables.map do |left_table|
-          table_pairs.find do |table_pair|
-            table_pair[:left] == left_table
-          end
-        end
-      end
-      sorted_table_pairs
+      table_pairs = session.sort_table_pairs(table_pairs) if table_ordering?
+      table_pairs
     end
   end
 end

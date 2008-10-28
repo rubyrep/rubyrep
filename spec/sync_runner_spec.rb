@@ -13,29 +13,17 @@ describe SyncRunner do
     }
   end
   
-  def convert_table_array_to_table_pair_array(tables)
-    tables.map {|table| {:left => table, :right => table}}
-  end
-
-  it "prepare_table_pairs should sort the tables correctly" do
-    table_pairs = convert_table_array_to_table_pair_array([
-      'scanner_records',
-      'referencing_table',
-      'referenced_table',
-      'scanner_text_key',
-    ])
-    sorted_table_pairs = convert_table_array_to_table_pair_array([
-      'scanner_records',
-      'referenced_table',
-      'referencing_table',
-      'scanner_text_key',
-    ])
-
+  it "prepare_table_pairs should sort the tables if that was enabled" do
     session = Session.new standard_config
+    session.should_receive(:sort_table_pairs).
+      with(:dummy_table_pairs).
+      and_return(:sorted_dummy_table_pairs)
+
     sync_runner = SyncRunner.new
+    sync_runner.stub!(:session).and_return(session)
     sync_runner.should_receive(:table_ordering?).and_return true
-    sync_runner.should_receive(:session).any_number_of_times.and_return(session)
-    sync_runner.prepare_table_pairs(table_pairs).should == sorted_table_pairs
+
+    sync_runner.prepare_table_pairs(:dummy_table_pairs).should == :sorted_dummy_table_pairs
   end
 
   it "prepare_table_pairs should not sort the tables if that was disabled" do

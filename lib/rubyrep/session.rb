@@ -83,6 +83,32 @@ module RR
       [configuration.left, configuration.right].any? \
         {|arm_config| arm_config.include? :proxy_host}
     end
+
+    # Returns an array of table pairs of the configured tables.
+    # Refer to TableSpecResolver#resolve for a detailed description of the
+    # return value.
+    # If +included_table_specs+ is provided (that is: not an empty array), it
+    # will be used instead of the configured table specs.
+    def configured_table_pairs(included_table_specs = [])
+      resolver = TableSpecResolver.new self
+      included_table_specs = Initializer.configuration.included_table_specs if included_table_specs.empty?
+      resolver.resolve included_table_specs, Initializer.configuration.excluded_table_specs
+    end
+
+    # Orders the array of table pairs as per primary key / foreign key relations
+    # of the tables. Returns the result.
+    # Refer to TableSpecResolver#resolve for a detailed description of the
+    # parameter and return value.
+    def sort_table_pairs(table_pairs)
+      left_tables = table_pairs.map {|table_pair| table_pair[:left]}
+      sorted_left_tables = TableSorter.new(self, left_tables).sort
+      sorted_table_pairs = sorted_left_tables.map do |left_table|
+        table_pairs.find do |table_pair|
+          table_pair[:left] == left_table
+        end
+      end
+      sorted_table_pairs
+    end
         
     # Creates a new rubyrep session with the provided Configuration
     def initialize(config = Initializer::configuration)
