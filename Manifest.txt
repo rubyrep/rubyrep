@@ -14,6 +14,7 @@ config/requirements.rb
 config/test_config.rb
 lib/rubyrep.rb
 lib/rubyrep/base_runner.rb
+lib/rubyrep/committers/buffered_committer.rb
 lib/rubyrep/committers/committers.rb
 lib/rubyrep/configuration.rb
 lib/rubyrep/connection_extenders/connection_extenders.rb
@@ -48,6 +49,7 @@ lib/rubyrep/table_scan_helper.rb
 lib/rubyrep/table_sorter.rb
 lib/rubyrep/table_spec_resolver.rb
 lib/rubyrep/table_sync.rb
+lib/rubyrep/trigger_mode_switcher.rb
 lib/rubyrep/type_casting_cursor.rb
 lib/rubyrep/version.rb
 script/destroy
@@ -59,6 +61,7 @@ sims/performance/big_sync_spec.rb
 sims/performance/performance.rake
 sims/sim_helper.rb
 spec/base_runner_spec.rb
+spec/buffered_committer_spec.rb
 spec/committers_spec.rb
 spec/configuration_spec.rb
 spec/connection_extender_interface_spec.rb
@@ -96,6 +99,7 @@ spec/table_scan_spec.rb
 spec/table_sorter_spec.rb
 spec/table_spec_resolver_spec.rb
 spec/table_sync_spec.rb
+spec/trigger_mode_switcher_spec.rb
 spec/two_way_syncer_spec.rb
 spec/type_casting_cursor_spec.rb
 tasks/database.rake

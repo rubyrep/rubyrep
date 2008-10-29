@@ -17,11 +17,12 @@ module RR
     
     # Forward certain methods to the proxied database connection
     def_delegators \
-      :connection, :columns, :quote_column_name, \
-      :quote_table_name, :select_cursor, :execute, \
-      :select_one, :select_all, :tables, \
-      :begin_db_transaction, :rollback_db_transaction, :commit_db_transaction, \
-      :referenced_tables, \
+      :connection, :columns, :quote_column_name,
+      :quote_table_name, :select_cursor, :execute,
+      :select_one, :select_all, :tables,
+      :begin_db_transaction, :rollback_db_transaction, :commit_db_transaction,
+      :referenced_tables,
+      :create_or_replace_replication_trigger_function,
       :create_replication_trigger, :drop_replication_trigger, :replication_trigger_exists?,
       :outdated_sequence_values, :update_sequences, :clear_sequence_setup,
       :create_table, :drop_table, :add_big_primary_key

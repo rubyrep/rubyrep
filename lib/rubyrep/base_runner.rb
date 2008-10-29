@@ -49,7 +49,7 @@ module RR
     # 0 otherwise)
     def process_options(args)
       status = 0
-      self.options = DEFAULT_OPTIONS
+      self.options = DEFAULT_OPTIONS.clone
 
       parser = OptionParser.new do |opts|
         opts.banner = <<EOS
@@ -144,6 +144,8 @@ EOS
       end
       @session
     end
+
+    attr_writer :session
 
     # Returns the table pairs that should be processed.
     # Refer to TableSpecRsolver#resolve for format of return value.

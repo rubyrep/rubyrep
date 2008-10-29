@@ -103,8 +103,10 @@ describe ReplicationInitializer do
       # Calling ensure_sequence_setup twice with different values to ensure that
       # it is actually does something.
 
-      initializer.ensure_sequence_setup 'sequence_test', 3, 2
-      initializer.ensure_sequence_setup 'sequence_test', 5, 2
+      table_pair = {:left => 'sequence_test', :right => 'sequence_test'}
+
+      initializer.ensure_sequence_setup table_pair, 3, 2, 2
+      initializer.ensure_sequence_setup table_pair, 5, 2, 1
       id1, id2 = get_example_sequence_values(session)
       (id2 - id1).should == 5
       (id1 % 5).should == 2
@@ -124,7 +126,8 @@ describe ReplicationInitializer do
       initializer = ReplicationInitializer.new(session)
       session.left.begin_db_transaction
       session.right.begin_db_transaction
-      initializer.ensure_sequence_setup 'sequence_test', 5, 2
+      table_pair = {:left => 'sequence_test', :right => 'sequence_test'}
+      initializer.ensure_sequence_setup table_pair, 5, 2, 2
       initializer.clear_sequence_setup :left, 'sequence_test'
       id1, id2 = get_example_sequence_values(session)
       (id2 - id1).should == 1
@@ -168,5 +171,129 @@ describe ReplicationInitializer do
 
     initializer.drop_replication_log(:left)
     initializer.replication_log_exists?(:left).should be_false
+  end
+
+  it "ensure_activity_marker_tables should not create the tables if they already exist" do
+    session = Session.new
+    initializer = ReplicationInitializer.new(session)
+    session.left.should_not_receive(:create_table)
+    initializer.ensure_activity_marker_tables
+  end
+
+  it "ensure_activity_marker_tables should create the marker tables" do
+    begin
+      config = deep_copy(standard_config)
+      config.options[:rep_prefix] = 'rx'
+      session = Session.new(config)
+      initializer = ReplicationInitializer.new(session)
+      initializer.ensure_activity_marker_tables
+      session.left.tables.include?('rx_active').should be_true
+      session.right.tables.include?('rx_active').should be_true
+    
+      # right columns?
+      columns = session.left.columns('rx_active')
+      columns.size.should == 1
+      columns[0].name.should == 'active'
+    ensure
+      if session
+        session.left.drop_table 'rx_active'
+        session.right.drop_table 'rx_active'
+      end
+    end
+  end
+
+  it "ensure_replication_log_tables should not create the tables if they already exist" do
+    session = Session.new
+    initializer = ReplicationInitializer.new(session)
+    session.left.should_not_receive(:create_table)
+    initializer.ensure_replication_log_tables
+  end
+
+  it "ensure_replication_log_tables should create the tables" do
+    begin
+      config = deep_copy(standard_config)
+      config.options[:rep_prefix] = 'rx'
+      session = Session.new(config)
+      initializer = ReplicationInitializer.new(session)
+      initializer.ensure_replication_log_tables
+      session.left.tables.include?('rx_change_log').should be_true
+      session.right.tables.include?('rx_change_log').should be_true
+
+    ensure
+      if session
+        session.left.drop_table 'rx_change_log'
+        session.right.drop_table 'rx_change_log'
+      end
+    end
+  end
+
+  it "exclude_ruby_rep_tables should exclude the correct system tables" do
+    config = deep_copy(standard_config)
+    initializer = ReplicationInitializer.new(Session.new(config))
+    initializer.session.configuration.should_receive(:exclude_tables).with(/^rr_.*/)
+    initializer.exclude_rubyrep_tables
+  end
+
+  it "prepare_replication should prepare the replication" do
+    session = nil
+    initializer = nil
+    org_stdout = $stdout
+
+    config = deep_copy(standard_config)
+    config.options[:committer] = :buffered_commit
+    config.options[:use_ansi] = false
+    config.include_tables 'rr_change_log' # added to verify that it is ignored
+
+    session = Session.new(config)
+
+    $stdout = StringIO.new
+    begin
+      initializer = ReplicationInitializer.new(session)
+      initializer.should_receive :ensure_activity_marker_tables
+      initializer.should_receive :ensure_replication_log_tables
+      initializer.prepare_replication
+      # verify sequences have been setup
+      session.left.outdated_sequence_values('rr','scanner_left_records_only', 2, 0).should == {}
+      session.right.outdated_sequence_values('rr','scanner_left_records_only', 2, 1).should == {}
+
+      # verify table was synced
+      left_records = session.left.select_all("select * from  scanner_left_records_only order by id")
+      right_records = session.left.select_all("select * from  scanner_left_records_only order by id")
+      left_records.should == right_records
+
+      # verify rubyrep activity is _not_ logged
+      session.right.select_all("select * from rr_change_log").should be_empty
+
+      # verify other data changes are logged
+      initializer.trigger_exists?(:left, 'scanner_left_records_only').should be_true
+      session.left.insert_record 'scanner_left_records_only', {'id' => 10, 'name' => 'bla'}
+      changes = session.left.select_all("select change_key from rr_change_log")
+      changes.size.should == 1
+      changes[0]['change_key'].should == 'id|10'
+
+      # verify that the 'rr_change_log' table was not touched
+      initializer.trigger_exists?(:left, 'rr_change_log').should be_false
+
+    ensure
+      $stdout = org_stdout
+      if session
+        session.left.execute "delete from scanner_left_records_only where id = 10"
+        session.right.execute "delete from scanner_left_records_only"
+        [:left, :right].each do |database|
+          session.send(database).execute "delete from rr_change_log"
+        end
+      end
+      if initializer
+        [:left, :right].each do |database|
+          initializer.clear_sequence_setup database, 'scanner_left_records_only'
+          initializer.clear_sequence_setup database, 'table_with_manual_key'
+          ['scanner_left_records_only', 'table_with_manual_key'].each do |table|
+            if initializer.trigger_exists?(database, table)
+              initializer.drop_trigger database, table
+            end
+          end
+        end
+      end
+    end
   end
 end

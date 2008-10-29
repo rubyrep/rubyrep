@@ -24,14 +24,18 @@ module RR
     DEFAULT_OPTIONS = {
       :proxy_block_size => 1000,
       :syncer => :two_way,
-      :committer => :default,
+      :committer => :buffered_commit,
+      :commit_frequency => 1000,
       :table_ordering => true,
       :scan_progress_printer => :progress_bar,
       :use_ansi => true_unless_running_on_windows,
+      :sequence_adjustment_buffer => 10,
+      :sequence_increment => 2,
+      :left_sequence_offset => 0,
+      :right_sequence_offset => 1,
 
       :rep_prefix => 'rr',
       :key_sep => '|',
-      :sequence_adjustment_buffer => 10,
     }
     
     # General options.
@@ -40,6 +44,9 @@ module RR
     # * :+committer+:
     #   A committer key as registered by Committers#register.
     #   Determines the transaction management to be used during the sync.
+    # * :+commit_frequency+:
+    #   Used by BufferedCommitter. Number of changes are which the open
+    #   transactions should be committed and new transactions be started.
     # * :+table_ordering+:
     #   If true, sort tables before syncing as per foreign key dependencies.
     #   (Dependent tables are synced last to reduce risk of foreign key
@@ -61,9 +68,14 @@ module RR
     #   used for the initial sync of a table.)
     #   If no +:syncer+ option is specified, than a syncer as named by this
     #   option is used.
-    # *:+sequence_adjustement_buffer+:
+    # * :+sequence_adjustement_buffer+:
     #   When updating a sequence, this is the additional gap to avoid sequence
     #   conflicts to appear due to concurrent record insertions.
+    # * :+sequence_increment+: new sequence value = last sequence value + this
+    # * :+left_sequence_offset+, +right_sequence_offset+:
+    #   Default sequence offset for the table in the according data base.
+    #   E. g. with a +sequence_increment+ of 2, an offset of 0 will produce even,
+    #   an offset of 1 will produce odd numbers.
     attr_reader :options
     
     # Merges the specified +options+ hash into the existing options

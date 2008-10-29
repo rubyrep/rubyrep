@@ -37,6 +37,12 @@ describe "ConnectionExtender", :shared => true do
       should == ["referenced_table", "referenced_table2"]
   end
   
+  it "referenced_tables should return those tables without primary key" do
+    session = Session.new
+    referenced_tables = session.left.referenced_tables(['table_with_manual_key'])
+    referenced_tables.should == {'table_with_manual_key' => []}
+  end
+
   it "select_cursor should handle zero result queries" do
     session = Session.new
     result = session.left.select_cursor "select * from extender_no_record"

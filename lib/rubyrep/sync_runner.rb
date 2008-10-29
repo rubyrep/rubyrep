@@ -15,10 +15,6 @@ module RR
       TableSync.new session, left_table, right_table
     end
 
-    def table_ordering?
-      session.configuration.options[:table_ordering] and not options[:no_table_ordering]
-    end
-
     # Reorders the table pairs to avoid foreign key conflicts.
     # More information on this methods at BaseRunner#prepare_table_pairs.
     def prepare_table_pairs(table_pairs)

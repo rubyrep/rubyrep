@@ -38,7 +38,7 @@ module RR
         :log_table => "#{options[:rep_prefix]}_change_log",
         :activity_table => "#{options[:rep_prefix]}_active",
         :key_sep => options[:key_sep],
-        :exclude_rubyrep_activity => true,
+        :exclude_rr_activity => false,
       }
 
       session.send(database).create_replication_trigger params
@@ -61,23 +61,26 @@ module RR
     end
 
     # Ensures that the sequences of the named table (normally the primary key
-    # column) are generated with the correct increment and offset.
+    # column) are generated with the correct increment and offset in both
+    # left and right database.
     # The sequence is always updated in both databases.
-    # * +table_name+: name of the table
+    # * +table_pair+: a hash of names of corresponding :left and :right tables
     # * +increment+: increment of the sequence
-    # * +offset+: offset
+    # * +left_offset+: offset of table in left database
+    # * +right_offset+: offset of table in right database
     # E. g. an increment of 2 and offset of 1 will lead to generation of odd
     # numbers.
-    def ensure_sequence_setup(table, increment, offset)
-      table_options = options(table)
+    def ensure_sequence_setup(table_pair, increment, left_offset, right_offset)
+      table_options = options(table_pair[:left])
       rep_prefix = table_options[:rep_prefix]
       left_sequence_values = session.left.outdated_sequence_values \
-        rep_prefix, table, increment, offset
+        rep_prefix, table_pair[:left], increment, left_offset
       right_sequence_values = session.right.outdated_sequence_values \
-        rep_prefix, table, increment, offset
+        rep_prefix, table_pair[:right], increment, right_offset
       [:left, :right].each do |database|
+        offset = database == :left ? left_offset : right_offset
         session.send(database).update_sequences \
-          rep_prefix, table, increment, offset,
+          rep_prefix, table_pair[database], increment, offset,
           left_sequence_values, right_sequence_values, table_options[:sequence_adjustment_buffer]
       end
     end
@@ -125,6 +128,72 @@ module RR
       if session.configuration.send(database)[:adapter] =~ /postgres/
         session.send(database).execute "set client_min_messages = #{old_message_level}"
       end
+    end
+
+    # Adds to the current session's configuration an exclusion of rubyrep tables.
+    def exclude_rubyrep_tables
+      r = Regexp.new "^#{options[:rep_prefix]}_.*"
+      session.configuration.exclude_tables r
+    end
+
+    # Checks in both databases, if the activity marker tables exist and if not,
+    # creates them.
+    def ensure_activity_marker_tables
+      table_name = "#{options[:rep_prefix]}_active"
+      [:left, :right].each do |database|
+        unless session.send(database).tables.include? table_name
+          session.send(database).create_table table_name, :id => false do |t|
+            t.column :active, :integer
+          end
+        end
+      end
+    end
+
+    # Checks in both databases, if the replication log tables exist and if not,
+    # creates them.
+    def ensure_replication_log_tables
+      [:left, :right].each do |database|
+        create_replication_log(database) unless replication_log_exists?(database)
+      end
+    end
+
+    # Prepares the database / tables for replication.
+    def prepare_replication
+      exclude_rubyrep_tables
+
+      puts "Verifying RubyRep tables"
+      ensure_activity_marker_tables
+      ensure_replication_log_tables
+
+      unsynced_table_pairs = []
+
+      puts "Verifying sequence and trigger setup of replicated tables"
+      table_pairs = session.sort_table_pairs(session.configured_table_pairs)
+      table_pairs.each do |table_pair|
+        table_options = options(table_pair[:left])
+        ensure_sequence_setup table_pair,
+          table_options[:sequence_increment],
+          table_options[:left_sequence_offset],
+          table_options[:right_sequence_offset]
+
+        unsynced = false
+        [:left, :right].each do |database|
+          unless trigger_exists? database, table_pair[database]
+            create_trigger database, table_pair[database]
+            unsynced = true
+          end
+        end
+        unsynced_table_pairs << table_pair if unsynced
+      end
+      unsynced_table_specs = unsynced_table_pairs.map do |table_pair|
+        "#{table_pair[:left]}, #{table_pair[:right]}"
+      end
+
+      puts "Executing initial table syncs" unless unsynced_table_specs.empty?
+      runner = SyncRunner.new
+      runner.session = session
+      runner.options = {:table_specs => unsynced_table_specs}
+      runner.execute
     end
   end
 
