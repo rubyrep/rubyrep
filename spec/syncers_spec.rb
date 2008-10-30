@@ -21,6 +21,19 @@ describe Syncers do
     Syncers.syncers.should == :dummy_data
   end
 
+  it "configured_syncer should return the correct syncer as per :syncer option, if both :syncer and :replicator is configured" do
+    options = {
+      :syncer => :two_way,
+      :replicator => :key2
+    }
+    Syncers.configured_syncer(options).should == Syncers::TwoWaySyncer
+  end
+
+  it "configured_syncer should return the correct syncer as per :replicator option if no :syncer option is provided" do
+    options = {:replicator => :two_way}
+    Syncers.configured_syncer(options).should == Syncers::TwoWaySyncer
+  end
+
   it "register should register the provided commiter" do
     Syncers.instance_variable_set :@syncers, nil
     Syncers.register :a_key => :a

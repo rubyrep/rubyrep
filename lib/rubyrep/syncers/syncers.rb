@@ -32,6 +32,13 @@ module RR
       @syncers ||= {}
       @syncers.merge! syncer_hash
     end
+
+    # Returns the correct syncer class as per provided options hash
+    def self.configured_syncer(options)
+      syncer_id = options[:syncer]
+      syncer_id ||= options[:replicator]
+      syncers[syncer_id]
+    end
     
     # This syncer implements a one way sync.
     # Syncer options relevant for this syncer:

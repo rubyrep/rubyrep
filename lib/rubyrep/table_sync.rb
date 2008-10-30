@@ -16,13 +16,6 @@ module RR
       super
     end
 
-    # Returns the correct syncer class as per active configuration
-    def syncer_class
-      syncer_id = sync_options[:syncer] 
-      syncer_id ||= sync_options[:replicator]
-      Syncers.syncers[syncer_id]
-    end
-    
     # Executes the table sync. If a block is given, yields each difference with
     # the following 2 parameters
     # * +:type+
@@ -38,7 +31,7 @@ module RR
       scan.progress_printer = progress_printer
 
       helper = SyncHelper.new(self)
-      syncer = syncer_class.new(helper)
+      syncer = Syncers.configured_syncer(sync_options).new(helper)
 
       scan.run do |type, row|
         yield type, row if block_given? # To enable progress reporting

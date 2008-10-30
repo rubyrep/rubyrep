@@ -3,22 +3,6 @@ require File.dirname(__FILE__) + '/spec_helper.rb'
 include RR
 
 describe TableSync do
-  it "syncer_class should return the correct syncer as per :syncer option, if both :syncer and :replicator is configured" do
-    config = deep_copy(standard_config)
-    config.options[:syncer] = :two_way
-    config.options[:replicator] = :key2
-    session = Session.new(config)
-    TableSync.new(session, 'scanner_records').syncer_class.should == Syncers::TwoWaySyncer
-  end
-  
-  it "syncer_class should return the correct syncer as per :replicator option if no :syncer option is provided" do
-    config = deep_copy(standard_config)
-    config.options[:replicator] = :two_way
-    config.options.delete :syncer
-    session = Session.new(config)
-    TableSync.new(session, 'scanner_records').syncer_class.should == Syncers::TwoWaySyncer
-  end
-
   it "sync_options should return the correct table specific sync options" do
     config = deep_copy(standard_config)
     old_table_specific_options = config.tables_with_options

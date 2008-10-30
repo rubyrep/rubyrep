@@ -23,7 +23,7 @@ module RR
     # Default #options for a new Configuration object.
     DEFAULT_OPTIONS = {
       :proxy_block_size => 1000,
-      :syncer => :two_way,
+      :replicator => :two_way,
       :committer => :buffered_commit,
       :commit_frequency => 1000,
       :table_ordering => true,
@@ -165,7 +165,7 @@ module RR
       end
 
       # Merge the default syncer options in (if syncer has some)
-      syncer_class = Syncers.syncers[resulting_options[:syncer]]
+      syncer_class = Syncers.configured_syncer(resulting_options)
       if syncer_class.respond_to? :default_options
         default_syncer_options = syncer_class.default_options.clone
       else
