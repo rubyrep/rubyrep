@@ -222,10 +222,10 @@ describe Committers::BufferedCommitter do
     stub_execute session
     committer = Committers::BufferedCommitter.new(session, 'left_table', 'right_table', {})
 
-    session.right.should_receive(:update_record).with('right_table', :dummy_values)
+    session.right.should_receive(:update_record).with('right_table', :dummy_values, :dummy_org_key)
     committer.should_receive(:commit)
 
-    committer.update_record(:right, :dummy_values)
+    committer.update_record(:right, :dummy_values, :dummy_org_key)
   end
 
   it "delete_record should commit" do

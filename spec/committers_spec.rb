@@ -47,7 +47,7 @@ describe "Committer", :shared => true do
     left_connection.should_receive(:insert_record).with("left", :dummy_insert_values)
 
     right_connection = mock("right connection", :null_object => true)
-    right_connection.should_receive(:update_record).with("right", :dummy_update_values)
+    right_connection.should_receive(:update_record).with("right", :dummy_update_values, :dummy_org_key)
     right_connection.should_receive(:delete_record).with("right", :dummy_delete_values)
 
     session = mock("session")
@@ -58,7 +58,7 @@ describe "Committer", :shared => true do
       "left", "right", :dummy_options
 
     committer.insert_record :left, :dummy_insert_values
-    committer.update_record :right, :dummy_update_values
+    committer.update_record :right, :dummy_update_values, :dummy_org_key
     committer.delete_record :right, :dummy_delete_values
   end
   

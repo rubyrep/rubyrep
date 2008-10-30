@@ -59,8 +59,16 @@ describe Configuration do
     sync = TableSync.new(Session.new, 'scanner_records')
     helper = SyncHelper.new(sync)
     c = helper.instance_eval {committer}
-    c.should_receive(:update_record).with(:right, :dummy_record)
+    c.should_receive(:update_record).with(:right, :dummy_record, nil)
     helper.update_record :right, :dummy_record
+  end
+
+  it "update_record should update the given record with the provided old key" do
+    sync = TableSync.new(Session.new, 'scanner_records')
+    helper = SyncHelper.new(sync)
+    c = helper.instance_eval {committer}
+    c.should_receive(:update_record).with(:right, :dummy_record, :old_key)
+    helper.update_record :right, :dummy_record, :old_key
   end
 
   it "delete_record should delete the given record" do

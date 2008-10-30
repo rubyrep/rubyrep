@@ -17,9 +17,10 @@ module RR
   #   def insert_record(database, values)
   #
   #   # Updates the specified record in the specified +database+ (either :left or :right).
-  #   # +values+ is a hash of column_name => value pairs. (Only the primary key
-  #   # values will be used and must be included in the hash.)
-  #   def update_record(database, values)
+  #   # +values+ is a hash of column_name => value pairs.
+  #   # +old_key+ is a column_name => value hash with the original primary key.
+  #   # If +old_key+ is +nil+, then the primary key must be contained in +values+.
+  #   def update_record(database, values, old_key)
   #
   #   # Deletes the specified record in the specified +database+ (either :left or :right).
   #   # +values+ is a hash of column_name => value pairs. (Only the primary key
@@ -86,10 +87,11 @@ module RR
       end
       
       # Updates the specified record in the specified +database+ (either :left or :right).
-      # +values+ is a hash of column_name => value pairs. (Only the primary key
-      # values will be used and must be included in the hash.)
-      def update_record(database, values)
-        connections[database].update_record(tables[database], values)
+      # +values+ is a hash of column_name => value pairs.
+      # # +old_key+ is a column_name => value hash with the original primary key.
+      # If +old_key+ is +nil+, then the primary key must be contained in +values+.
+      def update_record(database, values, old_key = nil)
+        connections[database].update_record(tables[database], values, old_key)
       end
       
       # Deletes the specified record in the specified +database+ (either :left or :right).
