@@ -222,23 +222,32 @@ module RR
       execute table_insert_query(table, values)
     end
     
-    # Returns an SQL update query for the given +table+ and +values+
-    # +values+ is a hash of column_name => value pairs.
-    def table_update_query(table, values)
+    # Returns an SQL update query.
+    # * +table+: name of the target table
+    # * +values+: a hash of column_name => value pairs
+    # * +org_key+:
+    #   A hash of column_name => value pairs. If +nil+, use the key specified by
+    #   +values+ instead.
+    def table_update_query(table, values, org_key = nil)
+      org_key ||= values
       query = "update #{quote_table_name(table)} set "
       query << values.map do |column_name, value|
         "#{quote_column_name(column_name)} = #{quote_value(table, column_name, value)}"
       end.join(', ')
       query << " where (" << quote_key_list(table) << ") = ("
       query << primary_key_names(table).map do |key|
-        quote_value(table, key, values[key])
+        quote_value(table, key, org_key[key])
       end.join(', ') << ")"
     end
     
-    # Updates the specified records of the named +table+.
-    # +values+ is a hash of column_name => value pairs.
-    def update_record(table, values)
-      execute table_update_query(table, values)
+    # Updates the specified records of the specified table.
+    # * +table+: name of the target table
+    # * +values+: a hash of column_name => value pairs.
+    # * +org_key+:
+    #   A hash of column_name => value pairs. If +nil+, use the key specified by
+    #   +values+ instead.
+    def update_record(table, values, org_key = nil)
+      execute table_update_query(table, values, org_key)
     end
 
     # Returns an SQL delete query for the given +table+ and +values+

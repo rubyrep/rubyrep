@@ -266,6 +266,21 @@ describe ProxyConnection do
     end
   end
 
+  it "update_record should handle key changes" do
+    @connection.begin_db_transaction
+    begin
+      @connection.update_record 'extender_combined_key',
+        {'first_id' => '8', 'second_id' => '9', 'name' => 'xy'},
+        {'first_id' => '1', 'second_id' => '1'}
+      @connection.select_one(
+        "select first_id, second_id, name
+         from extender_combined_key where (first_id, second_id) = (8, 9)") \
+        .should == {'first_id' => '8', 'second_id' => '9', 'name' => 'xy'}
+    ensure
+      @connection.rollback_db_transaction
+    end
+  end
+
   it "update_record should write nil values correctly" do
     @connection.begin_db_transaction
     begin
