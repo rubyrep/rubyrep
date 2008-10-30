@@ -251,7 +251,7 @@ describe Committers::BufferedCommitter do
     committer.finalize true
   end
 
-  it "finalize should commit the transactions if called with success = true" do
+  it "finalize should rollbackup the transactions if called with success = false" do
     session = Session.new
     stub_begin_transaction session
     stub_execute session
