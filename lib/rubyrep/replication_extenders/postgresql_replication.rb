@@ -185,9 +185,11 @@ module RR
         execute(<<-end_sql)
           alter table "#{table_name}" add column #{key_name} bigserial
         end_sql
+
         execute(<<-end_sql)
           alter table "#{table_name}" add constraint #{table_name}_#{key_name}_pkey primary key (#{key_name})
         end_sql
+        
       ensure
         execute "set client_min_messages = #{old_message_level}"
       end
