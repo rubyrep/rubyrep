@@ -7,8 +7,7 @@ module RR
   #
   #   # Creates a new committer
   #   #   * session: a Session object representing the current database session
-  #   #   * sync_options: a hash of table specific sync options
-  #   def initialize(session, sync_options)
+  #   def initialize(session)
   #
   #   # Inserts the specified record in the specified +database+ (either :left or :right).
   #   # +table+ is the name of the target table.
@@ -63,14 +62,10 @@ module RR
       # E. g. {:left => <left connection>, :right => <right connection>}
       attr_accessor :connections
     
-      # A hash of table specific sync options
-      attr_accessor :sync_options
-
       # A new committer is created for each table sync.
       #   * session: a Session object representing the current database session
-      #   * sync_options: a hash of table specific sync options
-      def initialize(session, sync_options)
-        self.session, self.sync_options = session, sync_options
+      def initialize(session)
+        self.session = session
         self.connections = {:left => session.left, :right => session.right}
       end
       
@@ -138,7 +133,7 @@ module RR
       # Starts new transactions on left and right database connectin of session.
       # Additionally rolls back transactions started in previous 
       # +NeverCommitter+ instances.
-      def initialize(session, sync_options)
+      def initialize(session)
         super
         self.class.rollback_current_session
         self.class.current_session = session

@@ -46,7 +46,7 @@ module RR
     def committer
       unless @committer
         committer_class = Committers::committers[sync_options[:committer]]
-        @committer = committer_class.new(session, sync_options)
+        @committer = committer_class.new(session)
       end
       @committer
     end

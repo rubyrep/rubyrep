@@ -13,7 +13,6 @@ describe Configuration do
     c = helper.instance_eval {committer}
     c.should be_an_instance_of(Committers::DefaultCommitter)
     c.session.should == helper.session
-    c.sync_options.should == helper.sync_options
   end
 
   it "session should return the session" do

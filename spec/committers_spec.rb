@@ -38,7 +38,7 @@ describe "Committer", :shared => true do
       .and_return(mock("left connection", :null_object => true))
     session.should_receive(:right).any_number_of_times \
       .and_return(mock("right connection", :null_object => true))
-    @committer.class.new session, :dummy_options
+    @committer.class.new session
   end
   
   it "should proxy insert_record, update_record and delete_record calls" do
@@ -53,7 +53,7 @@ describe "Committer", :shared => true do
     session.should_receive(:left).any_number_of_times.and_return(left_connection)
     session.should_receive(:right).any_number_of_times.and_return(right_connection)
 
-    committer = @committer.class.new session, :dummy_options
+    committer = @committer.class.new session
 
     committer.insert_record :left, 'left', :dummy_insert_values
     committer.update_record :right, 'right', :dummy_update_values, :dummy_org_key
@@ -70,7 +70,7 @@ describe Committers::DefaultCommitter do
     @session = mock("session")
     @session.should_receive(:left).any_number_of_times.and_return(:left_connection)
     @session.should_receive(:right).any_number_of_times.and_return(:right_connection)
-    @committer = Committers::DefaultCommitter.new @session, :dummy_options
+    @committer = Committers::DefaultCommitter.new @session
   end
 
   it "should register itself" do
@@ -81,7 +81,6 @@ describe Committers::DefaultCommitter do
     @committer.session.should == @session
     @committer.connections \
       .should == {:left => @session.left, :right => @session.right}
-    @committer.sync_options.should == :dummy_options
   end
   
   it_should_behave_like "Committer"
@@ -96,7 +95,7 @@ describe Committers::NeverCommitter do
       .and_return(mock("left connection", :null_object => true))
     @session.should_receive(:right).any_number_of_times \
       .and_return(mock("right connection", :null_object => true))
-    @committer = Committers::NeverCommitter.new @session, :dummy_options
+    @committer = Committers::NeverCommitter.new @session
   end
   
   after(:each) do
@@ -111,7 +110,6 @@ describe Committers::NeverCommitter do
     @committer.session.should == @session
     @committer.connections \
       .should == {:left => @session.left, :right => @session.right}
-    @committer.sync_options.should == :dummy_options
   end
   
   it "initialize should rollback the previous current session and then register the new one as current session" do
@@ -120,7 +118,7 @@ describe Committers::NeverCommitter do
     Committers::NeverCommitter.current_session = old_session
     Committers::NeverCommitter.should_receive(:rollback_current_session)
     
-    Committers::NeverCommitter.new new_session, :dummy_options
+    Committers::NeverCommitter.new new_session
     Committers::NeverCommitter.current_session.should == new_session
   end
   
@@ -138,7 +136,7 @@ describe Committers::NeverCommitter do
     right_connection.should_receive :begin_db_transaction
     new_session.should_receive(:right).any_number_of_times.and_return(right_connection)
 
-    @committer = Committers::NeverCommitter.new new_session, :dummy_options
+    @committer = Committers::NeverCommitter.new new_session
   end
   
   it "rollback_current_session should rollback current session" do
@@ -158,16 +156,16 @@ describe Committers::NeverCommitter do
   
   it "should work will real sessions" do
     session = Session.new(standard_config)
-    Committers::NeverCommitter.new session, :dummy_options    
-    Committers::NeverCommitter.new session, :dummy_options
+    Committers::NeverCommitter.new session
+    Committers::NeverCommitter.new session
     Committers::NeverCommitter.rollback_current_session
   end
   
   it "should work will real proxied sessions" do
     ensure_proxy
     session = Session.new(proxied_config)
-    Committers::NeverCommitter.new session, :dummy_options    
-    Committers::NeverCommitter.new session, :dummy_options   
+    Committers::NeverCommitter.new session
+    Committers::NeverCommitter.new session   
     Committers::NeverCommitter.rollback_current_session
   end
   

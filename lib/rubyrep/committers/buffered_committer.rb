@@ -91,8 +91,7 @@ module RR
 
       # A new committer is created for each table sync.
       #   * session: a Session object representing the current database session
-      #   * sync_options: a hash of table specific sync options
-      def initialize(session, sync_options)
+      def initialize(session)
         super
         begin_db_transactions
       end
