@@ -14,7 +14,7 @@ module RR
     #     * sync_helper: The current SyncHelper instance.
     #     * type: :+left+ or :+right+ to designate source database
     #     * row: column_name => value hash representing the row
-    # * :+conflict_handling+:
+    # * :+sync_conflict_handling+:
     #   Handling of conflicting records. Can be any of the following:
     #   * :+ignore+: No action. *Default* *Setting*
     #   * :+update_left+: Update left database with the field values in the right db.
@@ -46,7 +46,7 @@ module RR
         {
           :left_record_handling => :insert,
           :right_record_handling => :insert,
-          :conflict_handling => :ignore
+          :sync_conflict_handling => :ignore
         }
       end
 
@@ -79,7 +79,7 @@ module RR
       def initialize(sync_helper)
         validate_left_right_record_handling_option sync_helper.sync_options[:left_record_handling]
         validate_left_right_record_handling_option sync_helper.sync_options[:right_record_handling]
-        validate_conflict_handling_option sync_helper.sync_options[:conflict_handling]
+        validate_conflict_handling_option sync_helper.sync_options[:sync_conflict_handling]
         
         self.sync_helper = sync_helper
       end
@@ -101,7 +101,7 @@ module RR
             option.call sync_helper, type, row
           end
         else
-          option = sync_helper.sync_options[:conflict_handling]
+          option = sync_helper.sync_options[:sync_conflict_handling]
           if option == :ignore
             # nothing to do
           elsif option == :update_left

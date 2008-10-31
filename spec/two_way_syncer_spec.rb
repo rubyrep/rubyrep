@@ -26,7 +26,7 @@ describe Syncers::TwoWaySyncer do
       :syncer => :two_way,
       :left_record_handling => :ignore,
       :right_record_handling => :ignore,
-      :conflict_handling => :ignore
+      :sync_conflict_handling => :ignore
     }
 
     # Verify that correct options don't raise errors.
@@ -39,7 +39,7 @@ describe Syncers::TwoWaySyncer do
         {
           :left_record_handling => l,
           :right_record_handling => l,
-          :conflict_handling => l
+          :sync_conflict_handling => l
         })
     )
     lambda {Syncers::TwoWaySyncer.new(helper)}.should_not raise_error
@@ -48,7 +48,7 @@ describe Syncers::TwoWaySyncer do
     invalid_options = [
       {:left_record_handling => :invalid_left_option},
       {:right_record_handling => :invalid_right_option},
-      {:conflict_handling => :invalid_conflict_option}
+      {:sync_conflict_handling => :invalid_conflict_option}
     ]
     invalid_options.each do |options|
       helper.stub!(:sync_options).and_return(base_options.merge(options))
@@ -63,7 +63,7 @@ describe Syncers::TwoWaySyncer do
       {
         :left_record_handling => :ignore,
         :right_record_handling => :ignore,
-        :conflict_handling => :ignore
+        :sync_conflict_handling => :ignore
       })
 
     syncer = Syncers::TwoWaySyncer.new(helper)
@@ -88,7 +88,7 @@ describe Syncers::TwoWaySyncer do
       {
         :left_record_handling => l,
         :right_record_handling => l,
-        :conflict_handling => l
+        :sync_conflict_handling => l
       })
 
     syncer = Syncers::TwoWaySyncer.new(helper)
@@ -110,7 +110,7 @@ describe Syncers::TwoWaySyncer do
       {
         :left_record_handling => :delete,
         :right_record_handling => :delete,
-        :conflict_handling => :ignore
+        :sync_conflict_handling => :ignore
       })
 
     syncer = Syncers::TwoWaySyncer.new(helper)
@@ -127,7 +127,7 @@ describe Syncers::TwoWaySyncer do
       {
         :left_record_handling => :insert,
         :right_record_handling => :insert,
-        :conflict_handling => :ignore
+        :sync_conflict_handling => :ignore
       })
 
     syncer = Syncers::TwoWaySyncer.new(helper)
@@ -144,7 +144,7 @@ describe Syncers::TwoWaySyncer do
       {
         :left_record_handling => :ignore,
         :right_record_handling => :ignore,
-        :conflict_handling => :update_left
+        :sync_conflict_handling => :update_left
       })
 
     syncer = Syncers::TwoWaySyncer.new(helper)
@@ -159,7 +159,7 @@ describe Syncers::TwoWaySyncer do
       {
         :left_record_handling => :ignore,
         :right_record_handling => :ignore,
-        :conflict_handling => :update_right
+        :sync_conflict_handling => :update_right
       })
 
     syncer = Syncers::TwoWaySyncer.new(helper)
