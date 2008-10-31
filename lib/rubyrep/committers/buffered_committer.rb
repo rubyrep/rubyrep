@@ -14,6 +14,12 @@ module RR
       # given number of record changes
       DEFAULT_COMMIT_FREQUENCY = 1000
 
+      # Switches the trigger mode of the specified +table+ in the specified
+      # +database+ to ignore rubyrep activity.
+      def exclude_rr_activity(database, table)
+        trigger_mode_switcher.exclude_rr_activity database, table
+      end
+
       # Returns the trigger mode switcher (creates it if necessary)
       def trigger_mode_switcher
         @trigger_mode_switcher ||= TriggerModeSwitcher.new session
@@ -85,35 +91,38 @@ module RR
 
       # A new committer is created for each table sync.
       #   * session: a Session object representing the current database session
-      #   * left_table: name of the table in the left database
-      #   * right_table: name of the table in the right database.
       #   * sync_options: a hash of table specific sync options
-      def initialize(session, left_table, right_table, sync_options)
+      def initialize(session, sync_options)
         super
-        trigger_mode_switcher.exclude_rr_activity left_table, right_table
         begin_db_transactions
       end
 
       # Inserts the specified record in the specified +database+ (either :left or :right).
+      # +table+ is the name of the target table.
       # +values+ is a hash of column_name => value pairs.
-      def insert_record(database, values)
+      def insert_record(database, table, values)
+        exclude_rr_activity database, table
         super
         commit
       end
 
       # Updates the specified record in the specified +database+ (either :left or :right).
+      # +table+ is the name of the target table.
       # +values+ is a hash of column_name => value pairs.
       # +old_key+ is a column_name => value hash with the original primary key.
       # If +old_key+ is +nil+, then the primary key must be contained in +values+.
-      def update_record(database, values, old_key = nil)
+      def update_record(database, table, values, old_key = nil)
+        exclude_rr_activity database, table
         super
         commit
       end
 
       # Deletes the specified record in the specified +database+ (either :left or :right).
+      # +table+ is the name of the target table.
       # +values+ is a hash of column_name => value pairs. (Only the primary key
       # values will be used and must be included in the hash.)
-      def delete_record(database, values)
+      def delete_record(database, table, values)
+        exclude_rr_activity database, table
         super
         commit
       end

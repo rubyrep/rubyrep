@@ -17,30 +17,36 @@ module RR
     # Name of the right table
     def right_table; table_sync.right_table; end
 
+    # A hash with
+    # :+left+: name of the table in the left database
+    # :+right+: name of the table in the right database
+    def tables
+      @tables ||= {:left => left_table, :right => right_table}
+    end
+
     # Sync options for the current table sync
     def sync_options; @sync_options ||= table_sync.sync_options; end
 
     # Delegates to Committer#insert_record
     def insert_record(database, values)
-      committer.insert_record(database, values)
+      committer.insert_record(database, tables[database], values)
     end
 
     # Delegates to Committer#insert_record
     def update_record(database, values, old_key = nil)
-      committer.update_record(database, values, old_key)
+      committer.update_record(database, tables[database], values, old_key)
     end
 
     # Delegates to Committer#insert_record
     def delete_record(database, values)
-      committer.delete_record(database, values)
+      committer.delete_record(database, tables[database], values)
     end
 
     # Return the committer, creating it if not yet there.
     def committer
       unless @committer
         committer_class = Committers::committers[sync_options[:committer]]
-        @committer = committer_class.new(
-          session, left_table, right_table, sync_options)
+        @committer = committer_class.new(session, sync_options)
       end
       @committer
     end

@@ -7,22 +7,23 @@ module RR
   #
   #   # Creates a new committer
   #   #   * session: a Session object representing the current database session
-  #   #   * left_table: name of the table in the left database
-  #   #   * right_table: name of the table in the right database.
   #   #   * sync_options: a hash of table specific sync options
   #   def initialize(session, left_table, right_table, sync_options)
   #
   #   # Inserts the specified record in the specified +database+ (either :left or :right).
+  #   # +table+ is the name of the target table.
   #   # +values+ is a hash of column_name => value pairs.
   #   def insert_record(database, values)
   #
   #   # Updates the specified record in the specified +database+ (either :left or :right).
+  #   # +table+ is the name of the target table.
   #   # +values+ is a hash of column_name => value pairs.
   #   # +old_key+ is a column_name => value hash with the original primary key.
   #   # If +old_key+ is +nil+, then the primary key must be contained in +values+.
   #   def update_record(database, values, old_key)
   #
   #   # Deletes the specified record in the specified +database+ (either :left or :right).
+  #   # +table+ is the name of the target table.
   #   # +values+ is a hash of column_name => value pairs. (Only the primary key
   #   # values will be used and must be included in the hash.)
   #   def delete_record(database, values)
@@ -58,10 +59,6 @@ module RR
       # The current Session object
       attr_accessor :session 
       
-      # A hash holding the table names
-      # E. g. {:left => "left_table", :right => "right_table"}
-      attr_accessor :tables
-      
       # A hash holding the proxy connections
       # E. g. {:left => <left connection>, :right => <right connection>}
       attr_accessor :connections
@@ -71,34 +68,34 @@ module RR
 
       # A new committer is created for each table sync.
       #   * session: a Session object representing the current database session
-      #   * left_table: name of the table in the left database
-      #   * right_table: name of the table in the right database.
       #   * sync_options: a hash of table specific sync options
-      def initialize(session, left_table, right_table, sync_options)
+      def initialize(session, sync_options)
         self.session, self.sync_options = session, sync_options
-        self.tables = {:left => left_table, :right => right_table}
         self.connections = {:left => session.left, :right => session.right}
       end
       
       # Inserts the specified record in the specified +database+ (either :left or :right).
+      # +table+ is the name of the target table.
       # +values+ is a hash of column_name => value pairs.
-      def insert_record(database, values)
-        connections[database].insert_record(tables[database], values)
+      def insert_record(database, table, values)
+        connections[database].insert_record(table, values)
       end
       
       # Updates the specified record in the specified +database+ (either :left or :right).
+      # +table+ is the name of the target table.
       # +values+ is a hash of column_name => value pairs.
       # # +old_key+ is a column_name => value hash with the original primary key.
       # If +old_key+ is +nil+, then the primary key must be contained in +values+.
-      def update_record(database, values, old_key = nil)
-        connections[database].update_record(tables[database], values, old_key)
+      def update_record(database, table, values, old_key = nil)
+        connections[database].update_record(table, values, old_key)
       end
       
       # Deletes the specified record in the specified +database+ (either :left or :right).
+      # +table+ is the name of the target table.
       # +values+ is a hash of column_name => value pairs. (Only the primary key
       # values will be used and must be included in the hash.)
-      def delete_record(database, values)
-        connections[database].delete_record(tables[database], values)
+      def delete_record(database, table, values)
+        connections[database].delete_record(table, values)
       end
       
       # Is called after the last insert / update / delete query.
@@ -141,7 +138,7 @@ module RR
       # Starts new transactions on left and right database connectin of session.
       # Additionally rolls back transactions started in previous 
       # +NeverCommitter+ instances.
-      def initialize(session, left_table, right_table, sync_options)
+      def initialize(session, sync_options)
         super
         self.class.rollback_current_session
         self.class.current_session = session

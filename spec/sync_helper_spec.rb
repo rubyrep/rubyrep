@@ -13,7 +13,6 @@ describe Configuration do
     c = helper.instance_eval {committer}
     c.should be_an_instance_of(Committers::DefaultCommitter)
     c.session.should == helper.session
-    c.tables.should == {:left => helper.left_table, :right =>helper.right_table}
     c.sync_options.should == helper.sync_options
   end
 
@@ -35,6 +34,12 @@ describe Configuration do
     helper.right_table.should == 'right_table'
   end
 
+  it "tables should return the correct table name hash" do
+    sync = TableSync.new(Session.new, 'scanner_records', 'right_table')
+    helper = SyncHelper.new(sync)
+    helper.tables.should == {:left => 'scanner_records', :right => 'right_table'}
+  end
+
   it "table_sync should return the current table sync instance" do
     sync = TableSync.new(Session.new, 'scanner_records')
     helper = SyncHelper.new(sync)
@@ -51,7 +56,7 @@ describe Configuration do
     sync = TableSync.new(Session.new, 'scanner_records')
     helper = SyncHelper.new(sync)
     c = helper.instance_eval {committer}
-    c.should_receive(:insert_record).with(:right, :dummy_record)
+    c.should_receive(:insert_record).with(:right, 'scanner_records', :dummy_record)
     helper.insert_record :right, :dummy_record
   end
 
@@ -59,7 +64,7 @@ describe Configuration do
     sync = TableSync.new(Session.new, 'scanner_records')
     helper = SyncHelper.new(sync)
     c = helper.instance_eval {committer}
-    c.should_receive(:update_record).with(:right, :dummy_record, nil)
+    c.should_receive(:update_record).with(:right, 'scanner_records', :dummy_record, nil)
     helper.update_record :right, :dummy_record
   end
 
@@ -67,7 +72,7 @@ describe Configuration do
     sync = TableSync.new(Session.new, 'scanner_records')
     helper = SyncHelper.new(sync)
     c = helper.instance_eval {committer}
-    c.should_receive(:update_record).with(:right, :dummy_record, :old_key)
+    c.should_receive(:update_record).with(:right, 'scanner_records', :dummy_record, :old_key)
     helper.update_record :right, :dummy_record, :old_key
   end
 
@@ -75,7 +80,7 @@ describe Configuration do
     sync = TableSync.new(Session.new, 'scanner_records')
     helper = SyncHelper.new(sync)
     c = helper.instance_eval {committer}
-    c.should_receive(:delete_record).with(:right, :dummy_record)
+    c.should_receive(:delete_record).with(:right, 'scanner_records', :dummy_record)
     helper.delete_record :right, :dummy_record
   end
 

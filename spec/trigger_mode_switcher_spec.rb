@@ -11,26 +11,26 @@ describe TriggerModeSwitcher do
     session = Session.new
     switcher = TriggerModeSwitcher.new(session)
     switcher.session.should == session
-    switcher.triggers.should == {}
   end
 
   it "exclude_rr_activity should switch the trigger for the given table" do
     switcher = TriggerModeSwitcher.new(Session.new)
 
-    switcher.should_receive(:switch_trigger_mode).with('left1', 'right1', true).once
-    switcher.exclude_rr_activity('left1', 'right1')
+    switcher.should_receive(:switch_trigger_mode).with(:right, 'right1', true).once
+    switcher.exclude_rr_activity(:right, 'right1')
 
     # Verify that for a given table, the trigger is not modified multiple times
-    switcher.exclude_rr_activity('left1', 'right1')
+    switcher.exclude_rr_activity(:right, 'right1')
   end
 
   it "restore_triggers should restore the triggers" do
     switcher = TriggerModeSwitcher.new(Session.new)
-    switcher.triggers['left1'] = {:left => 'left1', :right => 'right1'}
 
-    switcher.should_receive(:switch_trigger_mode).with('left1', 'right1', false)
+    switcher.stub!(:switch_trigger_mode)
+    switcher.exclude_rr_activity :left, 'left1'
+    switcher.should_receive(:switch_trigger_mode).with(:left, 'left1', false).once
     switcher.restore_triggers
-    switcher.triggers.should be_empty
+    switcher.restore_triggers # ensure the restore is only done once
   end
 
   it "switch_trigger_mode should switch the exclude_rr_activity mode as specified" do
@@ -42,7 +42,7 @@ describe TriggerModeSwitcher do
       initializer.create_trigger(:left, 'trigger_test')
 
       switcher = TriggerModeSwitcher.new session
-      switcher.switch_trigger_mode 'trigger_test', 'trigger_test', true
+      switcher.switch_trigger_mode :left, 'trigger_test', true
       
       session.left.insert_record 'trigger_test', {
         'first_id' => 1,
@@ -79,6 +79,6 @@ describe TriggerModeSwitcher do
     session = Session.new
     switcher = TriggerModeSwitcher.new session
     session.left.should_not_receive(:execute)
-    switcher.switch_trigger_mode('scanner_records', 'scanner_records', true)
+    switcher.switch_trigger_mode(:left, 'scanner_records', true)
   end
 end

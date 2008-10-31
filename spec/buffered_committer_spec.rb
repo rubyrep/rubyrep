@@ -27,11 +27,20 @@ describe Committers::BufferedCommitter do
     session = Session.new
     stub_begin_transaction session
     stub_execute session
-    committer = Committers::BufferedCommitter.new(session, 'left_table', 'right_table', {})
+    committer = Committers::BufferedCommitter.new(session, {})
     switcher = committer.trigger_mode_switcher
     switcher.should be_an_instance_of(TriggerModeSwitcher)
 
     committer.trigger_mode_switcher.should == switcher # ensure it is only created one
+  end
+
+  it "exclude_rr_activity should exclude the rubyrep activity for the specified table" do
+    session = Session.new
+    stub_begin_transaction session
+    stub_execute session
+    committer = Committers::BufferedCommitter.new(session, {})
+    committer.trigger_mode_switcher.should_receive(:exclude_rr_activity).with(:left, 'dummy_table')
+    committer.exclude_rr_activity :left, 'dummy_table'
   end
 
   it "activity_marker_table should return the correct table name" do
@@ -40,7 +49,7 @@ describe Committers::BufferedCommitter do
     session = Session.new config
     stub_begin_transaction session
     stub_execute session
-    committer = Committers::BufferedCommitter.new(session, 'left_table', 'right_table', {})
+    committer = Committers::BufferedCommitter.new(session, {})
     committer.activity_marker_table.should == 'rx_active'
   end
 
@@ -48,7 +57,7 @@ describe Committers::BufferedCommitter do
     session = Session.new
     stub_begin_transaction session
     stub_execute session
-    committer = Committers::BufferedCommitter.new(session, 'left_table', 'right_table', {})
+    committer = Committers::BufferedCommitter.new(session, {})
     committer.maintain_activity_status?.should be_true
   end
 
@@ -58,7 +67,7 @@ describe Committers::BufferedCommitter do
     session = Session.new config
     stub_begin_transaction session
     stub_execute session
-    committer = Committers::BufferedCommitter.new(session, 'left_table', 'right_table', {})
+    committer = Committers::BufferedCommitter.new(session, {})
     committer.maintain_activity_status?.should be_false
   end
 
@@ -68,7 +77,7 @@ describe Committers::BufferedCommitter do
     session = Session.new config
     stub_begin_transaction session
     stub_execute session
-    committer = Committers::BufferedCommitter.new(session, 'left_table', 'right_table', {})
+    committer = Committers::BufferedCommitter.new(session, {})
     committer.commit_frequency.should == 5
   end
 
@@ -78,7 +87,7 @@ describe Committers::BufferedCommitter do
     session = Session.new config
     stub_begin_transaction session
     stub_execute session
-    committer = Committers::BufferedCommitter.new(session, 'left_table', 'right_table', {})
+    committer = Committers::BufferedCommitter.new(session, {})
     committer.commit_frequency.should == Committers::BufferedCommitter::DEFAULT_COMMIT_FREQUENCY
   end
 
@@ -89,17 +98,11 @@ describe Committers::BufferedCommitter do
       session.left.should_receive(:begin_db_transaction)
       session.right.should_receive(:begin_db_transaction)
       session.left.select_one("select * from rr_active").should be_nil # verify starting situation
-      committer = Committers::BufferedCommitter.new(session, 'left_table', 'right_table', {})
+      committer = Committers::BufferedCommitter.new(session, {})
 
       # rubyrep activity should be marked
       session.left.select_one("select * from rr_active").should_not be_nil
       session.right.select_one("select * from rr_active").should_not be_nil
-
-      # the triggers of 'left_table' should have been switched to ignore rubyrep activity
-      committer.trigger_mode_switcher.triggers['left_table'].should == {
-        :left => 'left_table',
-        :right => 'right_table'
-      }
     ensure
       session.left.execute "delete from rr_active" if session
       session.right.execute "delete from rr_active" if session
@@ -110,7 +113,7 @@ describe Committers::BufferedCommitter do
     session = Session.new
     stub_begin_transaction session
     stub_execute session
-    committer = Committers::BufferedCommitter.new(session, 'left_table', 'right_table', {})
+    committer = Committers::BufferedCommitter.new(session, {})
 
     session.left.should_receive(:commit_db_transaction)
     session.right.should_receive(:commit_db_transaction)
@@ -123,7 +126,7 @@ describe Committers::BufferedCommitter do
     session.left.stub!(:commit_db_transaction)
     session.right.stub!(:commit_db_transaction)
     stub_execute session
-    committer = Committers::BufferedCommitter.new(session, 'left_table', 'right_table', {})
+    committer = Committers::BufferedCommitter.new(session, {})
 
     session.left.should_receive(:execute).with("delete from rr_active")
     session.right.should_receive(:execute).with("delete from rr_active")
@@ -138,7 +141,7 @@ describe Committers::BufferedCommitter do
     session.left.stub!(:commit_db_transaction)
     session.right.stub!(:commit_db_transaction)
     stub_execute session
-    committer = Committers::BufferedCommitter.new(session, 'left_table', 'right_table', {})
+    committer = Committers::BufferedCommitter.new(session, {})
 
     session.left.should_not_receive(:execute)
     session.right.should_not_receive(:execute)
@@ -149,7 +152,7 @@ describe Committers::BufferedCommitter do
     session = Session.new
     stub_begin_transaction session
     stub_execute session
-    committer = Committers::BufferedCommitter.new(session, 'left_table', 'right_table', {})
+    committer = Committers::BufferedCommitter.new(session, {})
 
     session.left.should_receive(:begin_db_transaction)
     session.right.should_receive(:begin_db_transaction)
@@ -160,7 +163,7 @@ describe Committers::BufferedCommitter do
     session = Session.new
     stub_begin_transaction session
     stub_execute session
-    committer = Committers::BufferedCommitter.new(session, 'left_table', 'right_table', {})
+    committer = Committers::BufferedCommitter.new(session, {})
 
     session.left.should_receive(:execute).with("insert into rr_active values(1)")
     session.right.should_receive(:execute).with("insert into rr_active values(1)")
@@ -173,7 +176,7 @@ describe Committers::BufferedCommitter do
     session = Session.new config
     stub_begin_transaction session
     stub_execute session
-    committer = Committers::BufferedCommitter.new(session, 'left_table', 'right_table', {})
+    committer = Committers::BufferedCommitter.new(session, {})
 
     session.left.should_not_receive(:execute)
     session.right.should_not_receive(:execute)
@@ -184,7 +187,7 @@ describe Committers::BufferedCommitter do
     session = Session.new
     stub_begin_transaction session
     stub_execute session
-    committer = Committers::BufferedCommitter.new(session, 'left_table', 'right_table', {})
+    committer = Committers::BufferedCommitter.new(session, {})
 
     session.left.should_receive(:rollback_db_transaction)
     session.right.should_receive(:rollback_db_transaction)
@@ -197,7 +200,7 @@ describe Committers::BufferedCommitter do
     session = Session.new config
     stub_begin_transaction session
     stub_execute session
-    committer = Committers::BufferedCommitter.new(session, 'left_table', 'right_table', {})
+    committer = Committers::BufferedCommitter.new(session, {})
 
     committer.should_not_receive(:commit_db_transactions).twice
     committer.should_not_receive(:begin_db_transactions).twice
@@ -208,43 +211,46 @@ describe Committers::BufferedCommitter do
     session = Session.new
     stub_begin_transaction session
     stub_execute session
-    committer = Committers::BufferedCommitter.new(session, 'left_table', 'right_table', {})
+    committer = Committers::BufferedCommitter.new(session, {})
 
-    session.right.should_receive(:insert_record).with('right_table', :dummy_values)
-    committer.should_receive(:commit)
+    committer.should_receive(:exclude_rr_activity).with(:right, 'right_table').ordered
+    session.right.should_receive(:insert_record).with('right_table', :dummy_values).ordered
+    committer.should_receive(:commit).ordered
     
-    committer.insert_record(:right, :dummy_values)
+    committer.insert_record(:right, 'right_table', :dummy_values)
   end
 
   it "update_record should commit" do
     session = Session.new
     stub_begin_transaction session
     stub_execute session
-    committer = Committers::BufferedCommitter.new(session, 'left_table', 'right_table', {})
+    committer = Committers::BufferedCommitter.new(session, {})
 
-    session.right.should_receive(:update_record).with('right_table', :dummy_values, :dummy_org_key)
-    committer.should_receive(:commit)
+    committer.should_receive(:exclude_rr_activity).with(:right, 'right_table').ordered
+    session.right.should_receive(:update_record).with('right_table', :dummy_values, :dummy_org_key).ordered
+    committer.should_receive(:commit).ordered
 
-    committer.update_record(:right, :dummy_values, :dummy_org_key)
+    committer.update_record(:right, 'right_table', :dummy_values, :dummy_org_key)
   end
 
   it "delete_record should commit" do
     session = Session.new
     stub_begin_transaction session
     stub_execute session
-    committer = Committers::BufferedCommitter.new(session, 'left_table', 'right_table', {})
+    committer = Committers::BufferedCommitter.new(session, {})
 
-    session.right.should_receive(:delete_record).with('right_table', :dummy_values)
-    committer.should_receive(:commit)
+    committer.should_receive(:exclude_rr_activity).with(:right, 'right_table').ordered
+    session.right.should_receive(:delete_record).with('right_table', :dummy_values).ordered
+    committer.should_receive(:commit).ordered
 
-    committer.delete_record(:right, :dummy_values)
+    committer.delete_record(:right, 'right_table', :dummy_values)
   end
 
   it "finalize should commit the transactions if called with success = true" do
     session = Session.new
     stub_begin_transaction session
     stub_execute session
-    committer = Committers::BufferedCommitter.new(session, 'left_table', 'right_table', {})
+    committer = Committers::BufferedCommitter.new(session, {})
 
     committer.should_receive(:commit_db_transactions)
 
@@ -255,7 +261,7 @@ describe Committers::BufferedCommitter do
     session = Session.new
     stub_begin_transaction session
     stub_execute session
-    committer = Committers::BufferedCommitter.new(session, 'left_table', 'right_table', {})
+    committer = Committers::BufferedCommitter.new(session, {})
 
     committer.should_receive(:rollback_db_transactions)
 
