@@ -20,7 +20,6 @@ describe TableSync do
     begin
       config = deep_copy(standard_config)
       config.options[:committer] = :never_commit
-      config.options[:delete] = true
 
       session = Session.new(config)
       sync = TableSync.new(session, 'scanner_records')
