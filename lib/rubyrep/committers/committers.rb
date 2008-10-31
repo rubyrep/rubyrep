@@ -8,7 +8,7 @@ module RR
   #   # Creates a new committer
   #   #   * session: a Session object representing the current database session
   #   #   * sync_options: a hash of table specific sync options
-  #   def initialize(session, left_table, right_table, sync_options)
+  #   def initialize(session, sync_options)
   #
   #   # Inserts the specified record in the specified +database+ (either :left or :right).
   #   # +table+ is the name of the target table.
