@@ -17,8 +17,8 @@ module RR
   #   # Returns a hash with :key => value pairs.
   #   def self.default_options
   module Syncers
-    # Returns a Hash of currently registered committers.
-    # (Empty Hash if no connection committers were defined.)
+    # Returns a Hash of currently registered syncers.
+    # (Empty Hash if no syncers were defined.)
     def self.syncers
       @syncers ||= {}
       @syncers
