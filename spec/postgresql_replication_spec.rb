@@ -37,7 +37,7 @@ describe "PostgreSQLReplication", :shared => true do
       row.should == {
         'change_table' => 'trigger_test',
         'change_key' => 'first_id|1|second_id|2',
-        'change_org_key' => nil,
+        'change_new_key' => nil,
         'change_type' => 'I'
       }
       

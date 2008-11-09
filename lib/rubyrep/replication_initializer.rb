@@ -120,7 +120,7 @@ module RR
       session.send(database).create_table "#{options[:rep_prefix]}_change_log", :id => false do |t|
         t.column :change_table, :string
         t.column :change_key, :string
-        t.column :change_org_key, :string
+        t.column :change_new_key, :string
         t.column :change_type, :string
         t.column :change_time, :timestamp
       end

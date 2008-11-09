@@ -46,9 +46,9 @@ describe "ReplicationExtender", :shared => true do
 
       rows.each {|row| row.delete 'id'; row.delete 'change_time'}
       rows.should == [
-        {'change_table' => 'trigger_test', 'change_key' => 'first_id|1|second_id|2', 'change_org_key' => nil, 'change_type' => 'I'},
-        {'change_table' => 'trigger_test', 'change_key' => 'first_id|1|second_id|9', 'change_org_key' => 'first_id|1|second_id|2', 'change_type' => 'U'},
-        {'change_table' => 'trigger_test', 'change_key' => 'first_id|1|second_id|9', 'change_org_key' => nil, 'change_type' => 'D'},
+        {'change_table' => 'trigger_test', 'change_key' => 'first_id|1|second_id|2', 'change_new_key' => nil, 'change_type' => 'I'},
+        {'change_table' => 'trigger_test', 'change_key' => 'first_id|1|second_id|2', 'change_new_key' => 'first_id|1|second_id|9', 'change_type' => 'U'},
+        {'change_table' => 'trigger_test', 'change_key' => 'first_id|1|second_id|9', 'change_new_key' => nil, 'change_type' => 'D'},
       ]
     ensure
       session.left.execute 'delete from trigger_test' if session
@@ -93,7 +93,7 @@ describe "ReplicationExtender", :shared => true do
       rows.should == [{
           'change_table' => 'trigger_test',
           'change_key' => 'first_id|1|second_id|3',
-          'change_org_key' => nil,
+          'change_new_key' => nil,
           'change_type' => 'I'
         }]
     ensure
@@ -125,7 +125,7 @@ describe "ReplicationExtender", :shared => true do
       rows.should == [{
           'change_table' => 'extender_no_record',
           'change_key' => 'id|9',
-          'change_org_key' => nil,
+          'change_new_key' => nil,
           'change_type' => 'I'
         }]
     ensure

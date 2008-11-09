@@ -24,11 +24,11 @@ module RR
         end
 
         execute(<<-end_sql)
-          CREATE PROCEDURE #{params[:trigger_name]}(change_key varchar(2000), change_org_key varchar(2000), change_type varchar(1))
+          CREATE PROCEDURE #{params[:trigger_name]}(change_key varchar(2000), change_new_key varchar(2000), change_type varchar(1))
           p: BEGIN
             #{activity_check}
-            INSERT INTO #{params[:log_table]}(change_table, change_key, change_org_key, change_type, change_time)
-              VALUES('#{params[:table]}', change_key, change_org_key, change_type, now());
+            INSERT INTO #{params[:log_table]}(change_table, change_key, change_new_key, change_type, change_time)
+              VALUES('#{params[:table]}', change_key, change_new_key, change_type, now());
           END;
         end_sql
         
@@ -73,7 +73,7 @@ module RR
 
           trigger_var = action == 'delete' ? 'OLD' : 'NEW'
           if action == 'update'
-            call_statement = "CALL #{params[:trigger_name]}(#{key_clause('NEW', params)}, #{key_clause('OLD', params)}, '#{action[0,1].upcase}');"
+            call_statement = "CALL #{params[:trigger_name]}(#{key_clause('OLD', params)}, #{key_clause('NEW', params)}, '#{action[0,1].upcase}');"
           else
             call_statement = "CALL #{params[:trigger_name]}(#{key_clause(trigger_var, params)}, null, '#{action[0,1].upcase}');"
           end
