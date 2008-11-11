@@ -129,9 +129,51 @@ describe "ReplicationExtender", :shared => true do
           'change_type' => 'I'
         }]
     ensure
-      session.left.execute 'delete from extender_no_record' if session
-      session.left.execute 'delete from rr_change_log' if session
-      session.left.rollback_db_transaction if session
+      if session
+        session.left.execute 'delete from extender_no_record'
+        session.left.execute 'delete from rr_change_log'
+        session.left.drop_replication_trigger('rr_extender_no_record', 'extender_no_record')
+        session.left.rollback_db_transaction
+      end
+    end
+  end
+
+  it "created triggers should work with primary keys holding multi-byte text values" do
+    session = nil
+    begin
+      session = Session.new
+      session.left.begin_db_transaction
+      params = {
+        :trigger_name => 'rr_scanner_text_key',
+        :table => 'scanner_text_key',
+        :keys => ['text_id'],
+        :log_table => 'rr_change_log',
+        :key_sep => '|',
+      }
+      session.left.create_replication_trigger params
+      session.left.insert_record 'scanner_text_key', {
+        'text_id' => 'よろしくお願(ねが)いします yoroshiku onegai shimasu: I humbly ask for your favor.',
+        'name' => 'bla'
+      }
+      rows = session.left.connection.select_all("select * from rr_change_log order by id")
+      rows.each {|row| row.delete 'id'; row.delete 'change_time'}
+      rows.should == [{
+          'change_table' => 'scanner_text_key',
+          'change_key' => 'text_id|よろしくお願(ねが)いします yoroshiku onegai shimasu: I humbly ask for your favor.',
+          'change_new_key' => nil,
+          'change_type' => 'I'
+        }]
+      found_key = rows[0]['change_key'].sub(/^text_id\|/, '')
+      session.left.
+        select_one("select * from scanner_text_key where text_id = '#{found_key}'").
+        should_not be_nil
+    ensure
+      if session
+        session.left.execute "delete from scanner_text_key where text_id = 'よろしくお願(ねが)いします yoroshiku onegai shimasu: I humbly ask for your favor.'"
+        session.left.execute 'delete from rr_change_log'
+        session.left.drop_replication_trigger('rr_scanner_text_key', 'scanner_text_key')
+        session.left.rollback_db_transaction
+      end
     end
   end
 
