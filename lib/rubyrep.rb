@@ -37,6 +37,8 @@ require 'syncers/syncers'
 require 'syncers/two_way_syncer'
 require 'sync_runner'
 require 'trigger_mode_switcher'
+require 'logged_change'
+require 'replication_difference'
 
 Dir["#{File.dirname(__FILE__)}/rubyrep/connection_extenders/*.rb"].each do |extender|
   # jdbc_extender.rb is only loaded if we are running on jruby

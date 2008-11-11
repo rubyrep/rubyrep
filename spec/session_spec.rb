@@ -97,6 +97,24 @@ describe Session do   # here database connection caching is _not_ disabled
     session.manual_primary_keys(:right).should == {'extender_without_key'=>['id']}
   end
 
+  it "corresponding_table should return the correct corresponding table" do
+    config = deep_copy(standard_config)
+    config.included_table_specs.clear
+    config.include_tables "/scanner/"
+    config.include_tables "table_with_manual_key, extender_without_key"
+    session = Session.new config
+    
+    session.corresponding_table(:left, 'scanner_records').should == 'scanner_records'
+    session.corresponding_table(:right, 'scanner_records').should == 'scanner_records'
+    session.corresponding_table(:left, 'table_with_manual_key').should == 'extender_without_key'
+    session.corresponding_table(:right, 'extender_without_key').should == 'table_with_manual_key'
+  end
+
+  it "corresponding_table should return the given table if no corresponding table can be found" do
+    session = Session.new
+    session.corresponding_table(:left, 'not_existing_table').should == 'not_existing_table'
+  end
+
   it "configured_table_pairs should return the table pairs as per included_table_specs parameter" do
     session = Session.new
     session.configured_table_pairs(['scanner_records']).should == [

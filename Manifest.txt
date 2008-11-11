@@ -24,12 +24,14 @@ lib/rubyrep/connection_extenders/postgresql_extender.rb
 lib/rubyrep/database_proxy.rb
 lib/rubyrep/direct_table_scan.rb
 lib/rubyrep/initializer.rb
+lib/rubyrep/logged_change.rb
 lib/rubyrep/proxied_table_scan.rb
 lib/rubyrep/proxy_block_cursor.rb
 lib/rubyrep/proxy_connection.rb
 lib/rubyrep/proxy_cursor.rb
 lib/rubyrep/proxy_row_cursor.rb
 lib/rubyrep/proxy_runner.rb
+lib/rubyrep/replication_difference.rb
 lib/rubyrep/replication_extenders/mysql_replication.rb
 lib/rubyrep/replication_extenders/postgresql_replication.rb
 lib/rubyrep/replication_extenders/replication_extenders.rb
@@ -72,6 +74,7 @@ spec/db_specific_connection_extenders_spec.rb
 spec/db_specific_replication_extenders_spec.rb
 spec/direct_table_scan_spec.rb
 spec/initializer_spec.rb
+spec/logged_change_spec.rb
 spec/postgresql_replication_spec.rb
 spec/progress_bar_spec.rb
 spec/proxied_table_scan_spec.rb
@@ -80,6 +83,7 @@ spec/proxy_connection_spec.rb
 spec/proxy_cursor_spec.rb
 spec/proxy_row_cursor_spec.rb
 spec/proxy_runner_spec.rb
+spec/replication_difference_spec.rb
 spec/replication_extender_interface_spec.rb
 spec/replication_extenders_spec.rb
 spec/replication_initializer_spec.rb

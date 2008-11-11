@@ -52,6 +52,27 @@ module RR
       end
       manual_primary_keys
     end
+
+    # Returns the corresponding table in the other database.
+    # * +db_arm+: database of the given table (either :+left+ or :+right+)
+    # * +table+: name of the table
+    #
+    # If no corresponding table can be found, return the given table.
+    # Rationale:
+    # Support the case where a table was dropped from the configuration but
+    # there were still some unreplicated changes left.
+    def corresponding_table(db_arm, table)
+      unless @table_map
+        @table_map = {:left => {}, :right => {}}
+        resolver = TableSpecResolver.new self
+        table_pairs = resolver.resolve configuration.included_table_specs
+        table_pairs.each do |table_pair|
+          @table_map[:left][table_pair[:left]] = table_pair[:right]
+          @table_map[:right][table_pair[:right]] = table_pair[:left]
+        end
+      end
+      @table_map[db_arm][table] || table
+    end
     
     # Does the actual work of establishing a database connection
     # db_arm:: should be either :left or :right
