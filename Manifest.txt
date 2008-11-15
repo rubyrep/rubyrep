@@ -35,7 +35,11 @@ lib/rubyrep/replication_difference.rb
 lib/rubyrep/replication_extenders/mysql_replication.rb
 lib/rubyrep/replication_extenders/postgresql_replication.rb
 lib/rubyrep/replication_extenders/replication_extenders.rb
+lib/rubyrep/replication_helper.rb
 lib/rubyrep/replication_initializer.rb
+lib/rubyrep/replication_run.rb
+lib/rubyrep/replicators/replicators.rb
+lib/rubyrep/replicators/two_way_replicator.rb
 lib/rubyrep/scan_progress_printers/progress_bar.rb
 lib/rubyrep/scan_progress_printers/scan_progress_printers.rb
 lib/rubyrep/scan_report_printers/scan_report_printers.rb
@@ -86,7 +90,10 @@ spec/proxy_runner_spec.rb
 spec/replication_difference_spec.rb
 spec/replication_extender_interface_spec.rb
 spec/replication_extenders_spec.rb
+spec/replication_helper_spec.rb
 spec/replication_initializer_spec.rb
+spec/replication_run_spec.rb
+spec/replicators_spec.rb
 spec/rubyrep_spec.rb
 spec/scan_progress_printers_spec.rb
 spec/scan_report_printers_spec.rb
@@ -104,6 +111,7 @@ spec/table_sorter_spec.rb
 spec/table_spec_resolver_spec.rb
 spec/table_sync_spec.rb
 spec/trigger_mode_switcher_spec.rb
+spec/two_way_replicator_spec.rb
 spec/two_way_syncer_spec.rb
 spec/type_casting_cursor_spec.rb
 tasks/database.rake

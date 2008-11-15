@@ -112,8 +112,8 @@ module RR
       end
       new_raw_key = raw_key
       cursor = nil
-      current_id = -1
-      current_type = 'N'
+      current_id = loaded? ? 0 : -1 # so a change stays loaded if during amendment no additional change records are found
+      current_type = type || 'N' # type might exist if this is a change amendment
       loop do
         unless cursor
           # load change records from DB if not already done

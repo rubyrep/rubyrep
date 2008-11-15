@@ -2,7 +2,7 @@ require File.dirname(__FILE__) + '/spec_helper.rb'
 
 include RR
 
-describe Configuration do
+describe SyncHelper do
   before(:each) do
     Initializer.configuration = standard_config
   end

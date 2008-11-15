@@ -179,6 +179,14 @@ def create_sample_schema(config)
     create_table :sequence_test do |t|
       t.column :name, :string
     end
+
+    create_table :left_table do |t|
+      t.column :name, :string
+    end
+
+    create_table :right_table do |t|
+      t.column :name, :string
+    end
   end
 end
 
@@ -206,6 +214,8 @@ def drop_sample_schema(config)
     drop_table :rr_active rescue nil
     drop_table :trigger_test rescue nil
     drop_table :sequence_test rescue nil
+    drop_table :left_table rescue nil
+    drop_table :right_table rescue nil
   end  
 
   ActiveRecord::Base.connection.disconnect!

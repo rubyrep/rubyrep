@@ -61,12 +61,12 @@ module RR
         end
       end
 
-      # Verifies if the given :+conflict_handling+ option is valid.
+      # Verifies if the given :+sync_conflict_handling+ option is valid.
       # Raises an ArgumentError if option is invalid
       def validate_conflict_handling_option(option)
         unless option.respond_to? :call
           unless [:ignore, :update_left, :update_right].include? option
-            raise ArgumentError.new("#{option.inspect} not a valid :conflict_handling option")
+            raise ArgumentError.new("#{option.inspect} not a valid :sync_conflict_handling option")
           end
         end
       end
