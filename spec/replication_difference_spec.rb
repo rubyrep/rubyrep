@@ -113,5 +113,43 @@ describe ReplicationDifference do
     end
   end
 
+  it "amend should amend the replication difference with new found changes" do
+    session = Session.new
+    session.left.begin_db_transaction
+    session.right.begin_db_transaction
+    begin
+      session.right.insert_record 'rr_change_log', {
+        'change_table' => 'scanner_records',
+        'change_key' => 'id|1',
+        'change_type' => 'I',
+        'change_time' => Time.now
+      }
+      diff = ReplicationDifference.new session
+      diff.load
 
+      diff.should be_loaded
+      diff.type.should == :right
+      diff.changes[:right].key.should == {'id' => '1'}
+
+      # if there are no changes, the diff should still be the same
+      diff.amend
+      diff.type.should == :right
+      diff.changes[:right].key.should == {'id' => '1'}
+
+      # should recognize new changes
+      session.left.insert_record 'rr_change_log', {
+        'change_table' => 'scanner_records',
+        'change_key' => 'id|1',
+        'change_type' => 'D',
+        'change_time' => Time.now
+      }
+      diff.amend
+      diff.type.should == :conflict
+      diff.changes[:left].key.should == {'id' => '1'}
+      diff.changes[:right].key.should == {'id' => '1'}
+    ensure
+      session.right.rollback_db_transaction
+      session.left.rollback_db_transaction
+    end
+  end
 end
