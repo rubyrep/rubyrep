@@ -68,54 +68,61 @@ describe Replicators::TwoWayReplicator do
   it "clear_conflicts should update the correct database with the correct action" do
     Initializer.configuration.include_tables 'left_table, right_table'
     session = Session.new
-    rep_run = ReplicationRun.new(session)
-    helper = ReplicationHelper.new(rep_run)
-    replicator = Replicators::TwoWayReplicator.new(helper)
+    session.left.begin_db_transaction
+    session.right.begin_db_transaction
+    begin
+      rep_run = ReplicationRun.new(session)
+      helper = ReplicationHelper.new(rep_run)
+      replicator = Replicators::TwoWayReplicator.new(helper)
 
-    left_change = LoggedChange.new session, :left
-    left_change.table = 'left_table'
-    left_change.key = {'id' => '1'}
-    right_change = LoggedChange.new session, :right
-    right_change.table = 'right_table'
-    right_change.key = {'id' => '1'}
+      left_change = LoggedChange.new session, :left
+      left_change.table = 'left_table'
+      left_change.key = {'id' => '1'}
+      right_change = LoggedChange.new session, :right
+      right_change.table = 'right_table'
+      right_change.key = {'id' => '1'}
 
-    diff = ReplicationDifference.new(session)
-    diff.changes[:left] = left_change
-    diff.changes[:right] = right_change
-
-
-    # verify that an insert is dealt correctly with
-    left_change.type = :insert
-    right_change.type = :insert
-
-    helper.should_receive(:load_record).ordered.
-      with(:left, 'left_table', {'id' => '1'}).
-      and_return(:dummy_values)
-    helper.should_receive(:update_record).ordered.
-      with(:right, 'right_table', :dummy_values)
-    replicator.clear_conflict :left, diff
-
-    # verify that an update is dealt correctly with
-    left_change.type = :delete
-    right_change.type = :update
-    right_change.new_key = {'id' => '2'}
+      diff = ReplicationDifference.new(session)
+      diff.changes[:left] = left_change
+      diff.changes[:right] = right_change
 
 
-    helper.should_receive(:load_record).ordered.
-      with(:right, 'right_table', {'id' => '2'}).
-      and_return(:dummy_values)
-    helper.should_receive(:insert_record).ordered.
-      with(:left, 'left_table', :dummy_values)
-    replicator.clear_conflict :right, diff
+      # verify that an insert is dealt correctly with
+      left_change.type = :insert
+      right_change.type = :insert
+
+      helper.should_receive(:load_record).ordered.
+        with(:left, 'left_table', {'id' => '1'}).
+        and_return(:dummy_values)
+      helper.should_receive(:update_record).ordered.
+        with(:right, 'right_table', :dummy_values, {'id' => '1'})
+      replicator.clear_conflict :left, diff, 1
+
+      # verify that an update is dealt correctly with
+      left_change.type = :delete
+      right_change.type = :update
+      right_change.new_key = {'id' => '2'}
+
+
+      helper.should_receive(:load_record).ordered.
+        with(:right, 'right_table', {'id' => '2'}).
+        and_return(:dummy_values)
+      helper.should_receive(:insert_record).ordered.
+        with(:left, 'left_table', :dummy_values)
+      replicator.clear_conflict :right, diff, 1
 
     
-    # verify that a delete is dealt correctly with
-    left_change.type = :delete
-    right_change.type = :update
+      # verify that a delete is dealt correctly with
+      left_change.type = :delete
+      right_change.type = :update
 
-    helper.should_receive(:delete_record).ordered.
-      with(:right, 'right_table', {'id' => '2'})
-    replicator.clear_conflict :left, diff
+      helper.should_receive(:delete_record).ordered.
+        with(:right, 'right_table', {'id' => '2'})
+      replicator.clear_conflict :left, diff, 1
+    ensure
+      session.left.rollback_db_transaction
+      session.right.rollback_db_transaction
+    end
   end
 
   it "replicate_difference should not do anything if ignore option is given" do
@@ -198,42 +205,45 @@ describe Replicators::TwoWayReplicator do
 
     replicator = Replicators::TwoWayReplicator.new(helper)
     replicator.stub!(:options).and_return({:replication_conflict_handling => :left_wins})
-    replicator.should_receive(:clear_conflict).with(:left, diff)
-    replicator.replicate_difference diff
+    replicator.should_receive(:clear_conflict).with(:left, diff, 1)
+    replicator.replicate_difference diff, 1
 
     replicator = Replicators::TwoWayReplicator.new(helper)
     replicator.stub!(:options).and_return({:replication_conflict_handling => :right_wins})
-    replicator.should_receive(:clear_conflict).with(:right, diff)
-    replicator.replicate_difference diff
+    replicator.should_receive(:clear_conflict).with(:right, diff, 1)
+    replicator.replicate_difference diff, 1
 
     replicator = Replicators::TwoWayReplicator.new(helper)
     replicator.stub!(:options).and_return({:replication_conflict_handling => :later_wins})
-    replicator.should_receive(:clear_conflict).with(:left, diff).twice
+    replicator.should_receive(:clear_conflict).with(:left, diff, 1).twice
     left_change.last_changed_at = 5.seconds.from_now
     right_change.last_changed_at = Time.now
-    replicator.replicate_difference diff
+    replicator.replicate_difference diff, 1
     left_change.last_changed_at = right_change.last_changed_at = Time.now
-    replicator.replicate_difference diff
-    replicator.should_receive(:clear_conflict).with(:right, diff)
+    replicator.replicate_difference diff, 1
+    replicator.should_receive(:clear_conflict).with(:right, diff, 1)
     right_change.last_changed_at = 5.seconds.from_now
-    replicator.replicate_difference diff
+    replicator.replicate_difference diff, 1
 
     replicator = Replicators::TwoWayReplicator.new(helper)
     replicator.stub!(:options).and_return({:replication_conflict_handling => :earlier_wins})
-    replicator.should_receive(:clear_conflict).with(:left, diff).twice
+    replicator.should_receive(:clear_conflict).with(:left, diff, 1).twice
     left_change.last_changed_at = 5.seconds.ago
     right_change.last_changed_at = Time.now
-    replicator.replicate_difference diff
+    replicator.replicate_difference diff, 1
     left_change.last_changed_at = right_change.last_changed_at = Time.now
-    replicator.replicate_difference diff
-    replicator.should_receive(:clear_conflict).with(:right, diff)
+    replicator.replicate_difference diff, 1
+    replicator.should_receive(:clear_conflict).with(:right, diff, 1)
     right_change.last_changed_at = 5.seconds.ago
-    replicator.replicate_difference diff
+    replicator.replicate_difference diff, 1
   end
 
   it "replicate_difference should replicate :left / :right changes correctly" do
     Initializer.configuration.include_tables 'left_table, right_table'
     session = Session.new
+    session.left.begin_db_transaction
+    session.right.begin_db_transaction
+    begin
     rep_run = ReplicationRun.new(session)
 
     left_change = LoggedChange.new session, :left
@@ -279,5 +289,115 @@ describe Replicators::TwoWayReplicator do
     replicator = Replicators::TwoWayReplicator.new(helper)
     helper.should_receive(:delete_record).with(:left, 'left_table', {'id' => '1'})
     replicator.replicate_difference diff
+    ensure
+      session.left.rollback_db_transaction
+      session.right.rollback_db_transaction
+    end
+  end
+
+  it "replicate_difference should handle inserts failing due duplicate records getting created after the original diff was loaded" do
+    begin
+      config = deep_copy(standard_config)
+      config.options[:committer] = :never_commit
+      config.options[:replication_conflict_handling] = :right_wins
+
+      session = Session.new(config)
+
+      session.left.insert_record 'extender_no_record', {
+        'id' => '1',
+        'name' => 'bla'
+      }
+      session.left.insert_record 'rr_change_log', {
+        'change_table' => 'extender_no_record',
+        'change_key' => 'id|1',
+        'change_type' => 'I',
+        'change_time' => Time.now
+      }
+
+
+      rep_run = ReplicationRun.new session
+      helper = ReplicationHelper.new(rep_run)
+      replicator = Replicators::TwoWayReplicator.new(helper)
+
+      diff = ReplicationDifference.new session
+      diff.load
+
+      session.right.insert_record 'extender_no_record', {
+        'id' => '1',
+        'name' => 'blub'
+      }
+      session.right.insert_record 'rr_change_log', {
+        'change_table' => 'extender_no_record',
+        'change_key' => 'id|1',
+        'change_type' => 'I',
+        'change_time' => Time.now
+      }
+      replicator.replicate_difference diff, 2
+
+      session.left.select_one("select * from extender_no_record").should == {
+        'id' => '1',
+        'name' => 'blub'
+      }
+    ensure
+      Committers::NeverCommitter.rollback_current_session
+      if session
+        session.left.execute "delete from extender_no_record"
+        session.right.execute "delete from extender_no_record"
+        session.left.execute "delete from rr_change_log"
+      end
+    end
+  end
+
+
+  it "replicate_difference should handle updates failing due to the source record being deleted after the original diff was loaded" do
+    begin
+      config = deep_copy(standard_config)
+      config.options[:committer] = :never_commit
+      config.options[:replication_conflict_handling] = :left_wins
+
+      session = Session.new(config)
+
+      session.left.insert_record 'extender_no_record', {
+        'id' => '2',
+        'name' => 'bla'
+      }
+      session.right.insert_record 'extender_no_record', {
+        'id' => '2',
+        'name' => 'blub'
+      }
+      session.left.insert_record 'rr_change_log', {
+        'change_table' => 'extender_no_record',
+        'change_key' => 'id|1',
+        'change_new_key' => 'id|2',
+        'change_type' => 'U',
+        'change_time' => Time.now
+      }
+
+      rep_run = ReplicationRun.new session
+      helper = ReplicationHelper.new(rep_run)
+      replicator = Replicators::TwoWayReplicator.new(helper)
+
+      diff = ReplicationDifference.new session
+      diff.load
+
+      session.left.delete_record 'extender_no_record', {'id' => '2'}
+
+      session.left.insert_record 'rr_change_log', {
+        'change_table' => 'extender_no_record',
+        'change_key' => 'id|2',
+        'change_type' => 'D',
+        'change_time' => Time.now
+      }
+      replicator.replicate_difference diff, 2
+
+      session.right.select_one("select * from extender_no_record").should be_nil
+    ensure
+      Committers::NeverCommitter.rollback_current_session
+      if session
+        session.left.execute "delete from extender_no_record"
+        session.right.execute "delete from extender_no_record"
+        session.left.execute "delete from rr_change_log"
+      end
+    end
   end
 end

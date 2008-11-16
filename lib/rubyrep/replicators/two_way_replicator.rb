@@ -117,31 +117,95 @@ module RR
       # Helper function that clears a conflict by taking the change from the
       # specified winning database and updating the other database accordingly.
       # * +source_db+: the winning database (either :+left+ or :+right+)
-      # * diff: the ReplicationDifference instance
-      def clear_conflict(source_db, diff)
+      # * +diff+: the ReplicationDifference instance
+      # * +remaining_attempts+: the number of remaining replication attempts for this difference
+      def clear_conflict(source_db, diff, remaining_attempts)
         source_change = diff.changes[source_db]
         target_db = OTHER_SIDE[source_db]
         target_change = diff.changes[target_db]
-        target_table = rep_helper.corresponding_table(source_db, source_change.table)
 
         target_action = CONFLICT_STATE_MATRIX[source_change.type][target_change.type]
         source_key = source_change.type == :update ? source_change.new_key : source_change.key
         target_key = target_change.type == :update ? target_change.new_key : target_change.key
         case target_action
         when :insert
-          values = rep_helper.load_record source_db, source_change.table, source_key
-          rep_helper.insert_record target_db, target_table, values
+          attempt_insert source_db, diff, remaining_attempts, source_key
         when :update
-          values = rep_helper.load_record source_db, source_change.table, source_key
-          rep_helper.update_record target_db, target_table, values
+          attempt_update source_db, diff, remaining_attempts, source_key, target_key
         when :delete
+          target_table = rep_helper.corresponding_table(source_db, source_change.table)
           rep_helper.delete_record target_db, target_table, target_key
+        end
+      end
+
+      # How often a replication will be attempted (in case it fails because the
+      # record in question was removed from the source or inserted into the
+      # target database _after_ the ReplicationDifference was loaded
+      MAX_REPLICATION_ATTEMPTS = 2
+
+      # Attempts to read the specified record from the source database and insert
+      # it into the target database.
+      # Retries if insert fails due to missing source or suddenly existing target
+      # record.
+      # * +source_db+: either :+left+ or :+right+ - source database of replication
+      # * +diff+: the current ReplicationDifference instance
+      # * +remaining_attempts+: the number of remaining replication attempts for this difference
+      # * +source_key+: a column_name => value hash identifying the source record
+      def attempt_insert(source_db, diff, remaining_attempts, source_key)
+        source_change = diff.changes[source_db]
+        source_table = source_change.table
+        target_db = OTHER_SIDE[source_db]
+        target_table = rep_helper.corresponding_table(source_db, source_table)
+
+        values = rep_helper.load_record source_db, source_table, source_key
+        if values == nil
+          diff.amend
+          replicate_difference diff, remaining_attempts - 1
+        else
+          begin
+            # note: savepoints have to be used for postgresql (as a failed SQL
+            #       statement will otherwise invalidate the complete transaction.)
+            rep_helper.session.send(target_db).execute "savepoint rr_insert"
+            rep_helper.insert_record target_db, target_table, values
+            rep_helper.session.send(target_db).execute "release savepoint rr_insert"
+          rescue Exception => e
+            rep_helper.session.send(target_db).execute "rollback to savepoint rr_insert"
+            row = rep_helper.load_record target_db, target_table, source_key
+            raise unless row # problem is not the existence of the record in the target db
+            diff.amend
+            replicate_difference diff, remaining_attempts - 1
+          end
+        end
+      end
+
+      # Attempts to read the specified record from the source database and update
+      # the specified record in the target database.
+      # Retries if update fails due to missing source
+      # * +source_db+: either :+left+ or :+right+ - source database of replication
+      # * +diff+: the current ReplicationDifference instance
+      # * +remaining_attempts+: the number of remaining replication attempts for this difference
+      # * +source_key+: a column_name => value hash identifying the source record
+      # * +target_key+: a column_name => value hash identifying the source record
+      def attempt_update(source_db, diff, remaining_attempts, source_key, target_key)
+        source_change = diff.changes[source_db]
+        source_table = source_change.table
+        target_db = OTHER_SIDE[source_db]
+        target_table = rep_helper.corresponding_table(source_db, source_table)
+
+        values = rep_helper.load_record source_db, source_table, source_key
+        if values == nil
+          diff.amend
+          replicate_difference diff, remaining_attempts - 1
+        else
+          rep_helper.update_record target_db, target_table, values, target_key
         end
       end
 
       # Called to replicate the specified difference.
       # * :+diff+: ReplicationDifference instance
-      def replicate_difference(diff)
+      # * :+remaining_attempts+: how many more times a replication will be attempted
+      def replicate_difference(diff, remaining_attempts = MAX_REPLICATION_ATTEMPTS)
+        return if remaining_attempts == 0
         if diff.type == :left or diff.type == :right
           key = diff.type == :left ? :left_change_handling : :right_change_handling
           option = options[key]
@@ -150,19 +214,17 @@ module RR
             # nothing to do
           elsif option == :replicate
             source_db = diff.type
-            target_db = OTHER_SIDE[source_db]
 
             change = diff.changes[source_db]
-            target_table = rep_helper.corresponding_table(source_db, change.table)
 
             case change.type
             when :insert
-              values = rep_helper.load_record source_db, change.table, change.key
-              rep_helper.insert_record target_db, target_table, values
+              attempt_insert source_db, diff, remaining_attempts, change.key
             when :update
-              values = rep_helper.load_record source_db, change.table, change.new_key
-              rep_helper.update_record target_db, target_table, values, change.key
+              attempt_update source_db, diff, remaining_attempts, change.new_key, change.key
             when :delete
+              target_db = OTHER_SIDE[source_db]
+              target_table = rep_helper.corresponding_table(source_db, change.table)
               rep_helper.delete_record target_db, target_table, change.key
             end
           else # option must be a Proc
@@ -173,15 +235,15 @@ module RR
           if option == :ignore
             # nothing to do
           elsif option == :left_wins
-            clear_conflict :left, diff
+            clear_conflict :left, diff, remaining_attempts
           elsif option == :right_wins
-            clear_conflict :right, diff
+            clear_conflict :right, diff, remaining_attempts
           elsif option == :later_wins
             winner_db = diff.changes[:left].last_changed_at >= diff.changes[:right].last_changed_at ? :left : :right
-            clear_conflict winner_db, diff
+            clear_conflict winner_db, diff, remaining_attempts
           elsif option == :earlier_wins
             winner_db = diff.changes[:left].last_changed_at <= diff.changes[:right].last_changed_at ? :left : :right
-            clear_conflict winner_db, diff
+            clear_conflict winner_db, diff, remaining_attempts
           else # option must be a Proc
             option.call rep_helper, diff
           end
