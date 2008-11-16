@@ -64,6 +64,35 @@ describe ReplicationRun do
     end
   end
 
+  it "run should only replicate real differences" do
+    session = Session.new
+    session.left.begin_db_transaction
+    session.right.begin_db_transaction
+    begin
+
+      session.left.insert_record 'rr_change_log', {
+        'change_table' => 'extender_no_record',
+        'change_key' => 'id|1',
+        'change_type' => 'D',
+        'change_time' => Time.now
+      }
+      session.right.insert_record 'rr_change_log', {
+        'change_table' => 'extender_no_record',
+        'change_key' => 'id|1',
+        'change_type' => 'D',
+        'change_time' => Time.now
+      }
+
+      run = ReplicationRun.new session
+      run.replicator.should_not_receive(:replicate)
+      run.run
+
+    ensure
+      session.left.rollback_db_transaction
+      session.right.rollback_db_transaction
+    end
+  end
+
   it "run should process trigger created change log records" do
     begin
       config = deep_copy(standard_config)

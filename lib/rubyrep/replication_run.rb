@@ -25,7 +25,7 @@ module RR
         diff = ReplicationDifference.new session
         diff.load
         break unless diff.loaded?
-        replicator.replicate_difference diff
+        replicator.replicate_difference diff if diff.type != :no_diff
       end
       success = true # considered to be successful if we get till here
     ensure
