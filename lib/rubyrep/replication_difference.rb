@@ -11,6 +11,7 @@ module RR
     # * :+left+: change in left database
     # * :+right+: change in right database
     # * :+conflict+: change in both databases
+    # * :+no_diff+: changes in both databases constitute no difference
     attr_accessor :type
 
     # A hash with keys :+left+ and / or :+right+.
@@ -40,9 +41,24 @@ module RR
       :right => :left
     }
 
+    # Resulting diff type based on types of left changes (outer hash) and right
+    # changes (inner hash)
+    DIFF_TYPES = {
+      :insert =>    {:insert => :conflict, :update => :conflict, :delete => :conflict,  :no_change => :left},
+      :update =>    {:update => :conflict, :update => :conflict, :delete => :conflict,  :no_change => :left},
+      :delete =>    {:insert => :conflict, :update => :conflict, :delete => :no_change, :no_change => :left},
+      :no_change => {:insert => :right,    :update => :right,    :delete => :right,     :no_change => :no_change}
+    }
+
+    # Amends a difference according to new entries in the change log table
+    def amend
+      changes[:left].load
+      changes[:right].load
+      self.type = DIFF_TYPES[changes[:left].type][changes[:right].type]
+    end
+    
     # Loads a difference
     def load
-      changes = {}
       change_times = {}
       [:left, :right].each do |database|
         changes[database] = LoggedChange.new session, database
@@ -61,14 +77,7 @@ module RR
         session.corresponding_table(oldest, changes[oldest].table),
         changes[oldest].key)
 
-      if changes[OTHER_SIDE[oldest]].loaded?
-        self.type = :conflict
-        self.changes.replace changes
-      else
-        self.type = oldest
-        self.changes[oldest] = changes[oldest]
-      end
-      
+      self.type = DIFF_TYPES[changes[:left].type][changes[:right].type]
       self.loaded = true
     end
 

@@ -14,65 +14,35 @@ describe LoggedChange do
     change.database.should == :left
   end
 
-  it "loaded? should return true if a change was loaded" do
-    change = LoggedChange.new Session.new, :left
-    change.should_not be_loaded
-    change.loaded = true
-    change.should be_loaded
-  end
-
   it "load_specified should load the specified change" do
     session = Session.new
     session.left.begin_db_transaction
     begin
       session.left.insert_record 'rr_change_log', {
-        'change_table' => 'dummy_table',
+        'change_table' => 'left_table',
         'change_key' => 'id|1',
         'change_type' => 'I',
         'change_time' => Time.now
       }
       session.left.insert_record 'rr_change_log', {
-        'change_table' => 'wrong_table',
+        'change_table' => 'right_table',
         'change_key' => 'id|2',
         'change_new_key' => 'id|2',
         'change_type' => 'U',
         'change_time' => Time.now
       }
       session.left.insert_record 'rr_change_log', {
-        'change_table' => 'dummy_table',
+        'change_table' => 'left_table',
         'change_key' => 'id|2',
         'change_type' => 'I',
         'change_time' => Time.now
       }
       change = LoggedChange.new session, :left
-      change.load_specified 'dummy_table', 'id|2'
+      change.load_specified 'left_table', {'id' => '2'}
 
-      change.should be_loaded
-      change.table.should == 'dummy_table'
+      change.table.should == 'left_table'
       change.type.should == :insert
       change.key.should == {'id' => '2'}
-    ensure
-      session.left.rollback_db_transaction
-    end
-  end
-
-  it "load_specified should accept a string as key" do
-    session = Session.new
-    session.left.begin_db_transaction
-    begin
-      session.left.insert_record 'rr_change_log', {
-        'change_table' => 'scanner_records',
-        'change_key' => 'id|1',
-        'change_type' => 'I',
-        'change_time' => Time.now
-      }
-      change = LoggedChange.new session, :left
-      change.load_specified 'scanner_records', 'id|1'
-
-      change.should be_loaded
-      change.table.should == 'scanner_records'
-      change.type.should == :insert
-      change.key.should == {'id' => '1'}
     ensure
       session.left.rollback_db_transaction
     end
@@ -95,7 +65,6 @@ describe LoggedChange do
       change = LoggedChange.new session, :left
       change.load_specified 'scanner_records', {'id1' => 1, 'id2' => 2}
 
-      change.should be_loaded
       change.table.should == 'scanner_records'
       change.type.should == :insert
       change.key.should == {'id1' => '1', 'id2' => '2'}
@@ -109,15 +78,14 @@ describe LoggedChange do
     session.left.begin_db_transaction
     begin
       session.left.insert_record 'rr_change_log', {
-        'change_table' => 'dummy_table',
+        'change_table' => 'left_table',
         'change_key' => 'id|1',
         'change_type' => 'I',
         'change_time' => Time.now
       }
       change = LoggedChange.new session, :left
-      change.load_specified 'dummy_table', 'id|1'
+      change.load_specified 'left_table', {'id' => 1}
 
-      change.should be_loaded
       session.left.
         select_one("select * from rr_change_log where change_key = 'id|1'").
         should be_nil
@@ -133,22 +101,21 @@ describe LoggedChange do
       t1 = 5.seconds.ago
       t2 = 5.seconds.from_now
       session.left.insert_record 'rr_change_log', {
-        'change_table' => 'dummy_table',
+        'change_table' => 'left_table',
         'change_key' => 'id|1',
         'change_type' => 'I',
         'change_time' => t1
       }
       session.left.insert_record 'rr_change_log', {
-        'change_table' => 'dummy_table',
+        'change_table' => 'left_table',
         'change_key' => 'id|1',
         'change_new_key' => 'id|1',
         'change_type' => 'U',
         'change_time' => t2
       }
       change = LoggedChange.new session, :left
-      change.load_specified 'dummy_table', 'id|1'
+      change.load_specified 'left_table', {'id' => 1}
 
-      change.should be_loaded
       change.first_changed_at.to_s.should == t1.to_s
       change.last_changed_at.to_s.should == t2.to_s
     ensure
@@ -161,57 +128,57 @@ describe LoggedChange do
     session.left.begin_db_transaction
     begin
       session.left.insert_record 'rr_change_log', {
-        'change_table' => 'dummy_table',
+        'change_table' => 'left_table',
         'change_key' => 'id|1',
         'change_new_key' => 'id|2',
         'change_type' => 'U',
         'change_time' => Time.now
       }
       session.left.insert_record 'rr_change_log', {
-        'change_table' => 'dummy_table',
+        'change_table' => 'left_table',
         'change_key' => 'id|2',
         'change_new_key' => 'id|3',
         'change_type' => 'U',
         'change_time' => Time.now
       }
       change = LoggedChange.new session, :left
-      change.load_specified 'dummy_table', 'id|1'
+      change.load_specified 'left_table', {'id' => 1}
 
-      change.should be_loaded
-      change.key.should == {'id' => '1'}
+      change.type.should == :update
+      change.key.should == {'id' => 1}
       change.new_key.should == {'id' => '3'}
     ensure
       session.left.rollback_db_transaction
     end
   end
 
-  it "load_specified should not load if changes cancel each other out" do
+  it "load_specified should recognize if changes cancel each other out" do
     session = Session.new
     session.left.begin_db_transaction
     begin
       session.left.insert_record 'rr_change_log', {
-        'change_table' => 'dummy_table',
+        'change_table' => 'left_table',
         'change_key' => 'id|1',
         'change_type' => 'I',
         'change_time' => Time.now
       }
       session.left.insert_record 'rr_change_log', {
-        'change_table' => 'dummy_table',
+        'change_table' => 'left_table',
         'change_key' => 'id|1',
         'change_new_key' => 'id|2',
         'change_type' => 'U',
         'change_time' => Time.now
       }
       session.left.insert_record 'rr_change_log', {
-        'change_table' => 'dummy_table',
+        'change_table' => 'left_table',
         'change_key' => 'id|2',
         'change_type' => 'D',
         'change_time' => Time.now
       }
       change = LoggedChange.new session, :left
-      change.load_specified 'dummy_table', 'id|1'
+      change.load_specified 'left_table', {'id' => '1'}
 
-      change.should_not be_loaded
+      change.type.should == :no_change
     ensure
       session.left.rollback_db_transaction
     end
@@ -224,55 +191,101 @@ describe LoggedChange do
 
       # first test case
       session.left.insert_record 'rr_change_log', {
-        'change_table' => 'dummy_table',
+        'change_table' => 'left_table',
         'change_key' => 'id|1',
         'change_type' => 'I',
         'change_time' => Time.now
       }
       session.left.insert_record 'rr_change_log', {
-        'change_table' => 'dummy_table',
+        'change_table' => 'left_table',
         'change_key' => 'id|1',
         'change_type' => 'D',
         'change_time' => Time.now
       }
       session.left.insert_record 'rr_change_log', {
-        'change_table' => 'dummy_table',
+        'change_table' => 'left_table',
         'change_key' => 'id|1',
         'change_type' => 'I',
         'change_time' => Time.now
       }
       session.left.insert_record 'rr_change_log', {
-        'change_table' => 'dummy_table',
+        'change_table' => 'left_table',
         'change_key' => 'id|1',
         'change_new_key' => 'id|2',
         'change_type' => 'U',
         'change_time' => Time.now
       }
       change = LoggedChange.new session, :left
-      change.load_specified 'dummy_table', 'id|1'
-      change.should be_loaded
+      change.load_specified 'left_table', {'id' => '1'}
       change.type.should == :insert
       change.key.should == {'id' => '2'}
 
       # second test case
       session.left.insert_record 'rr_change_log', {
-        'change_table' => 'dummy_table',
+        'change_table' => 'left_table',
         'change_key' => 'id|5',
         'change_type' => 'D',
         'change_time' => Time.now
       }
       session.left.insert_record 'rr_change_log', {
-        'change_table' => 'dummy_table',
+        'change_table' => 'left_table',
         'change_key' => 'id|5',
         'change_type' => 'I',
         'change_time' => Time.now
       }
       change = LoggedChange.new session, :left
-      change.load_specified 'dummy_table', 'id|5'
-      change.should be_loaded
+      change.load_specified 'left_table', {'id' => '5'}
       change.type.should == :update
       change.key.should == {'id' => '5'}
       change.new_key.should == {'id' => '5'}
+    ensure
+      session.left.rollback_db_transaction
+    end
+  end
+
+  it "amend should work if there were no changes" do
+    session = Session.new
+    session.left.begin_db_transaction
+    begin
+      session.left.insert_record 'rr_change_log', {
+        'change_table' => 'scanner_records',
+        'change_key' => 'id|1',
+        'change_type' => 'I',
+        'change_time' => Time.now
+      }
+      change = LoggedChange.new session, :left
+      change.load_specified 'scanner_records', {'id' => '1'}
+
+      change.table.should == 'scanner_records'
+      change.type.should == :insert
+      change.key.should == {'id' => '1'}
+
+      change.load
+
+      change.table.should == 'scanner_records'
+      change.type.should == :insert
+      change.key.should == {'id' => '1'}
+    ensure
+      session.left.rollback_db_transaction
+    end
+  end
+
+  it "amend should work if the current type is :no_change" do
+    session = Session.new
+    session.left.begin_db_transaction
+    begin
+      change = LoggedChange.new session, :left
+      change.load_specified 'scanner_records', {'id' => '1'}
+
+      change.table.should == 'scanner_records'
+      change.type.should == :no_change
+      change.key.should == {'id' => '1'}
+
+      change.load
+
+      change.table.should == 'scanner_records'
+      change.type.should == :no_change
+      change.key.should == {'id' => '1'}
     ensure
       session.left.rollback_db_transaction
     end
@@ -294,16 +307,15 @@ describe LoggedChange do
         'change_time' => Time.now
       }
       change = LoggedChange.new session, :left
-      change.load_specified 'left_table', 'id|1'
+      change.load_specified 'left_table', {'id' => '1'}
       session.left.insert_record 'rr_change_log', {
         'change_table' => 'left_table',
         'change_key' => 'id|1',
         'change_type' => 'D',
         'change_time' => Time.now
       }
-      change.amend
+      change.load
 
-      change.should be_loaded
       change.table.should == 'left_table'
       change.type.should == :delete
       change.key.should == {'id' => '1'}
@@ -328,7 +340,7 @@ describe LoggedChange do
         'change_time' => Time.now
       }
       change = LoggedChange.new session, :left
-      change.load_specified 'left_table', 'id|1'
+      change.load_specified 'left_table', {'id' => '1'}
       session.left.insert_record 'rr_change_log', {
         'change_table' => 'left_table',
         'change_key' => 'id|2',
@@ -336,9 +348,8 @@ describe LoggedChange do
         'change_type' => 'U',
         'change_time' => Time.now
       }
-      change.amend
+      change.load
 
-      change.should be_loaded
       change.table.should == 'left_table'
       change.type.should == :update
       change.key.should == {'id' => '1'}
@@ -359,13 +370,13 @@ describe LoggedChange do
     begin
       time = Time.now
       session.left.insert_record 'rr_change_log', {
-        'change_table' => 'dummy_table',
+        'change_table' => 'left_table',
         'change_key' => 'id|1',
         'change_type' => 'I',
         'change_time' => time
       }
       session.left.insert_record 'rr_change_log', {
-        'change_table' => 'dummy_table',
+        'change_table' => 'left_table',
         'change_key' => 'id|2',
         'change_type' => 'I',
         'change_time' => 100.seconds.from_now
@@ -396,13 +407,13 @@ describe LoggedChange do
     session.left.begin_db_transaction
     begin
       session.left.insert_record 'rr_change_log', {
-        'change_table' => 'dummy_table',
+        'change_table' => 'left_table',
         'change_key' => 'id|1',
         'change_type' => 'I',
         'change_time' => Time.now
       }
       session.left.insert_record 'rr_change_log', {
-        'change_table' => 'dummy_table',
+        'change_table' => 'left_table',
         'change_key' => 'id|2',
         'change_type' => 'I',
         'change_time' => Time.now
@@ -410,7 +421,6 @@ describe LoggedChange do
       change = LoggedChange.new session, :left
       change.load_oldest
 
-      change.should be_loaded
       change.key.should == {'id' => '1'}
     ensure
       session.left.rollback_db_transaction
@@ -422,19 +432,19 @@ describe LoggedChange do
     session.left.begin_db_transaction
     begin
       session.left.insert_record 'rr_change_log', {
-        'change_table' => 'dummy_table',
+        'change_table' => 'left_table',
         'change_key' => 'id|1',
         'change_type' => 'I',
         'change_time' => Time.now
       }
       session.left.insert_record 'rr_change_log', {
-        'change_table' => 'dummy_table',
+        'change_table' => 'left_table',
         'change_key' => 'id|1',
         'change_type' => 'D',
         'change_time' => Time.now
       }
       session.left.insert_record 'rr_change_log', {
-        'change_table' => 'dummy_table',
+        'change_table' => 'left_table',
         'change_key' => 'id|2',
         'change_type' => 'I',
         'change_time' => Time.now
@@ -442,7 +452,7 @@ describe LoggedChange do
       change = LoggedChange.new session, :left
       change.load_oldest
 
-      change.should be_loaded
+      change.type.should == :insert
       change.key.should == {'id' => '2'}
     ensure
       session.left.rollback_db_transaction

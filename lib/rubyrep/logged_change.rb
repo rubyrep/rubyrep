@@ -47,15 +47,6 @@ module RR
       @change_log_table ||= "#{session.configuration.options[:rep_prefix]}_change_log"
     end
 
-    # Should be set to +true+ if this LoggedChange instance was successfully loaded
-    # with a change.
-    attr_writer :loaded
-
-    # Returns +true+ if a change was loaded
-    def loaded?
-      @loaded
-    end
-
     # A hash describing how the change state morph based on newly found change
     # records.
     # * key: String consisting of 2 letters
@@ -104,27 +95,19 @@ module RR
       result
     end
 
-    # Amends an already loaded change with additional change records.
-    def amend
-      load_specified table, new_key || key
-    end
-
-    # Loads the change with the specified +raw_key+ for the named +table+.
-    # +raw_key+ can be either
-    # * a string as found in the key column of the change log table
-    # * a column_name => value hash for all primary key columns
-    def load_specified(table, raw_key)
-      self.table = table
+    # Loads the change as per #table and #key. Works if the LoggedChange instance
+    # is totally new or was already loaded before.
+    def load
       cursor = nil
       current_type = LONG_TYPES[type]
       current_id = -1
 
-      if(raw_key.is_a?(Hash)) # convert to key string if already a hash
-        raw_key = session.send(database).primary_key_names(table).map do |key_name|
-          "#{key_name}#{key_sep}#{raw_key[key_name]}"
-        end.join(key_sep)
-      end
-      new_raw_key = raw_key
+      org_key = new_key || key
+      # change to key string as can be found in change log table
+      org_key = session.send(database).primary_key_names(table).map do |key_name|
+        "#{key_name}#{key_sep}#{org_key[key_name]}"
+      end.join(key_sep)
+      current_key = org_key
 
       loop do
         unless cursor
@@ -132,7 +115,7 @@ module RR
           org_cursor = session.send(database).select_cursor(<<-end_sql)
             select * from #{change_log_table}
             where change_table = '#{table}'
-            and change_key = '#{new_raw_key}' and id > #{current_id}
+            and change_key = '#{current_key}' and id > #{current_id}
             order by id
           end_sql
           cursor = TypeCastingCursor.new(session.send(database),
@@ -151,24 +134,32 @@ module RR
         self.last_changed_at = row['change_time']
 
 
-        if row['change_type'] == 'U' and row['change_new_key'] != new_raw_key
+        if row['change_type'] == 'U' and row['change_new_key'] != current_key
           cursor.clear
           cursor = nil
-          new_raw_key = row['change_new_key']
+          current_key = row['change_new_key']
         end
       end
 
-      self.loaded = current_type != 'N'
       self.type = SHORT_TYPES[current_type]
       self.new_key = nil
       if type == :update
-        self.key ||= key_to_hash(raw_key)
-        self.new_key = key_to_hash(new_raw_key)
-      elsif type != :no_change
-        self.key ||= key_to_hash(new_raw_key)
+        self.key ||= key_to_hash(org_key)
+        self.new_key = key_to_hash(current_key)
+      else
+        self.key = key_to_hash(current_key)
       end
     ensure
       cursor.clear if cursor
+    end
+
+    # Loads the change with the specified key for the named +table+.
+    # * +table+: name of the table
+    # * +key+: a column_name => value hash for all primary key columns of the table
+    def load_specified(table, key)
+      self.table = table
+      self.key = key
+      load
     end
 
     # Returns the time of the oldest change. Returns +nil+ if there are no
@@ -192,8 +183,11 @@ module RR
       begin
         row = session.send(database).select_one(
           "select change_table, change_key from #{change_log_table} order by id")
-        load_specified row['change_table'], row['change_key'] if row
-      end until row == nil or loaded?
+        break unless row
+        self.key = key_to_hash(row['change_key'])
+        self.table = row['change_table']
+        load
+      end until type != :no_change
     end
   end
 end

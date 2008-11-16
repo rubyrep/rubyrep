@@ -42,7 +42,6 @@ describe ReplicationDifference do
       diff.should be_loaded
       diff.type.should == :left
       diff.changes[:left].key.should == {'id' => '1'}
-      diff.changes[:right].should be_nil
     ensure
       session.left.rollback_db_transaction
     end
@@ -64,7 +63,6 @@ describe ReplicationDifference do
       diff.should be_loaded
       diff.type.should == :right
       diff.changes[:right].key.should == {'id' => '1'}
-      diff.changes[:left].should be_nil
     ensure
       session.right.rollback_db_transaction
     end
