@@ -278,6 +278,76 @@ describe LoggedChange do
     end
   end
 
+  it "amend should amend the change correctly" do
+    session = Session.new
+    session.left.begin_db_transaction
+    begin
+      session.left.insert_record 'left_table', {
+        :id => '1',
+        :name => 'bla'
+      }
+      session.left.insert_record 'rr_change_log', {
+        'change_table' => 'left_table',
+        'change_key' => 'id|1',
+        'change_new_key' => 'id|1',
+        'change_type' => 'U',
+        'change_time' => Time.now
+      }
+      change = LoggedChange.new session, :left
+      change.load_specified 'left_table', 'id|1'
+      session.left.insert_record 'rr_change_log', {
+        'change_table' => 'left_table',
+        'change_key' => 'id|1',
+        'change_type' => 'D',
+        'change_time' => Time.now
+      }
+      change.amend
+
+      change.should be_loaded
+      change.table.should == 'left_table'
+      change.type.should == :delete
+      change.key.should == {'id' => '1'}
+    ensure
+      session.left.rollback_db_transaction
+    end
+  end
+
+  it "amend should support primary key updates" do
+    session = Session.new
+    session.left.begin_db_transaction
+    begin
+      session.left.insert_record 'left_table', {
+        :id => '1',
+        :name => 'bla'
+      }
+      session.left.insert_record 'rr_change_log', {
+        'change_table' => 'left_table',
+        'change_key' => 'id|1',
+        'change_new_key' => 'id|2',
+        'change_type' => 'U',
+        'change_time' => Time.now
+      }
+      change = LoggedChange.new session, :left
+      change.load_specified 'left_table', 'id|1'
+      session.left.insert_record 'rr_change_log', {
+        'change_table' => 'left_table',
+        'change_key' => 'id|2',
+        'change_new_key' => 'id|3',
+        'change_type' => 'U',
+        'change_time' => Time.now
+      }
+      change.amend
+
+      change.should be_loaded
+      change.table.should == 'left_table'
+      change.type.should == :update
+      change.key.should == {'id' => '1'}
+      change.new_key.should == {'id' => '3'}
+    ensure
+      session.left.rollback_db_transaction
+    end
+  end
+
   it "oldest_change_time should return nil if there are no changes" do
     change = LoggedChange.new Session.new, :left
     change.oldest_change_time.should be_nil

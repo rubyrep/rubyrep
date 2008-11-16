@@ -39,6 +39,7 @@ module RR
     def initialize(session, database)
       self.session = session
       self.database = database
+      self.type = :no_change
     end
 
     # Returns the name of the change log table
@@ -79,12 +80,15 @@ module RR
       'DD' => 'D', # [1]
     }
 
-    # A hash giving translating the short 1-letter types to the according symbols
-    TYPE_TRANSLATOR = {
+    # A hash translating the short 1-letter types to the according symbols
+    SHORT_TYPES = {
       'I' => :insert,
       'U' => :update,
-      'D' => :delete
+      'D' => :delete,
+      'N' => :no_change
     }
+    # A hash translating the symbold types to according 1 letter types
+    LONG_TYPES = SHORT_TYPES.invert
 
     # Returns the configured key separator
     def key_sep
@@ -100,20 +104,28 @@ module RR
       result
     end
 
+    # Amends an already loaded change with additional change records.
+    def amend
+      load_specified table, new_key || key
+    end
+
     # Loads the change with the specified +raw_key+ for the named +table+.
     # +raw_key+ can be either
     # * a string as found in the key column of the change log table
     # * a column_name => value hash for all primary key columns
     def load_specified(table, raw_key)
+      self.table = table
+      cursor = nil
+      current_type = LONG_TYPES[type]
+      current_id = -1
+
       if(raw_key.is_a?(Hash)) # convert to key string if already a hash
         raw_key = session.send(database).primary_key_names(table).map do |key_name|
           "#{key_name}#{key_sep}#{raw_key[key_name]}"
         end.join(key_sep)
       end
       new_raw_key = raw_key
-      cursor = nil
-      current_id = loaded? ? 0 : -1 # so a change stays loaded if during amendment no additional change records are found
-      current_type = type || 'N' # type might exist if this is a change amendment
+
       loop do
         unless cursor
           # load change records from DB if not already done
@@ -129,10 +141,10 @@ module RR
         break unless cursor.next? # no more matching changes in the change log
 
         row = cursor.next_row
-        current_id = row['id']
         new_type = row['change_type']
         current_type = TYPE_CHANGES["#{current_type}#{new_type}"]
 
+        current_id = row['id']
         session.send(database).execute "delete from #{change_log_table} where id = #{current_id}"
 
         self.first_changed_at ||= row['change_time']
@@ -145,17 +157,18 @@ module RR
           new_raw_key = row['change_new_key']
         end
       end
-      if current_id != nil and current_type != 'N'
-        self.loaded = true
-        self.table = table
-        self.type = TYPE_TRANSLATOR[current_type]
-        if type == :update
-          self.key = key_to_hash(raw_key)
-          self.new_key = key_to_hash(new_raw_key)
-        else
-          self.key = key_to_hash(new_raw_key)
-        end
+
+      self.loaded = current_type != 'N'
+      self.type = SHORT_TYPES[current_type]
+      self.new_key = nil
+      if type == :update
+        self.key ||= key_to_hash(raw_key)
+        self.new_key = key_to_hash(new_raw_key)
+      elsif type != :no_change
+        self.key ||= key_to_hash(new_raw_key)
       end
+    ensure
+      cursor.clear if cursor
     end
 
     # Returns the time of the oldest change. Returns +nil+ if there are no
