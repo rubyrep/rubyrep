@@ -45,7 +45,7 @@ module RR
     # changes (inner hash)
     DIFF_TYPES = {
       :insert =>    {:insert => :conflict, :update => :conflict, :delete => :conflict,  :no_change => :left},
-      :update =>    {:update => :conflict, :update => :conflict, :delete => :conflict,  :no_change => :left},
+      :update =>    {:insert => :conflict, :update => :conflict, :delete => :conflict,  :no_change => :left},
       :delete =>    {:insert => :conflict, :update => :conflict, :delete => :no_change, :no_change => :left},
       :no_change => {:insert => :right,    :update => :right,    :delete => :right,     :no_change => :no_change}
     }
