@@ -50,7 +50,7 @@ describe ReplicationRun do
       run = ReplicationRun.new session
       run.run
 
-      session.left.select_one("select * from extender_no_record").should == {
+      session.right.select_one("select * from extender_no_record").should == {
         'id' => '1',
         'name' => 'bla'
       }
@@ -81,7 +81,7 @@ describe ReplicationRun do
       run = ReplicationRun.new session
       run.run
 
-      session.left.select_one("select * from extender_no_record").should == {
+      session.right.select_one("select * from extender_no_record").should == {
         'id' => '1',
         'name' => 'bla'
       }
