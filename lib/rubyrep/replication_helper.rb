@@ -58,6 +58,31 @@ module RR
     def finalize(success = true)
       committer.finalize(success)
     end
+
+    # Logs the outcome of a replication into the replication log table.
+    # * +diff+: the replicated ReplicationDifference
+    # * +outcome+: string summarizing the outcome of the replication
+    # * +details+: string with further details regarding the replication
+    def log_replication_outcome(diff, outcome, details = nil)
+      table = (diff.changes[:left] || diff.changes[:right]).table
+      key = (diff.changes[:left] || diff.changes[:right]).key
+      key = key.size == 1 ? key.values[0] : key.inspect
+      rep_details = details[0...ReplicationInitializer::REP_DETAILS_SIZE]
+      diff_dump = diff.to_yaml[0...ReplicationInitializer::DIFF_DUMP_SIZE]
+      
+      session.left.insert_record "#{options[:rep_prefix]}_event_log", {
+        :activity => 'replication',
+        :rep_table => table,
+        :diff_type => diff.type.to_s,
+        :diff_key => key,
+        :left_change_type => (diff.changes[:left] ? diff.changes[:left].type.to_s : nil),
+        :right_change_type => (diff.changes[:right] ? diff.changes[:right].type.to_s : nil),
+        :rep_outcome => outcome,
+        :rep_details => rep_details,
+        :rep_time => Time.now,
+        :diff_dump => diff_dump
+      }
+    end
     
     # Creates a new SyncHelper for the given +TableSync+ instance.
     def initialize(replication_run)

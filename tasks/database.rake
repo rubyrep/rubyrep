@@ -161,6 +161,19 @@ def create_sample_schema(config)
       t.column :change_time, :timestamp
     end
 
+    create_table :rr_event_log do |t|
+      t.column :activity, :string
+      t.column :rep_table, :string
+      t.column :diff_type, :string
+      t.column :diff_key, :string
+      t.column :left_change_type, :string
+      t.column :right_change_type, :string
+      t.column :rep_outcome, :string
+      t.column :rep_details, :string, :limit => RR::ReplicationInitializer::REP_DETAILS_SIZE
+      t.column :rep_time, :timestamp
+      t.column :diff_dump, :string, :limit => RR::ReplicationInitializer::DIFF_DUMP_SIZE
+    end
+
     create_table :rr_active, :id => false do |t|
       t.column :active, :integer
     end

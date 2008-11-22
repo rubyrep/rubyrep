@@ -22,10 +22,15 @@ module RR
       success = false
 
       loop do
-        diff = ReplicationDifference.new session
-        diff.load
-        break unless diff.loaded?
-        replicator.replicate_difference diff if diff.type != :no_diff
+        begin
+          diff = ReplicationDifference.new session
+          diff.load
+          break unless diff.loaded?
+          replicator.replicate_difference diff if diff.type != :no_diff
+        rescue Exception => e
+          helper.log_replication_outcome diff, e.message, 
+            e.class.to_s + "\n" + e.backtrace.join("\n")
+        end
       end
       success = true # considered to be successful if we get till here
     ensure

@@ -96,37 +96,81 @@ module RR
       )
     end
 
-    # Returns +true+ if the replication log exists in the specified database.
+    # Returns +true+ if the change log exists in the specified database.
     # * database: either :+left+ or :+right+
-    def replication_log_exists?(database)
+    def change_log_exists?(database)
       session.send(database).tables.include? "#{options[:rep_prefix]}_change_log"
     end
 
-    # Drops the replication log table in the specified database
+    # Returns +true+ if the replication log exists.
+    def event_log_exists?
+      session.left.tables.include? "#{options[:rep_prefix]}_event_log"
+    end
+
+    # Drops the change log table in the specified database
     # * database: either :+left+ or :+right+
-    def drop_replication_log(database)
+    def drop_change_log(database)
       session.send(database).drop_table "#{options[:rep_prefix]}_change_log"
     end
 
-    # Creates the replication log table in the specified database
-    # * database: either :+left+ or :+right+
-    def create_replication_log(database)
+    # Drops the replication log table.
+    def drop_event_log
+      session.left.drop_table "#{options[:rep_prefix]}_event_log"
+    end
+
+    # Size of the replication log column diff_dump
+    DIFF_DUMP_SIZE = 2000
+
+    # Size of the repliation log column rep_exception
+    REP_DETAILS_SIZE = 1000
+
+    # Ensures that create_table and related statements don't print notices to
+    # stdout. Then restored original message setting.
+    # * +database+: either :+left+ or :+right+
+    def silence_ddl_notices(database)
       if session.configuration.send(database)[:adapter] =~ /postgres/
-        # suppress the postgres stderr output about creation of indexes
         old_message_level = session.send(database).
           select_one("show client_min_messages")['client_min_messages']
         session.send(database).execute "set client_min_messages = warning"
       end
-      session.send(database).create_table "#{options[:rep_prefix]}_change_log", :id => false do |t|
-        t.column :change_table, :string
-        t.column :change_key, :string
-        t.column :change_new_key, :string
-        t.column :change_type, :string
-        t.column :change_time, :timestamp
-      end
-      session.send(database).add_big_primary_key "#{options[:rep_prefix]}_change_log", 'id'
+      yield
+    ensure
       if session.configuration.send(database)[:adapter] =~ /postgres/
         session.send(database).execute "set client_min_messages = #{old_message_level}"
+      end
+    end
+
+    # Creates the replication log table.
+    def create_event_log
+      silence_ddl_notices(:left) do
+        session.left.create_table "#{options[:rep_prefix]}_event_log", :id => false do |t|
+          t.column :activity, :string
+          t.column :rep_table, :string
+          t.column :diff_type, :string
+          t.column :diff_key, :string
+          t.column :left_change_type, :string
+          t.column :right_change_type, :string
+          t.column :rep_outcome, :string
+          t.column :rep_details, :string, :limit => REP_DETAILS_SIZE
+          t.column :rep_time, :timestamp
+          t.column :diff_dump, :string, :limit => DIFF_DUMP_SIZE
+        end
+        session.left.add_big_primary_key "#{options[:rep_prefix]}_event_log", 'id'
+      end
+    end
+
+    # Creates the change log table in the specified database
+    # * database: either :+left+ or :+right+
+    def create_change_log(database)
+      silence_ddl_notices(database) do
+        session.send(database).create_table "#{options[:rep_prefix]}_change_log", :id => false do |t|
+          t.column :change_table, :string
+          t.column :change_key, :string
+          t.column :change_new_key, :string
+          t.column :change_type, :string
+          t.column :change_time, :timestamp
+        end
+        session.send(database).add_big_primary_key "#{options[:rep_prefix]}_change_log", 'id'
       end
     end
 
@@ -149,11 +193,13 @@ module RR
       end
     end
 
-    # Checks in both databases, if the replication log tables exist and if not,
-    # creates them.
-    def ensure_replication_log_tables
+    # Checks in both databases, if the infrastructure tables (change log, event
+    # log) exist and creates them if necessary.
+    def ensure_infrastructure
+      ensure_activity_marker_tables
+      create_event_log unless event_log_exists?
       [:left, :right].each do |database|
-        create_replication_log(database) unless replication_log_exists?(database)
+        create_change_log(database) unless change_log_exists?(database)
       end
     end
 
@@ -162,8 +208,7 @@ module RR
       exclude_rubyrep_tables
 
       puts "Verifying RubyRep tables"
-      ensure_activity_marker_tables
-      ensure_replication_log_tables
+      ensure_infrastructure
 
       unsynced_table_pairs = []
 

@@ -189,5 +189,11 @@ module RR
         load
       end until type != :no_change
     end
+
+    # Prevents session from going into YAML output
+    def to_yaml_properties
+      instance_variables.sort.reject {|var_name| var_name == '@session'}
+    end
+
   end
 end

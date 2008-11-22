@@ -205,7 +205,7 @@ module RR
       # * :+diff+: ReplicationDifference instance
       # * :+remaining_attempts+: how many more times a replication will be attempted
       def replicate_difference(diff, remaining_attempts = MAX_REPLICATION_ATTEMPTS)
-        return if remaining_attempts == 0
+        raise Exception, "max replication attempts exceeded" if remaining_attempts == 0
         if diff.type == :left or diff.type == :right
           key = diff.type == :left ? :left_change_handling : :right_change_handling
           option = options[key]

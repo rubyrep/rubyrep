@@ -458,4 +458,9 @@ describe LoggedChange do
       session.left.rollback_db_transaction
     end
   end
+
+  it "to_yaml should blank out session" do
+    change = LoggedChange.new :dummy_session, :left
+    change.to_yaml.should_not =~ /session/
+  end
 end

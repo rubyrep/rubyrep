@@ -244,51 +244,51 @@ describe Replicators::TwoWayReplicator do
     session.left.begin_db_transaction
     session.right.begin_db_transaction
     begin
-    rep_run = ReplicationRun.new(session)
+      rep_run = ReplicationRun.new(session)
 
-    left_change = LoggedChange.new session, :left
-    left_change.table = 'left_table'
-    left_change.key = {'id' => '1'}
-    right_change = LoggedChange.new session, :right
-    right_change.table = 'right_table'
-    right_change.key = {'id' => '1'}
+      left_change = LoggedChange.new session, :left
+      left_change.table = 'left_table'
+      left_change.key = {'id' => '1'}
+      right_change = LoggedChange.new session, :right
+      right_change.table = 'right_table'
+      right_change.key = {'id' => '1'}
 
-    diff = ReplicationDifference.new(session)
+      diff = ReplicationDifference.new(session)
 
-    # verify insert behaviour
-    left_change.type = :insert
-    diff.type = :left
-    diff.changes[:left] = left_change
-    diff.changes[:right] = nil
+      # verify insert behaviour
+      left_change.type = :insert
+      diff.type = :left
+      diff.changes[:left] = left_change
+      diff.changes[:right] = nil
     
-    helper = ReplicationHelper.new(rep_run)
-    replicator = Replicators::TwoWayReplicator.new(helper)
-    helper.should_receive(:load_record).with(:left, 'left_table', {'id' => '1'}).
-      and_return(:dummy_values)
-    helper.should_receive(:insert_record).with(:right, 'right_table', :dummy_values)
-    replicator.replicate_difference diff
+      helper = ReplicationHelper.new(rep_run)
+      replicator = Replicators::TwoWayReplicator.new(helper)
+      helper.should_receive(:load_record).with(:left, 'left_table', {'id' => '1'}).
+        and_return(:dummy_values)
+      helper.should_receive(:insert_record).with(:right, 'right_table', :dummy_values)
+      replicator.replicate_difference diff
 
-    # verify update behaviour
-    right_change.type = :update
-    right_change.new_key = {'id' => '2'}
-    diff.type = :right
-    diff.changes[:left] = nil
-    diff.changes[:right] = right_change
+      # verify update behaviour
+      right_change.type = :update
+      right_change.new_key = {'id' => '2'}
+      diff.type = :right
+      diff.changes[:left] = nil
+      diff.changes[:right] = right_change
 
-    helper = ReplicationHelper.new(rep_run)
-    replicator = Replicators::TwoWayReplicator.new(helper)
-    helper.should_receive(:load_record).with(:right, 'right_table', {'id' => '2'}).
-      and_return(:dummy_values)
-    helper.should_receive(:update_record).with(:left, 'left_table', :dummy_values, {'id' => '1'})
-    replicator.replicate_difference diff
+      helper = ReplicationHelper.new(rep_run)
+      replicator = Replicators::TwoWayReplicator.new(helper)
+      helper.should_receive(:load_record).with(:right, 'right_table', {'id' => '2'}).
+        and_return(:dummy_values)
+      helper.should_receive(:update_record).with(:left, 'left_table', :dummy_values, {'id' => '1'})
+      replicator.replicate_difference diff
 
-    # verify delete behaviour
-    right_change.type = :delete
+      # verify delete behaviour
+      right_change.type = :delete
 
-    helper = ReplicationHelper.new(rep_run)
-    replicator = Replicators::TwoWayReplicator.new(helper)
-    helper.should_receive(:delete_record).with(:left, 'left_table', {'id' => '1'})
-    replicator.replicate_difference diff
+      helper = ReplicationHelper.new(rep_run)
+      replicator = Replicators::TwoWayReplicator.new(helper)
+      helper.should_receive(:delete_record).with(:left, 'left_table', {'id' => '1'})
+      replicator.replicate_difference diff
     ensure
       session.left.rollback_db_transaction
       session.right.rollback_db_transaction
@@ -348,6 +348,13 @@ describe Replicators::TwoWayReplicator do
     end
   end
 
+  it "replicate_difference should raise Exception if all replication attempts have been exceeded" do
+    rep_run = ReplicationRun.new Session.new
+    helper = ReplicationHelper.new(rep_run)
+    replicator = Replicators::TwoWayReplicator.new(helper)
+    lambda {replicator.replicate_difference :dummy_diff, 0}.
+      should raise_error(Exception, "max replication attempts exceeded")
+  end
 
   it "replicate_difference should handle updates failing due to the source record being deleted after the original diff was loaded" do
     begin

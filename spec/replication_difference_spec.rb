@@ -152,4 +152,9 @@ describe ReplicationDifference do
       session.left.rollback_db_transaction
     end
   end
+
+  it "to_yaml should blank out session" do
+    diff = ReplicationDifference.new :dummy_session
+    diff.to_yaml.should_not =~ /session/
+  end
 end

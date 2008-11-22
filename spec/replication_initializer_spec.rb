@@ -72,15 +72,8 @@ describe ReplicationInitializer do
         initializer.drop_trigger(:left, 'trigger_test')
       end
       session.left.begin_db_transaction
-      params = {
-        :trigger_name => 'rr_trigger_test',
-        :table => 'trigger_test',
-        :keys => ['first_id'],
-        :log_table => 'rr_change_log',
-        :key_sep => '|',
-      }
-      initializer.create_trigger :left, 'trigger_test'
 
+      initializer.create_trigger :left, 'trigger_test'
       initializer.trigger_exists?(:left, 'trigger_test').
         should be_true
       initializer.drop_trigger(:left, 'trigger_test')
@@ -140,26 +133,56 @@ describe ReplicationInitializer do
     end
   end
 
-  it "replication_log_exists? should return true if replication log exists" do
+  it "change_log_exists? should return true if replication log exists" do
     config = deep_copy(standard_config)
     initializer = ReplicationInitializer.new(Session.new(config))
-    initializer.replication_log_exists?(:left).should be_true
+    initializer.change_log_exists?(:left).should be_true
     config.options[:rep_prefix] = 'r2'
     initializer = ReplicationInitializer.new(Session.new(config))
-    initializer.replication_log_exists?(:left).should be_false
+    initializer.change_log_exists?(:left).should be_false
   end
 
-  it "create_replication_log / drop_replication_log should create / drop the replication log" do
+  it "event_log_exists? should return true if event log exists" do
+    config = deep_copy(standard_config)
+    initializer = ReplicationInitializer.new(Session.new(config))
+    initializer.event_log_exists?.should be_true
+    config.options[:rep_prefix] = 'r2'
+    initializer = ReplicationInitializer.new(Session.new(config))
+    initializer.event_log_exists?.should be_false
+  end
+
+  it "create_event_log / drop_event_log should create / drop the event log" do
     config = deep_copy(standard_config)
     config.options[:rep_prefix] = 'r2'
     session = Session.new(config)
     initializer = ReplicationInitializer.new(session)
-    initializer.drop_replication_log(:left) if initializer.replication_log_exists?(:left)
+    initializer.drop_event_log if initializer.event_log_exists?
 
     $stderr.stub! :write
-    initializer.replication_log_exists?(:left).should be_false
-    initializer.create_replication_log(:left)
-    initializer.replication_log_exists?(:left).should be_true
+    initializer.event_log_exists?.should be_false
+    initializer.create_event_log
+    initializer.event_log_exists?.should be_true
+
+    # verify that replication log has 8 byte, auto-generating primary key
+    session.left.insert_record 'r2_event_log', {'id' => 1e18.to_i, 'diff_key' => 'blub'}
+    session.left.select_one("select id from r2_event_log where diff_key = 'blub'")['id'].
+      to_i.should == 1e18.to_i
+
+    initializer.drop_event_log
+    initializer.event_log_exists?.should be_false
+  end
+
+  it "create_change_log / drop_change_log should create / drop the replication log" do
+    config = deep_copy(standard_config)
+    config.options[:rep_prefix] = 'r2'
+    session = Session.new(config)
+    initializer = ReplicationInitializer.new(session)
+    initializer.drop_change_log(:left) if initializer.change_log_exists?(:left)
+
+    $stderr.stub! :write
+    initializer.change_log_exists?(:left).should be_false
+    initializer.create_change_log(:left)
+    initializer.change_log_exists?(:left).should be_true
 
     # verify that replication log has 8 byte, auto-generating primary key
     session.left.insert_record 'r2_change_log', {'change_key' => 'bla'}
@@ -169,8 +192,8 @@ describe ReplicationInitializer do
     session.left.select_one("select id from r2_change_log where change_key = 'blub'")['id'].
       to_i.should == 1e18.to_i
 
-    initializer.drop_replication_log(:left)
-    initializer.replication_log_exists?(:left).should be_false
+    initializer.drop_change_log(:left)
+    initializer.change_log_exists?(:left).should be_false
   end
 
   it "ensure_activity_marker_tables should not create the tables if they already exist" do
@@ -202,23 +225,24 @@ describe ReplicationInitializer do
     end
   end
 
-  it "ensure_replication_log_tables should not create the tables if they already exist" do
+  it "ensure_infrastructure should not create the infrastructure tables if they already exist" do
     session = Session.new
     initializer = ReplicationInitializer.new(session)
     session.left.should_not_receive(:create_table)
-    initializer.ensure_replication_log_tables
+    initializer.ensure_infrastructure
   end
 
-  it "ensure_replication_log_tables should create the tables" do
+  it "ensure_infrastructure should create the infrastructure tables" do
     begin
       config = deep_copy(standard_config)
       config.options[:rep_prefix] = 'rx'
       session = Session.new(config)
       initializer = ReplicationInitializer.new(session)
-      initializer.ensure_replication_log_tables
+      initializer.should_receive :ensure_activity_marker_tables
+      initializer.ensure_infrastructure
       session.left.tables.include?('rx_change_log').should be_true
       session.right.tables.include?('rx_change_log').should be_true
-
+      session.left.tables.include?('rx_event_log').should be_true
     ensure
       if session
         session.left.drop_table 'rx_change_log'
@@ -249,8 +273,7 @@ describe ReplicationInitializer do
     $stdout = StringIO.new
     begin
       initializer = ReplicationInitializer.new(session)
-      initializer.should_receive :ensure_activity_marker_tables
-      initializer.should_receive :ensure_replication_log_tables
+      initializer.should_receive :ensure_infrastructure
       initializer.prepare_replication
       # verify sequences have been setup
       session.left.outdated_sequence_values('rr','scanner_left_records_only', 2, 0).should == {}

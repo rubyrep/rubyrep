@@ -93,6 +93,31 @@ describe ReplicationRun do
     end
   end
 
+  it "run should log raised exceptions" do
+    session = Session.new
+    session.left.begin_db_transaction
+    session.right.begin_db_transaction
+    begin
+
+      session.left.insert_record 'rr_change_log', {
+        'change_table' => 'extender_no_record',
+        'change_key' => 'id|1',
+        'change_type' => 'D',
+        'change_time' => Time.now
+      }
+      run = ReplicationRun.new session
+      run.replicator.stub!(:replicate_difference).and_return {raise Exception, 'dummy message'}
+      run.run
+
+      row = session.left.select_one("select * from rr_event_log")
+      row['rep_outcome'].should == 'dummy message'
+      row['rep_details'].should =~ /Exception/
+    ensure
+      session.left.rollback_db_transaction
+      session.right.rollback_db_transaction
+    end
+  end
+
   it "run should process trigger created change log records" do
     begin
       config = deep_copy(standard_config)
