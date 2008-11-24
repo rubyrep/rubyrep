@@ -55,6 +55,11 @@ class Module
   end
 end
 
+class RR::Session
+  # To keep rspec output of failed tests managable
+  def inspect; 'session'; end
+end
+
 # If number_of_calls is :once, mock ActiveRecord for 1 call.
 # If number_of_calls is :twice, mock ActiveRecord for 2 calls.
 def mock_active_record(number_of_calls)

@@ -64,10 +64,10 @@ module RR
     # * +outcome+: string summarizing the outcome of the replication
     # * +details+: string with further details regarding the replication
     def log_replication_outcome(diff, outcome, details = nil)
-      table = (diff.changes[:left] || diff.changes[:right]).table
-      key = (diff.changes[:left] || diff.changes[:right]).key
+      table = diff.changes[:left].table
+      key = diff.changes[:left].key
       key = key.size == 1 ? key.values[0] : key.inspect
-      rep_details = details[0...ReplicationInitializer::REP_DETAILS_SIZE]
+      rep_details = details == nil ? nil : details[0...ReplicationInitializer::REP_DETAILS_SIZE]
       diff_dump = diff.to_yaml[0...ReplicationInitializer::DIFF_DUMP_SIZE]
       
       session.left.insert_record "#{options[:rep_prefix]}_event_log", {

@@ -28,6 +28,15 @@ module RR
     #     record. Called with the following parameters:
     #     * replication_helper: The current ReplicationHelper instance.
     #     * difference: A ReplicationDifference instance describing the changes
+    # * :+logged_replication_events+:
+    #   Specifies which types of replications are logged.
+    #   Is either a single value or an array of multiple ones.
+    #   Default: [:ignored_conflicts]
+    #   Possible values:
+    #   * :+ignored_changes+: log ignored (but not replicated) non-conflict changes
+    #   * :+all_changes+: log all non-conflict changes
+    #   * :+ignored_conflicts+: log ignored (but not replicated) conflicts
+    #   * :+all_conflicts+: log all conflicts
     #
     # Example of using a Proc object for custom behaviour:
     #   lambda do |rep_helper, diff|
@@ -55,7 +64,8 @@ module RR
       DEFAULT_OPTIONS =  {
         :left_change_handling => :replicate,
         :right_change_handling => :replicate,
-        :replication_conflict_handling => :ignore
+        :replication_conflict_handling => :ignore,
+        :logged_replication_events => [:ignored_conflicts],
       }
 
       # Returns the current options.
@@ -84,6 +94,17 @@ module RR
         end
       end
 
+      # Verifies if the given :+replication_logging+ option /options is / are valid.
+      # Raises an ArgumentError if invalid
+      def validate_logging_options(option)
+        values = [option].flatten # ensure that I have an array
+        values.each do |value|
+          unless [:ignored_changes, :all_changes, :ignored_conflicts, :all_conflicts].include? value
+            raise ArgumentError.new("#{value.inspect} not a valid :logged_replication_events option")
+          end
+        end
+      end
+
       # Initializes the TwoWayReplicator
       # Raises an ArgumentError if any of the replication options is invalid.
       #
@@ -96,6 +117,7 @@ module RR
         validate_left_right_change_handling_option options[:left_change_handling]
         validate_left_right_change_handling_option options[:right_change_handling]
         validate_conflict_handling_option options[:replication_conflict_handling]
+        validate_logging_options options[:logged_replication_events]
       end
 
       # Shortcut to calculate the "other" database.
@@ -133,9 +155,26 @@ module RR
         when :update
           attempt_update source_db, diff, remaining_attempts, source_key, target_key
         when :delete
-          target_table = rep_helper.corresponding_table(source_db, source_change.table)
-          rep_helper.delete_record target_db, target_table, target_key
+          attempt_delete source_db, diff, target_key
         end
+      end
+
+      # Logs replication of the specified difference as per configured
+      # :+replication_conflict_logging+ / :+left_change_logging+ / :+right_change_logging+ options.
+      # * +winner+: Either the winner database (:+left+ or :+right+) or :+ignore+
+      # * +diff+: the ReplicationDifference instance
+      def log_replication_outcome(winner, diff)
+        option_values = [options[:logged_replication_events]].flatten # make sure I have an array
+        if diff.type == :conflict
+          return unless option_values.include?(:all_conflicts) or option_values.include?(:ignored_conflicts)
+          return if winner != :ignore and not option_values.include?(:all_conflicts)
+          outcome = {:left => 'left_won', :right => 'right_won', :ignore => 'ignored'}[winner]
+        else
+          return unless option_values.include?(:all_changes) or option_values.include?(:ignored_changes)
+          return if winner != :ignore and not option_values.include?(:all_changes)
+          outcome = winner == :ignore ? 'ignored' : 'replicated'
+        end
+        rep_helper.log_replication_outcome diff, outcome
       end
 
       # How often a replication will be attempted (in case it fails because the
@@ -167,6 +206,7 @@ module RR
             #       statement will otherwise invalidate the complete transaction.)
             rep_helper.session.send(target_db).execute "savepoint rr_insert"
             rep_helper.insert_record target_db, target_table, values
+            log_replication_outcome source_db, diff
             rep_helper.session.send(target_db).execute "release savepoint rr_insert"
           rescue Exception => e
             rep_helper.session.send(target_db).execute "rollback to savepoint rr_insert"
@@ -198,7 +238,22 @@ module RR
           replicate_difference diff, remaining_attempts - 1
         else
           rep_helper.update_record target_db, target_table, values, target_key
+          log_replication_outcome source_db, diff
         end
+      end
+
+      # Attempts delete the source record from the target database.
+      # E. g. if +source_db is :+left+, then the record is deleted in database
+      # :+right+.
+      # * +source_db+: either :+left+ or :+right+ - source database of replication
+      # * +diff+: the current ReplicationDifference instance
+      # * +target_key+: a column_name => value hash identifying the source record
+      def attempt_delete(source_db, diff, target_key)
+        change = diff.changes[source_db]
+        target_db = OTHER_SIDE[source_db]
+        target_table = rep_helper.corresponding_table(source_db, change.table)
+        rep_helper.delete_record target_db, target_table, target_key
+        log_replication_outcome source_db, diff
       end
 
       # Called to replicate the specified difference.
@@ -211,7 +266,7 @@ module RR
           option = options[key]
 
           if option == :ignore
-            # nothing to do
+            log_replication_outcome :ignore, diff
           elsif option == :replicate
             source_db = diff.type
 
@@ -223,17 +278,15 @@ module RR
             when :update
               attempt_update source_db, diff, remaining_attempts, change.new_key, change.key
             when :delete
-              target_db = OTHER_SIDE[source_db]
-              target_table = rep_helper.corresponding_table(source_db, change.table)
-              rep_helper.delete_record target_db, target_table, change.key
+              attempt_delete source_db, diff, change.key
             end
           else # option must be a Proc
             option.call rep_helper, diff
           end
-        else
+        elsif diff.type == :conflict
           option = options[:replication_conflict_handling]
           if option == :ignore
-            # nothing to do
+            log_replication_outcome :ignore, diff
           elsif option == :left_wins
             clear_conflict :left, diff, remaining_attempts
           elsif option == :right_wins

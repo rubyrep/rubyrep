@@ -122,6 +122,7 @@ describe ReplicationRun do
     begin
       config = deep_copy(standard_config)
       config.options[:committer] = :never_commit
+      config.options[:logged_replication_events] = [:all_changes]
 
       session = Session.new(config)
       initializer = ReplicationInitializer.new(session)
@@ -139,6 +140,12 @@ describe ReplicationRun do
         'id' => '1',
         'name' => 'bla'
       }
+
+      # also verify that event was logged
+      row = session.left.select_one("select * from rr_event_log")
+      row['diff_type'].should == 'left'
+      row['diff_key'].should == '1'
+      row['rep_outcome'].should == 'replicated'
     ensure
       Committers::NeverCommitter.rollback_current_session
       if session
