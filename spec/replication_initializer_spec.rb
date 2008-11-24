@@ -164,8 +164,8 @@ describe ReplicationInitializer do
     initializer.event_log_exists?.should be_true
 
     # verify that replication log has 8 byte, auto-generating primary key
-    session.left.insert_record 'r2_event_log', {'id' => 1e18.to_i, 'diff_key' => 'blub'}
-    session.left.select_one("select id from r2_event_log where diff_key = 'blub'")['id'].
+    session.left.insert_record 'r2_event_log', {'id' => 1e18.to_i, 'change_key' => 'blub'}
+    session.left.select_one("select id from r2_event_log where change_key = 'blub'")['id'].
       to_i.should == 1e18.to_i
 
     initializer.drop_event_log

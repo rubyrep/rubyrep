@@ -163,14 +163,14 @@ def create_sample_schema(config)
 
     create_table :rr_event_log do |t|
       t.column :activity, :string
-      t.column :rep_table, :string
+      t.column :change_table, :string
       t.column :diff_type, :string
-      t.column :diff_key, :string
+      t.column :change_key, :string
       t.column :left_change_type, :string
       t.column :right_change_type, :string
-      t.column :rep_outcome, :string
-      t.column :rep_details, :string, :limit => RR::ReplicationInitializer::REP_DETAILS_SIZE
-      t.column :rep_time, :timestamp
+      t.column :description, :string
+      t.column :long_description, :string, :limit => RR::ReplicationInitializer::LONG_DESCRIPTION_SIZE
+      t.column :event_time, :timestamp
       t.column :diff_dump, :string, :limit => RR::ReplicationInitializer::DIFF_DUMP_SIZE
     end
 

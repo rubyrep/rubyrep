@@ -121,8 +121,8 @@ module RR
     # Size of the replication log column diff_dump
     DIFF_DUMP_SIZE = 2000
 
-    # Size of the repliation log column rep_exception
-    REP_DETAILS_SIZE = 1000
+    # Size of the repliation log column long_description
+    LONG_DESCRIPTION_SIZE = 1000
 
     # Ensures that create_table and related statements don't print notices to
     # stdout. Then restored original message setting.
@@ -145,14 +145,14 @@ module RR
       silence_ddl_notices(:left) do
         session.left.create_table "#{options[:rep_prefix]}_event_log", :id => false do |t|
           t.column :activity, :string
-          t.column :rep_table, :string
+          t.column :change_table, :string
           t.column :diff_type, :string
-          t.column :diff_key, :string
+          t.column :change_key, :string
           t.column :left_change_type, :string
           t.column :right_change_type, :string
-          t.column :rep_outcome, :string
-          t.column :rep_details, :string, :limit => REP_DETAILS_SIZE
-          t.column :rep_time, :timestamp
+          t.column :description, :string
+          t.column :long_description, :string, :limit => LONG_DESCRIPTION_SIZE
+          t.column :event_time, :timestamp
           t.column :diff_dump, :string, :limit => DIFF_DUMP_SIZE
         end
         session.left.add_big_primary_key "#{options[:rep_prefix]}_event_log", 'id'

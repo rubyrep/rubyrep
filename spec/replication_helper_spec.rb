@@ -96,14 +96,14 @@ describe ReplicationHelper do
 
       row = session.left.select_one("select * from rr_event_log order by id desc")
       row['activity'].should == 'replication'
-      row['rep_table'].should == 'dummy_table'
+      row['change_table'].should == 'dummy_table'
       row['diff_type'].should == 'conflict'
-      row['diff_key'].should == '{"id1"=>1, "id2"=>2}'
+      row['change_key'].should == '{"id1"=>1, "id2"=>2}'
       row['left_change_type'].should == 'update'
       row['right_change_type'].should == 'delete'
-      row['rep_outcome'].should == 'ignore'
-      row['rep_details'].should == 'ignored'
-      Time.parse(row['rep_time']).should >= 10.seconds.ago
+      row['description'].should == 'ignore'
+      row['long_description'].should == 'ignored'
+      Time.parse(row['event_time']).should >= 10.seconds.ago
       row['diff_dump'].should == diff.to_yaml
     ensure
       session.left.rollback_db_transaction if session

@@ -110,8 +110,8 @@ describe ReplicationRun do
       run.run
 
       row = session.left.select_one("select * from rr_event_log")
-      row['rep_outcome'].should == 'dummy message'
-      row['rep_details'].should =~ /Exception/
+      row['description'].should == 'dummy message'
+      row['long_description'].should =~ /Exception/
     ensure
       session.left.rollback_db_transaction
       session.right.rollback_db_transaction
@@ -144,8 +144,8 @@ describe ReplicationRun do
       # also verify that event was logged
       row = session.left.select_one("select * from rr_event_log")
       row['diff_type'].should == 'left'
-      row['diff_key'].should == '1'
-      row['rep_outcome'].should == 'replicated'
+      row['change_key'].should == '1'
+      row['description'].should == 'replicated'
     ensure
       Committers::NeverCommitter.rollback_current_session
       if session

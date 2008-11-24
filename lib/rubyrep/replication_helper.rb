@@ -67,19 +67,19 @@ module RR
       table = diff.changes[:left].table
       key = diff.changes[:left].key
       key = key.size == 1 ? key.values[0] : key.inspect
-      rep_details = details == nil ? nil : details[0...ReplicationInitializer::REP_DETAILS_SIZE]
+      rep_details = details == nil ? nil : details[0...ReplicationInitializer::LONG_DESCRIPTION_SIZE]
       diff_dump = diff.to_yaml[0...ReplicationInitializer::DIFF_DUMP_SIZE]
       
       session.left.insert_record "#{options[:rep_prefix]}_event_log", {
         :activity => 'replication',
-        :rep_table => table,
+        :change_table => table,
         :diff_type => diff.type.to_s,
-        :diff_key => key,
+        :change_key => key,
         :left_change_type => (diff.changes[:left] ? diff.changes[:left].type.to_s : nil),
         :right_change_type => (diff.changes[:right] ? diff.changes[:right].type.to_s : nil),
-        :rep_outcome => outcome,
-        :rep_details => rep_details,
-        :rep_time => Time.now,
+        :description => outcome,
+        :long_description => rep_details,
+        :event_time => Time.now,
         :diff_dump => diff_dump
       }
     end
