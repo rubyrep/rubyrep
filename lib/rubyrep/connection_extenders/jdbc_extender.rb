@@ -1,5 +1,4 @@
 require 'java'
-include_class 'java.sql.Types'
 
 module RR
   module ConnectionExtenders
@@ -56,6 +55,8 @@ module RR
           @columns = nil
           self.close
         end
+
+        Types = java.sql.Types unless const_defined?(:Types)
         
         # Converts the specified column of the current row to the proper ruby string
         # column is a hash with the following elements:

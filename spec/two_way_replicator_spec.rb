@@ -62,9 +62,9 @@ describe Replicators::TwoWayReplicator do
     rep_run = ReplicationRun.new(Session.new)
     helper = ReplicationHelper.new(rep_run)
     replicator = Replicators::TwoWayReplicator.new(helper)
-    replicator.options.should include(:left_change_handling)
-    replicator.options.should include(:right_change_handling)
-    replicator.options.should include(:replication_conflict_handling)
+    replicator.options.include?(:left_change_handling).should be_true
+    replicator.options.include?(:right_change_handling).should be_true
+    replicator.options.include?(:replication_conflict_handling).should be_true
   end
 
   it "clear_conflicts should update the correct database with the correct action" do
