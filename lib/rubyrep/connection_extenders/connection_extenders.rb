@@ -48,7 +48,7 @@ module RR
       connection = DummyActiveRecord.connection
 
       # Delete the database connection from ActiveRecords's 'memory'
-      ActiveRecord::Base.active_connections.delete DummyActiveRecord.name
+      ActiveRecord::Base.connection_handler.connection_pools.delete DummyActiveRecord.name
       
       extender = ""
       if RUBY_PLATFORM =~ /java/

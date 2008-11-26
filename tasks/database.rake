@@ -48,8 +48,7 @@ end
 # Creates the sample schema in the database specified by the given 
 # Configuration object
 def create_sample_schema(config)
-  connection = RR::ConnectionExtenders.db_connect(config)
-  ActiveRecord::Base.connection = connection
+  ActiveRecord::Base.establish_connection config
   
   ActiveRecord::Schema.define do
     create_table :scanner_text_key, :id => false do |t|
@@ -271,16 +270,14 @@ def create_row(connection, table, row)
 end
 
 # Deletes all records and creates the records being same in left and right DB
-def delete_all_and_create_shared_sample_data(connection)
-  ScannerRecords.connection = connection
+def delete_all_and_create_shared_sample_data(config)
+  ActiveRecord::Base.establish_connection config
   ScannerRecords.delete_all
   ScannerRecords.create_with_key :id => 1, :name => 'Alice - exists in both databases'
   
-  ExtenderOneRecord.connection = connection
   ExtenderOneRecord.delete_all
   ExtenderOneRecord.create_with_key :id => 1, :name => 'Alice'
   
-  ExtenderTypeCheck.connection = connection
   ExtenderTypeCheck.delete_all
   ExtenderTypeCheck.create_with_key(
     :id => 1, 
@@ -290,6 +287,7 @@ def delete_all_and_create_shared_sample_data(connection)
     :binary_test => Marshal.dump(['bla',:dummy,1,2,3])
   )
 
+  connection = ActiveRecord::Base.connection
   # The primary key of this table is in text format - ActiveRecord cannot be
   # used to create the example data.
   connection.execute "delete from scanner_text_key"
@@ -310,29 +308,26 @@ end
 
 # Reinitializes the sample schema with the sample data
 def create_sample_data
-  session = RR::Session.new
-  
   # Create records existing in both databases
-  [session.left.connection, session.right.connection].each do |connection|
-    delete_all_and_create_shared_sample_data connection
+  [:left, :right].each do |database|
+    delete_all_and_create_shared_sample_data RR::Initializer.configuration.send(database)
   end
 
   # Create data in left table
-  ScannerRecords.connection = session.left.connection
+  ActiveRecord::Base.establish_connection RR::Initializer.configuration.left
   ScannerRecords.create_with_key :id => 2, :name => 'Bob - left database version'
   ScannerRecords.create_with_key :id => 3, :name => 'Charlie - exists in left database only'
   ScannerRecords.create_with_key :id => 5, :name => 'Eve - exists in left database only'
-  
-  # Create data in right table
-  ScannerRecords.connection = session.right.connection
-  ScannerRecords.create_with_key :id => 2, :name => 'Bob - right database version'
-  ScannerRecords.create_with_key :id => 4, :name => 'Dave - exists in right database only'
-  ScannerRecords.create_with_key :id => 6, :name => 'Fred - exists in right database only'
 
-  ScannerLeftRecordsOnly.connection = session.left.connection
   ScannerLeftRecordsOnly.delete_all
   ScannerLeftRecordsOnly.create_with_key :id => 1, :name => 'Alice'
   ScannerLeftRecordsOnly.create_with_key :id => 2, :name => 'Bob'
+  
+  # Create data in right table
+  ActiveRecord::Base.establish_connection RR::Initializer.configuration.right
+  ScannerRecords.create_with_key :id => 2, :name => 'Bob - right database version'
+  ScannerRecords.create_with_key :id => 4, :name => 'Dave - exists in right database only'
+  ScannerRecords.create_with_key :id => 6, :name => 'Fred - exists in right database only'
 end
 
 namespace :db do
