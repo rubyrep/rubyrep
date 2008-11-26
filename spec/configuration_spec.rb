@@ -24,6 +24,38 @@ describe Configuration do
     config.options[:bla].should == :blub
   end
 
+  it "each_matching_option should yield if general option matches" do
+    config = Configuration.new
+    config.options = {:bla => :blub}
+    yielded = []
+    config.each_matching_option(:bla) {|spec, value| yielded << [spec, value]}
+    yielded.should == [[nil, :blub]]
+  end
+
+  it "each_matching_option should yield if table specific options match" do
+    config = Configuration.new
+    config.options = {:a => 1}
+    config.add_table_options 't1', :a => 2
+    config.add_table_options 't2', :b => 3
+    config.add_table_options 't3', :a => 4
+    yielded = []
+    config.each_matching_option(:a) {|spec, value| yielded << [spec, value]}
+    yielded.should == [
+      [nil,  1],
+      ['t1', 2],
+      ['t3', 4]
+    ]
+  end
+
+  it "each_matching_option should not yield unmatching options" do
+    config = Configuration.new
+    config.options = {:a => :blub}
+    config.add_table_options 'dummy_table', :b => :blub
+    yielded = []
+    config.each_matching_option(:c) {|spec, value| yielded << [spec, value]}
+    yielded.should == []
+  end
+
   it "options_for_table should return the general options if there are no table specific options at all" do
     config = Configuration.new
     config.options_for_table('b').should == \

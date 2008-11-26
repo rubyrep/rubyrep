@@ -68,39 +68,54 @@ module RR
         :logged_replication_events => [:ignored_conflicts],
       }
 
-      # Returns the current options.
-      def options
-        @options ||= DEFAULT_OPTIONS.merge(rep_helper.options)
+      # Checks if an option is configured correctly. Raises an ArgumentError if not.
+      # * +table_spec+: the table specification to which the option belongs. May be +nil+.
+      # * +valid_option_values+: array of valid option values
+      # * +option_key+: the key of the option that is to be checked
+      # * +option_value+: the value of the option that is to be checked
+      def verify_option(table_spec, valid_option_values, option_key, option_value)
+        unless valid_option_values.include? option_value
+          message = ""
+          message << "#{table_spec.inspect}: " if table_spec
+          message << "#{option_value.inspect} not a valid #{option_key.inspect} option"
+          raise ArgumentError.new(message)
+        end
       end
 
-      # Verifies if the given :+left_change_handling+ / :+right_change_handling+
-      # option is valid.
-      # Raises an ArgumentError if option is invalid
-      def validate_left_right_change_handling_option(option)
-        unless option.respond_to? :call
-          unless [:ignore, :replicate].include? option
-            raise ArgumentError.new("#{option.inspect} not a valid :left_change_handling / :right_change_handling option")
+      # Verifies if the :+left_change_handling+ / :+right_change_handling+
+      # options are valid.
+      # Raises an ArgumentError if an option is invalid
+      def validate_change_handling_options
+        [:left_change_handling, :right_change_handling].each do |key|
+          rep_helper.session.configuration.each_matching_option(key) do |table_spec, value|
+            unless value.respond_to? :call
+              verify_option table_spec, [:ignore, :replicate], key, value
+            end
           end
         end
       end
 
-      # Verifies if the given :+replication_conflict_handling+ option is valid.
-      # Raises an ArgumentError if option is invalid
-      def validate_conflict_handling_option(option)
-        unless option.respond_to? :call
-          unless [:ignore, :left_wins, :right_wins, :later_wins, :earlier_wins].include? option
-            raise ArgumentError.new("#{option.inspect} not a valid :replication_conflict_handling option")
+      # Verifies if the given :+replication_conflict_handling+ options are valid.
+      # Raises an ArgumentError if an option is invalid.
+      def validate_conflict_handling_options
+        rep_helper.session.configuration.each_matching_option(:replication_conflict_handling) do |table_spec, value|
+          unless value.respond_to? :call
+            verify_option table_spec,
+              [:ignore, :left_wins, :right_wins, :later_wins, :earlier_wins],
+              :replication_conflict_handling, value
           end
         end
       end
 
       # Verifies if the given :+replication_logging+ option /options is / are valid.
       # Raises an ArgumentError if invalid
-      def validate_logging_options(option)
-        values = [option].flatten # ensure that I have an array
-        values.each do |value|
-          unless [:ignored_changes, :all_changes, :ignored_conflicts, :all_conflicts].include? value
-            raise ArgumentError.new("#{value.inspect} not a valid :logged_replication_events option")
+      def validate_logging_options
+        rep_helper.session.configuration.each_matching_option(:logged_replication_events) do |table_spec, values|
+          values = [values].flatten # ensure that I have an array
+          values.each do |value|
+            verify_option table_spec,
+              [:ignored_changes, :all_changes, :ignored_conflicts, :all_conflicts],
+              :logged_replication_events, value
           end
         end
       end
@@ -114,10 +129,9 @@ module RR
       def initialize(rep_helper)
         self.rep_helper = rep_helper
 
-        validate_left_right_change_handling_option options[:left_change_handling]
-        validate_left_right_change_handling_option options[:right_change_handling]
-        validate_conflict_handling_option options[:replication_conflict_handling]
-        validate_logging_options options[:logged_replication_events]
+        validate_change_handling_options
+        validate_conflict_handling_options
+        validate_logging_options
       end
 
       # Shortcut to calculate the "other" database.
@@ -159,11 +173,23 @@ module RR
         end
       end
 
+      # Returns the options for the specified table name.
+      # * +table+: name of the table (left database version)
+      def options_for_table(table)
+        @options_for_table ||= {}
+        unless @options_for_table.include? table
+          @options_for_table[table] = DEFAULT_OPTIONS.merge(
+            rep_helper.session.configuration.options_for_table(table))
+        end
+        @options_for_table[table]
+      end
+
       # Logs replication of the specified difference as per configured
       # :+replication_conflict_logging+ / :+left_change_logging+ / :+right_change_logging+ options.
       # * +winner+: Either the winner database (:+left+ or :+right+) or :+ignore+
       # * +diff+: the ReplicationDifference instance
       def log_replication_outcome(winner, diff)
+        options = options_for_table(diff.changes[:left].table)
         option_values = [options[:logged_replication_events]].flatten # make sure I have an array
         if diff.type == :conflict
           return unless option_values.include?(:all_conflicts) or option_values.include?(:ignored_conflicts)
@@ -261,6 +287,7 @@ module RR
       # * :+remaining_attempts+: how many more times a replication will be attempted
       def replicate_difference(diff, remaining_attempts = MAX_REPLICATION_ATTEMPTS)
         raise Exception, "max replication attempts exceeded" if remaining_attempts == 0
+        options = options_for_table(diff.changes[:left].table)
         if diff.type == :left or diff.type == :right
           key = diff.type == :left ? :left_change_handling : :right_change_handling
           option = options[key]

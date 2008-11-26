@@ -143,6 +143,18 @@ module RR
       end
       table_options.merge! options
     end
+
+    # Yields all table specs that have been set up with the given option
+    # * +key+: the option key
+    # Yields:
+    # * +table_spec+: the table specification of the matching option (or nil if non-table specific setting)
+    # * +option_value+: the option value for the specified +key+
+    def each_matching_option(key)
+      yield nil, options[key] if options.include?(key)
+      tables_with_options.each do |table_options|
+        yield table_options[0], table_options[1][key] if table_options[1].include? key
+      end
+    end
     
     # Returns an option hash for the given table.
     # Accumulates options for all matching table specs (most recently added options

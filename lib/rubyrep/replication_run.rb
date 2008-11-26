@@ -20,6 +20,7 @@ module RR
     # Executes the replication run.
     def run
       success = false
+      replicator # ensure that replicator is created and has chance to validate settings
 
       loop do
         begin

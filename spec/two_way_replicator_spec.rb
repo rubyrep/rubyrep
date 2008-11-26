@@ -19,6 +19,16 @@ describe Replicators::TwoWayReplicator do
     replicator.rep_helper.should == helper
   end
 
+  it "verify_option should raise descriptive errors" do
+    rep_run = ReplicationRun.new(Session.new)
+    helper = ReplicationHelper.new(rep_run)
+    replicator = Replicators::TwoWayReplicator.new(helper)
+    lambda {replicator.verify_option(nil, [:valid_value], :my_key, :my_value)}.
+      should raise_error(ArgumentError, ':my_value not a valid :my_key option')
+    lambda {replicator.verify_option(/my_spec/, [:valid_value], :my_key, :my_value)}.
+      should raise_error(ArgumentError, '/my_spec/: :my_value not a valid :my_key option')
+  end
+
   it "initialize should throw an error if options are invalid" do
     rep_run = ReplicationRun.new(Session.new)
     helper = ReplicationHelper.new(rep_run)
@@ -53,18 +63,29 @@ describe Replicators::TwoWayReplicator do
       {:logged_replication_events => :invalid_logging_option},
     ]
     invalid_options.each do |options|
-      helper.stub!(:options).and_return(base_options.merge(options))
+      helper.session.configuration.stub!(:options).and_return(base_options.merge(options))
       lambda {Replicators::TwoWayReplicator.new(helper)}.should raise_error(ArgumentError)
     end
   end
 
-  it "options should merge the configured options into the default two way replicator options" do
+  it "options_for_table should return the correct options for the table" do
+    Initializer.configuration.options = {:a => 1, :b => 2}
+    Initializer.configuration.add_table_options 'scanner_records', {:b => 3}
     rep_run = ReplicationRun.new(Session.new)
     helper = ReplicationHelper.new(rep_run)
     replicator = Replicators::TwoWayReplicator.new(helper)
-    replicator.options.include?(:left_change_handling).should be_true
-    replicator.options.include?(:right_change_handling).should be_true
-    replicator.options.include?(:replication_conflict_handling).should be_true
+    options = replicator.options_for_table('scanner_records')
+    options[:a].should == 1
+    options[:b].should == 3
+  end
+
+  it "options_for_table should merge the configured options into the default two way replicator options" do
+    rep_run = ReplicationRun.new(Session.new)
+    helper = ReplicationHelper.new(rep_run)
+    replicator = Replicators::TwoWayReplicator.new(helper)
+    replicator.options_for_table('scanner_records').include?(:left_change_handling).should be_true
+    replicator.options_for_table('scanner_records').include?(:right_change_handling).should be_true
+    replicator.options_for_table('scanner_records').include?(:replication_conflict_handling).should be_true
   end
 
   it "clear_conflicts should update the correct database with the correct action" do
@@ -133,28 +154,30 @@ describe Replicators::TwoWayReplicator do
 
     diff = ReplicationDifference.new session
     diff.type = :conflict
+    diff.changes[:left] = LoggedChange.new session, :left
+    diff.changes[:left].table = 'scanner_records'
 
     # should only log events if so configured
     helper = ReplicationHelper.new(rep_run)
     replicator = Replicators::TwoWayReplicator.new(helper)
     helper.should_not_receive(:log_replication_outcome)
-    replicator.stub!(:options).and_return({:logged_replication_events => []})
+    replicator.stub!(:options_for_table).and_return({:logged_replication_events => []})
     replicator.log_replication_outcome :ignore, diff
-    replicator.stub!(:options).and_return({:logged_replication_events => [:ignored_conflicts]})
+    replicator.stub!(:options_for_table).and_return({:logged_replication_events => [:ignored_conflicts]})
     replicator.log_replication_outcome :left, diff
 
     # should log ignored conflicts correctly
     helper = ReplicationHelper.new(rep_run)
     replicator = Replicators::TwoWayReplicator.new(helper)
     helper.should_receive(:log_replication_outcome).with(diff, 'ignored')
-    replicator.stub!(:options).and_return({:logged_replication_events => [:ignored_conflicts]})
+    replicator.stub!(:options_for_table).and_return({:logged_replication_events => [:ignored_conflicts]})
     replicator.log_replication_outcome :ignore, diff
 
     # should log conflicts correctly
     helper = ReplicationHelper.new(rep_run)
     replicator = Replicators::TwoWayReplicator.new(helper)
     helper.should_receive(:log_replication_outcome).with(diff, 'left_won')
-    replicator.stub!(:options).and_return({:logged_replication_events => [:all_conflicts]})
+    replicator.stub!(:options_for_table).and_return({:logged_replication_events => [:all_conflicts]})
     replicator.log_replication_outcome :left, diff
   end
 
@@ -164,28 +187,30 @@ describe Replicators::TwoWayReplicator do
 
     diff = ReplicationDifference.new session
     diff.type = :left
+    diff.changes[:left] = LoggedChange.new session, :left
+    diff.changes[:left].table = 'scanner_records'
 
     # should only log events if so configured
     helper = ReplicationHelper.new(rep_run)
     replicator = Replicators::TwoWayReplicator.new(helper)
     helper.should_not_receive(:log_replication_outcome)
-    replicator.stub!(:options).and_return({:logged_replication_events => []})
+    replicator.stub!(:options_for_table).and_return({:logged_replication_events => []})
     replicator.log_replication_outcome :ignore, diff
-    replicator.stub!(:options).and_return({:logged_replication_events => [:ignored_changes]})
+    replicator.stub!(:options_for_table).and_return({:logged_replication_events => [:ignored_changes]})
     replicator.log_replication_outcome :left, diff
 
     # should log changes correctly
     helper = ReplicationHelper.new(rep_run)
     replicator = Replicators::TwoWayReplicator.new(helper)
     helper.should_receive(:log_replication_outcome).with(diff, 'replicated')
-    replicator.stub!(:options).and_return({:logged_replication_events => [:all_changes]})
+    replicator.stub!(:options_for_table).and_return({:logged_replication_events => [:all_changes]})
     replicator.log_replication_outcome :right, diff
 
     # should log changes correctly
     helper = ReplicationHelper.new(rep_run)
     replicator = Replicators::TwoWayReplicator.new(helper)
     helper.should_receive(:log_replication_outcome).with(diff, 'ignored')
-    replicator.stub!(:options).and_return({:logged_replication_events => [:ignored_changes]})
+    replicator.stub!(:options_for_table).and_return({:logged_replication_events => [:ignored_changes]})
     replicator.log_replication_outcome :ignore, diff
   end
 
@@ -193,7 +218,8 @@ describe Replicators::TwoWayReplicator do
     session = Session.new
     rep_run = ReplicationRun.new(session)
     helper = ReplicationHelper.new(rep_run)
-    helper.stub!(:options).and_return(
+    replicator = Replicators::TwoWayReplicator.new(helper)
+    replicator.stub!(:options_for_table).and_return(
       {
         :left_change_handling => :ignore,
         :right_change_handling => :ignore,
@@ -201,9 +227,10 @@ describe Replicators::TwoWayReplicator do
         :logged_replication_events => [:ignored_changes, :ignored_conflicts]
       }
     )
-    replicator = Replicators::TwoWayReplicator.new(helper)
 
     diff = ReplicationDifference.new(session)
+    diff.changes[:left] = LoggedChange.new session, :left
+    diff.changes[:left].table = 'scanner_records'
 
     # but logging should still happen
     replicator.should_receive(:log_replication_outcome).
@@ -231,27 +258,31 @@ describe Replicators::TwoWayReplicator do
     l = lambda do |rep_helper, diff|
       lambda_parameters << [rep_helper, diff]
     end
-    helper.stub!(:options).and_return(
+    replicator = Replicators::TwoWayReplicator.new(helper)
+    replicator.stub!(:options_for_table).and_return(
       {
         :left_change_handling => l,
         :right_change_handling => l,
         :replication_conflict_handling => l
       }
     )
-    replicator = Replicators::TwoWayReplicator.new(helper)
 
-    diff = ReplicationDifference.new(session)
+    change = LoggedChange.new session, :left
+    change.table = 'scanner_records'
 
     d1 = ReplicationDifference.new(session)
     d1.type = :conflict
+    d1.changes[:left] = change
     replicator.replicate_difference d1
 
     d2 = ReplicationDifference.new(session)
     d2.type = :left
+    d2.changes[:left] = change
     replicator.replicate_difference d2
 
     d3 = ReplicationDifference.new(session)
     d3.type = :right
+    d3.changes[:left] = change
     replicator.replicate_difference d3
 
     lambda_parameters.should == [
@@ -267,24 +298,26 @@ describe Replicators::TwoWayReplicator do
     helper = ReplicationHelper.new(rep_run)
 
     left_change = LoggedChange.new session, :left
+    left_change.table = 'scanner_records'
     right_change = LoggedChange.new session, :right
+    right_change.table = 'scanner_records'
     diff = ReplicationDifference.new(session)
     diff.type = :conflict
     diff.changes[:left] = left_change
     diff.changes[:right] = right_change
 
     replicator = Replicators::TwoWayReplicator.new(helper)
-    replicator.stub!(:options).and_return({:replication_conflict_handling => :left_wins})
+    replicator.stub!(:options_for_table).and_return({:replication_conflict_handling => :left_wins})
     replicator.should_receive(:clear_conflict).with(:left, diff, 1)
     replicator.replicate_difference diff, 1
 
     replicator = Replicators::TwoWayReplicator.new(helper)
-    replicator.stub!(:options).and_return({:replication_conflict_handling => :right_wins})
+    replicator.stub!(:options_for_table).and_return({:replication_conflict_handling => :right_wins})
     replicator.should_receive(:clear_conflict).with(:right, diff, 1)
     replicator.replicate_difference diff, 1
 
     replicator = Replicators::TwoWayReplicator.new(helper)
-    replicator.stub!(:options).and_return({:replication_conflict_handling => :later_wins})
+    replicator.stub!(:options_for_table).and_return({:replication_conflict_handling => :later_wins})
     replicator.should_receive(:clear_conflict).with(:left, diff, 1).twice
     left_change.last_changed_at = 5.seconds.from_now
     right_change.last_changed_at = Time.now
@@ -296,7 +329,7 @@ describe Replicators::TwoWayReplicator do
     replicator.replicate_difference diff, 1
 
     replicator = Replicators::TwoWayReplicator.new(helper)
-    replicator.stub!(:options).and_return({:replication_conflict_handling => :earlier_wins})
+    replicator.stub!(:options_for_table).and_return({:replication_conflict_handling => :earlier_wins})
     replicator.should_receive(:clear_conflict).with(:left, diff, 1).twice
     left_change.last_changed_at = 5.seconds.ago
     right_change.last_changed_at = Time.now
@@ -343,7 +376,6 @@ describe Replicators::TwoWayReplicator do
       right_change.type = :update
       right_change.new_key = {'id' => '2'}
       diff.type = :right
-      diff.changes[:left] = nil
       diff.changes[:right] = right_change
 
       helper = ReplicationHelper.new(rep_run)

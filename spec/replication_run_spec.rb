@@ -118,6 +118,13 @@ describe ReplicationRun do
     end
   end
 
+  it "run should not catch exceptions raised during replicator initialization" do
+    config = deep_copy(standard_config)
+    config.options[:logged_replication_events] = [:invalid_option]
+    run = ReplicationRun.new Session.new(config)
+    lambda {run.run}.should raise_error(ArgumentError)
+  end
+
   it "run should process trigger created change log records" do
     begin
       config = deep_copy(standard_config)
