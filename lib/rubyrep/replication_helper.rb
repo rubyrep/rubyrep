@@ -66,7 +66,13 @@ module RR
     def log_replication_outcome(diff, outcome, details = nil)
       table = diff.changes[:left].table
       key = diff.changes[:left].key
-      key = key.size == 1 ? key.values[0] : key.inspect
+      key = if key.size == 1
+        key.values[0]
+      else
+        session.left.primary_key_names(table).map do |column_name|
+          %Q("#{column_name}"=>#{key[column_name].to_s.inspect})
+        end.join(', ')
+      end
       rep_details = details == nil ? nil : details[0...ReplicationInitializer::LONG_DESCRIPTION_SIZE]
       diff_dump = diff.to_yaml[0...ReplicationInitializer::DIFF_DUMP_SIZE]
       
@@ -77,7 +83,7 @@ module RR
         :change_key => key,
         :left_change_type => (diff.changes[:left] ? diff.changes[:left].type.to_s : nil),
         :right_change_type => (diff.changes[:right] ? diff.changes[:right].type.to_s : nil),
-        :description => outcome,
+        :description => outcome.to_s,
         :long_description => rep_details,
         :event_time => Time.now,
         :diff_dump => diff_dump

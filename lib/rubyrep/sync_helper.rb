@@ -52,6 +52,50 @@ module RR
     end
     private :committer
 
+    # Checks if the event log table already exists and creates it if necessary
+    def ensure_event_log
+      unless @ensured_event_log
+        ReplicationInitializer.new(session).ensure_event_log
+        @ensured_event_log = true
+      end
+    end
+
+    # Returns an array of primary key names for the synced table
+    def primary_key_names
+      @primary_key_names ||= session.left.primary_key_names(left_table)
+    end
+    private :primary_key_names
+
+    # Logs the outcome of a replication into the replication log table.
+    # * +row+: a column_name => value hash for at least the primary keys of the record
+    # * +type+: string describing the type of the sync
+    # * +outcome+: string describing what's done about the sync
+    # * +details+: string with further details regarding the sync
+    def log_sync_outcome(row, type, outcome, details = nil)
+      ensure_event_log
+      key = if primary_key_names.size == 1
+        row[primary_key_names[0]]
+      else
+        primary_key_names.map do |column_name|
+          %Q("#{column_name}"=>#{row[column_name].to_s.inspect})
+        end.join(', ')
+      end
+      sync_details = details == nil ? nil : details[0...ReplicationInitializer::LONG_DESCRIPTION_SIZE]
+
+      session.left.insert_record "#{sync_options[:rep_prefix]}_event_log", {
+        :activity => 'sync',
+        :change_table => left_table,
+        :diff_type => type.to_s,
+        :change_key => key,
+        :left_change_type => nil,
+        :right_change_type => nil,
+        :description => outcome.to_s,
+        :long_description => sync_details,
+        :event_time => Time.now,
+        :diff_dump => nil
+      }
+    end
+
     # Asks the committer (if it exists) to finalize any open transactions
     # +success+ should be true if there were no problems, false otherwise.
     def finalize(success = true)

@@ -21,6 +21,65 @@ describe SyncHelper do
     helper.session.should == sync.session
   end
 
+  it "ensure_event_log should ask the replication_initializer to ensure the event log" do
+    sync = TableSync.new(Session.new, 'scanner_records')
+    helper = SyncHelper.new(sync)
+    ReplicationInitializer.any_instance_should_receive(:ensure_event_log) do
+      helper.ensure_event_log
+    end
+  end
+
+  it "log_sync_outcome should log the replication outcome correctly" do
+    session = Session.new
+    session.left.begin_db_transaction
+    begin
+      sync = TableSync.new(Session.new, 'scanner_records')
+      helper = SyncHelper.new(sync)
+
+      helper.log_sync_outcome(
+        {'bla' => 'blub', 'id' => 1},
+        'my_sync_type',
+        'my_outcome',
+        'my_long_description'
+      )
+      
+      row = session.left.select_one("select * from rr_event_log order by id desc")
+      row['activity'].should == 'sync'
+      row['change_table'].should == 'scanner_records'
+      row['diff_type'].should == 'my_sync_type'
+      row['change_key'].should == '1'
+      row['left_change_type'].should be_nil
+      row['right_change_type'].should be_nil
+      row['description'].should == 'my_outcome'
+      row['long_description'].should == 'my_long_description'
+      Time.parse(row['event_time']).should >= 10.seconds.ago
+      row['diff_dump'].should == nil
+    ensure
+      session.left.rollback_db_transaction if session
+    end
+  end
+
+  it "log_sync_outcome should log events for combined primary key tables correctly" do
+    session = Session.new
+    session.left.begin_db_transaction
+    begin
+      sync = TableSync.new(Session.new, 'extender_combined_key')
+      helper = SyncHelper.new(sync)
+
+      helper.log_sync_outcome(
+        {'bla' => 'blub', 'first_id' => 1, 'second_id' => 2},
+        'my_sync_type',
+        'my_outcome',
+        'my_long_description'
+      )
+
+      row = session.left.select_one("select * from rr_event_log order by id desc")
+      row['change_key'].should == '"first_id"=>"1", "second_id"=>"2"'
+    ensure
+      session.left.rollback_db_transaction if session
+    end
+  end
+
   it "left_table and right_table should return the correct table names" do
     sync = TableSync.new(Session.new, 'scanner_records')
     helper = SyncHelper.new(sync)

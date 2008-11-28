@@ -193,11 +193,16 @@ module RR
       end
     end
 
+    # Checks if the event log table already exists and creates it if necessary
+    def ensure_event_log
+      create_event_log unless event_log_exists?
+    end
+
     # Checks in both databases, if the infrastructure tables (change log, event
     # log) exist and creates them if necessary.
     def ensure_infrastructure
       ensure_activity_marker_tables
-      create_event_log unless event_log_exists?
+      ensure_event_log
       [:left, :right].each do |database|
         create_change_log(database) unless change_log_exists?(database)
       end

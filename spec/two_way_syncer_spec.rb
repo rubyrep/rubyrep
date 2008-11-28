@@ -26,7 +26,8 @@ describe Syncers::TwoWaySyncer do
       :syncer => :two_way,
       :left_record_handling => :ignore,
       :right_record_handling => :ignore,
-      :sync_conflict_handling => :ignore
+      :sync_conflict_handling => :ignore,
+      :logged_sync_events => []
     }
 
     # Verify that correct options don't raise errors.
@@ -48,12 +49,92 @@ describe Syncers::TwoWaySyncer do
     invalid_options = [
       {:left_record_handling => :invalid_left_option},
       {:right_record_handling => :invalid_right_option},
-      {:sync_conflict_handling => :invalid_conflict_option}
+      {:sync_conflict_handling => :invalid_conflict_option},
+      {:logged_sync_events => [:invalid_logging_option]}
     ]
     invalid_options.each do |options|
       helper.stub!(:sync_options).and_return(base_options.merge(options))
       lambda {Syncers::TwoWaySyncer.new(helper)}.should raise_error(ArgumentError)
     end
+  end
+
+  it "log_sync_outcome should not log if not so configured" do
+    sync = TableSync.new(Session.new, 'scanner_records')
+
+    helper = SyncHelper.new(sync)
+    helper.should_not_receive(:log_sync_outcome)
+    helper.stub!(:sync_options).and_return(
+      {
+        :rep_prefix => 'rr',
+        :left_record_handling => :ignore,
+        :right_record_handling => :ignore,
+        :sync_conflict_handling => :ignore,
+        :logged_sync_events => []
+      })
+    syncer = Syncers::TwoWaySyncer.new(helper)
+    [:left, :right, :conflict].each do |diff_type|
+      syncer.sync_difference(diff_type, :dummy_row)
+    end
+
+    helper = SyncHelper.new(sync)
+    helper.should_not_receive(:log_sync_outcome)
+    helper.stub!(:sync_options).and_return(
+      {
+        :rep_prefix => 'rr',
+        :left_record_handling => :insert,
+        :right_record_handling => :insert,
+        :sync_conflict_handling => :update_left,
+        :logged_sync_events => [:ignored_changes, :ignored_conflicts]
+      })
+    helper.stub!(:insert_record)
+    helper.stub!(:update_record)
+    syncer.sync_difference :left, :dummy_row
+    syncer.sync_difference :right, :dummy_row
+    syncer.sync_difference :conflict, [:left_dummy_row, :right_dummy_row]
+  end
+
+  it "log_sync_outcome should log sync actions correctly" do
+    sync = TableSync.new(Session.new, 'scanner_records')
+
+    helper = SyncHelper.new(sync)
+    helper.should_receive(:log_sync_outcome).with(:dummy_row, 'left_record', :insert).ordered
+    helper.should_receive(:log_sync_outcome).with(:dummy_row, 'right_record', :insert).ordered
+    helper.should_receive(:log_sync_outcome).with(:left_dummy_row, 'conflict', :update_left).ordered
+    helper.stub!(:sync_options).and_return(
+      {
+        :rep_prefix => 'rr',
+        :left_record_handling => :insert,
+        :right_record_handling => :insert,
+        :sync_conflict_handling => :update_left,
+        :logged_sync_events => [:all_changes, :all_conflicts]
+      })
+    helper.stub!(:insert_record)
+    helper.stub!(:update_record)
+    syncer = Syncers::TwoWaySyncer.new(helper)
+    syncer.sync_difference :left, :dummy_row
+    syncer.sync_difference :right, :dummy_row
+    syncer.sync_difference :conflict, [:left_dummy_row, :right_dummy_row]
+  end
+
+  it "log_sync_outcome should log ignored syncs correctly" do
+    sync = TableSync.new(Session.new, 'scanner_records')
+
+    helper = SyncHelper.new(sync)
+    helper.should_receive(:log_sync_outcome).with(:dummy_row, 'left_record', :ignore).ordered
+    helper.should_receive(:log_sync_outcome).with(:dummy_row, 'right_record', :ignore).ordered
+    helper.should_receive(:log_sync_outcome).with(:left_dummy_row, 'conflict', :ignore).ordered
+    helper.stub!(:sync_options).and_return(
+      {
+        :rep_prefix => 'rr',
+        :left_record_handling => :ignore,
+        :right_record_handling => :ignore,
+        :sync_conflict_handling => :ignore,
+        :logged_sync_events => [:ignored_changes, :ignored_conflicts]
+      })
+    syncer = Syncers::TwoWaySyncer.new(helper)
+    syncer.sync_difference :left, :dummy_row
+    syncer.sync_difference :right, :dummy_row
+    syncer.sync_difference :conflict, [:left_dummy_row, :right_dummy_row]
   end
 
   it "sync_difference should not do anything if ignore option is given" do
@@ -63,7 +144,8 @@ describe Syncers::TwoWaySyncer do
       {
         :left_record_handling => :ignore,
         :right_record_handling => :ignore,
-        :sync_conflict_handling => :ignore
+        :sync_conflict_handling => :ignore,
+        :logged_sync_events => []
       })
 
     syncer = Syncers::TwoWaySyncer.new(helper)
@@ -88,7 +170,8 @@ describe Syncers::TwoWaySyncer do
       {
         :left_record_handling => l,
         :right_record_handling => l,
-        :sync_conflict_handling => l
+        :sync_conflict_handling => l,
+        :logged_sync_events => [:ignored_conflicts]
       })
 
     syncer = Syncers::TwoWaySyncer.new(helper)
@@ -110,7 +193,8 @@ describe Syncers::TwoWaySyncer do
       {
         :left_record_handling => :delete,
         :right_record_handling => :delete,
-        :sync_conflict_handling => :ignore
+        :sync_conflict_handling => :ignore,
+        :logged_sync_events => [:ignored_conflicts]
       })
 
     syncer = Syncers::TwoWaySyncer.new(helper)
@@ -127,7 +211,8 @@ describe Syncers::TwoWaySyncer do
       {
         :left_record_handling => :insert,
         :right_record_handling => :insert,
-        :sync_conflict_handling => :ignore
+        :sync_conflict_handling => :ignore,
+        :logged_sync_events => [:ignored_conflicts]
       })
 
     syncer = Syncers::TwoWaySyncer.new(helper)
@@ -144,7 +229,8 @@ describe Syncers::TwoWaySyncer do
       {
         :left_record_handling => :ignore,
         :right_record_handling => :ignore,
-        :sync_conflict_handling => :update_left
+        :sync_conflict_handling => :update_left,
+        :logged_sync_events => [:ignored_conflicts]
       })
 
     syncer = Syncers::TwoWaySyncer.new(helper)
@@ -159,7 +245,8 @@ describe Syncers::TwoWaySyncer do
       {
         :left_record_handling => :ignore,
         :right_record_handling => :ignore,
-        :sync_conflict_handling => :update_right
+        :sync_conflict_handling => :update_right,
+        :logged_sync_events => [:ignored_conflicts]
       })
 
     syncer = Syncers::TwoWaySyncer.new(helper)

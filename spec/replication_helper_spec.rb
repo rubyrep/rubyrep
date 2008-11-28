@@ -89,16 +89,16 @@ describe ReplicationHelper do
       diff.type = :conflict
 
       left_change.type, right_change.type = :update, :delete
-      left_change.table = right_change.table = 'dummy_table'
-      left_change.key = right_change.key = {'id1' => 1, 'id2' => 2}
+      left_change.table = right_change.table = 'extender_combined_key'
+      left_change.key = right_change.key = {'first_id' => 1, 'second_id' => 2}
 
       helper.log_replication_outcome diff, 'ignore', 'ignored'
 
       row = session.left.select_one("select * from rr_event_log order by id desc")
       row['activity'].should == 'replication'
-      row['change_table'].should == 'dummy_table'
+      row['change_table'].should == 'extender_combined_key'
       row['diff_type'].should == 'conflict'
-      row['change_key'].should == '{"id1"=>1, "id2"=>2}'
+      row['change_key'].should == '"first_id"=>"1", "second_id"=>"2"'
       row['left_change_type'].should == 'update'
       row['right_change_type'].should == 'delete'
       row['description'].should == 'ignore'

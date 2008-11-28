@@ -26,6 +26,15 @@ module RR
     #     * type: always :+conflict+
     #     * rows: A two element array of rows (column_name => value hashes).
     #       First left, than right record.
+    # * :+logged_sync_events+:
+    #   Specifies which types of syncs are logged.
+    #   Is either a single value or an array of multiple ones.
+    #   Default: [:ignored_conflicts]
+    #   Possible values:
+    #   * :+ignored_changes+: log ignored (but not synced) non-conflict changes
+    #   * :+all_changes+: log all non-conflict changes
+    #   * :+ignored_conflicts+: log ignored (but not synced) conflicts
+    #   * :+all_conflicts+: log all conflicts
     #
     # Example of using a Proc object:
     #   lambda do |sync_helper, type, row|
@@ -46,7 +55,8 @@ module RR
         {
           :left_record_handling => :insert,
           :right_record_handling => :insert,
-          :sync_conflict_handling => :ignore
+          :sync_conflict_handling => :ignore,
+          :logged_sync_events => [:ignored_conflicts]
         }
       end
 
@@ -71,6 +81,17 @@ module RR
         end
       end
 
+      # Verifies if the given :+replication_logging+ option /options is / are valid.
+      # Raises an ArgumentError if invalid
+      def validate_logging_options(options)
+        values = [options].flatten # ensure that I have an array
+        values.each do |value|
+          unless [:ignored_changes, :all_changes, :ignored_conflicts, :all_conflicts].include? value
+            raise ArgumentError.new("#{value.inspect} not a valid :logged_sync_events option")
+          end
+        end
+      end
+
       # Initializes the syncer
       # * sync_helper:
       #   The SyncHelper object provided information and utility functions.
@@ -80,8 +101,41 @@ module RR
         validate_left_right_record_handling_option sync_helper.sync_options[:left_record_handling]
         validate_left_right_record_handling_option sync_helper.sync_options[:right_record_handling]
         validate_conflict_handling_option sync_helper.sync_options[:sync_conflict_handling]
+        validate_logging_options sync_helper.sync_options[:logged_sync_events]
         
         self.sync_helper = sync_helper
+      end
+
+      # Sync type descriptions that are written into the event log
+      TYPE_DESCRIPTIONS = {
+        :left => 'left_record',
+        :right => 'right_record',
+        :conflict => 'conflict'
+      }
+
+      # Returns the :logged_sync_events option values.
+      def log_option_values
+        @log_option_values ||= [sync_helper.sync_options[:logged_sync_events]].flatten
+      end
+      private :log_option_values
+
+      # Logs a sync event into the event log table as per configuration options.
+      # * +type+: Refer to DirectTableScan#run for a description
+      # * +action+: the sync action that is executed
+      #   (The :+left_record_handling+ / :+right_record_handling+ or
+      #   :+sync_conflict_handling+ option)
+      # * +row+: Refer to DirectTableScan#run for a description
+      def log_sync_outcome(type, action, row)
+        if type == :conflict
+          return unless log_option_values.include?(:all_conflicts) or log_option_values.include?(:ignored_conflicts)
+          return if action != :ignore and not log_option_values.include?(:all_conflicts)
+          row = row[0] # Extract left row from row array
+        else
+          return unless log_option_values.include?(:all_changes) or log_option_values.include?(:ignored_changes)
+          return if action != :ignore and not log_option_values.include?(:all_changes)
+        end
+
+        sync_helper.log_sync_outcome row, TYPE_DESCRIPTIONS[type], action
       end
 
       # Called to sync the provided difference.
@@ -90,6 +144,7 @@ module RR
         if type == :left or type == :right
           option_key = type == :left ? :left_record_handling : :right_record_handling
           option = sync_helper.sync_options[option_key]
+          log_sync_outcome type, option, row unless option.respond_to?(:call)
           if option == :ignore
             # nothing to do
           elsif option == :delete
@@ -102,6 +157,7 @@ module RR
           end
         else
           option = sync_helper.sync_options[:sync_conflict_handling]
+          log_sync_outcome type, option, row unless option.respond_to?(:call)
           if option == :ignore
             # nothing to do
           elsif option == :update_left
