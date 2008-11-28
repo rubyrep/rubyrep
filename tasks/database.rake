@@ -5,7 +5,7 @@ require 'rubyrep'
 require File.dirname(__FILE__) + '/task_helper.rb'
 require File.dirname(__FILE__) + '/../config/test_config'
 
-# Creates the databases in the given Configuration object
+# Creates the databases for the given configuration hash
 def create_database(config)
   begin
     RR::ConnectionExtenders.db_connect(config)
@@ -32,7 +32,7 @@ def create_database(config)
   end
 end
 
-# Drops the databases in the given Configuration object
+# Drops the databases identified by the given configuration hash
 def drop_database(config)
   case config[:adapter]
   when 'postgresql'
@@ -46,7 +46,7 @@ def drop_database(config)
 end
 
 # Creates the sample schema in the database specified by the given 
-# Configuration object
+# configuration hash.
 def create_sample_schema(config)
   ActiveRecord::Base.establish_connection config
   
