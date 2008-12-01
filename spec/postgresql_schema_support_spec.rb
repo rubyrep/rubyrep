@@ -6,6 +6,7 @@ describe "PostgreSQL schema support" do
   before(:each) do
     config = deep_copy(standard_config)
     config.left[:schema_search_path] = 'rr'
+    config.right[:schema_search_path] = 'rr'
     Initializer.configuration = config
   end
 
@@ -56,5 +57,64 @@ describe "PostgreSQL schema support" do
       }
     end
 
+    it "sequence setup should work" do
+      session = nil
+      begin
+        session = Session.new
+        initializer = ReplicationInitializer.new(session)
+        session.left.begin_db_transaction
+        session.right.begin_db_transaction
+        table_pair = {:left => 'rr_sequence_test', :right => 'rr_sequence_test'}
+        initializer.ensure_sequence_setup table_pair, 5, 2, 1
+        id1, id2 = get_example_sequence_values(session, 'rr_sequence_test')
+        (id2 - id1).should == 5
+        (id1 % 5).should == 2
+      ensure
+        [:left, :right].each do |database|
+          initializer.clear_sequence_setup database, 'rr_sequence_test' rescue nil if session
+          session.send(database).execute "delete from rr_sequence_test" rescue nil if session
+          session.send(database).rollback_db_transaction rescue nil if session
+        end
+      end
+    end
+
+    it "clear_sequence_setup should work" do
+      session = nil
+      begin
+        session = Session.new
+        initializer = ReplicationInitializer.new(session)
+        session.left.begin_db_transaction
+        session.right.begin_db_transaction
+        table_pair = {:left => 'rr_sequence_test', :right => 'rr_sequence_test'}
+        initializer.ensure_sequence_setup table_pair, 5, 2, 2
+        initializer.clear_sequence_setup :left, 'rr_sequence_test'
+        id1, id2 = get_example_sequence_values(session, 'rr_sequence_test')
+        (id2 - id1).should == 1
+      ensure
+        [:left, :right].each do |database|
+          initializer.clear_sequence_setup database, 'rr_sequence_test' if session
+          session.send(database).execute "delete from rr_sequence_test" if session
+          session.send(database).rollback_db_transaction if session
+        end
+      end
+    end
+
+    it "create_trigger, trigger_exists? and drop_trigger should work" do
+      session = nil
+      begin
+        session = Session.new
+        initializer = ReplicationInitializer.new(session)
+        session.left.begin_db_transaction
+
+        initializer.create_trigger :left, 'rr_trigger_test'
+        initializer.trigger_exists?(:left, 'rr_trigger_test').
+          should be_true
+        initializer.drop_trigger(:left, 'rr_trigger_test')
+        initializer.trigger_exists?(:left, 'rr_trigger_test').
+          should be_false
+      ensure
+        session.left.rollback_db_transaction if session
+      end
+    end
   end
 end

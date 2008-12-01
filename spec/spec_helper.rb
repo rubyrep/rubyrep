@@ -71,6 +71,7 @@ def mock_active_record(number_of_calls)
   # So extend might not be called in all cases
   dummy_connection.stub!(:extend)
   dummy_connection.stub!(:tables).and_return([])
+  dummy_connection.stub!(:initialize_search_path)
     
   ConnectionExtenders::DummyActiveRecord.should_receive(:connection).send(number_of_calls) \
     .and_return {dummy_connection}
@@ -200,11 +201,12 @@ end
 
 # Inserts two records into 'sequence_test' and returns the generated id values
 # * session: the active Session
-def get_example_sequence_values(session)
-  session.left.insert_record 'sequence_test', { 'name' => 'bla' }
-  id1 = session.left.select_one("select max(id) as id from sequence_test")['id'].to_i
-  session.left.insert_record 'sequence_test', { 'name' => 'blub' }
-  id2 = session.left.select_one("select max(id) as id from sequence_test")['id'].to_i
+# * table: name of the table which is to be tested
+def get_example_sequence_values(session, table = 'sequence_test')
+  session.left.insert_record table, { 'name' => 'bla' }
+  id1 = session.left.select_one("select max(id) as id from #{table}")['id'].to_i
+  session.left.insert_record table, { 'name' => 'blub' }
+  id2 = session.left.select_one("select max(id) as id from #{table}")['id'].to_i
   return id1, id2
 end
 

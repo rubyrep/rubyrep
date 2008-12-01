@@ -215,24 +215,13 @@ module RR
         end
       end
 
-      # Sets the schema search path to a string of comma-separated schema names.
-      # Names beginning with $ have to be quoted (e.g. $user => '$user').
-      # See: http://www.postgresql.org/docs/current/static/ddl-schemas.html
-      #
-      # This should be not be called manually but set in database.yml.
-      def schema_search_path=(schema_csv)
-        if schema_csv
-          execute "SET search_path TO #{schema_csv}"
-          @schema_search_path = schema_csv
-        end
+      # Sets the schema search path as per configuration parameters
+      def initialize_search_path
+        execute "SET search_path TO #{config[:schema_search_path]}" if config[:schema_search_path]
       end
 
       # Returns the active schema search path.
       def schema_search_path
-        unless @schema_search_path_initialized
-          self.schema_search_path = config[:schema_search_path]
-          @schema_search_path_initialized = true
-        end
         @schema_search_path ||= select_one('SHOW search_path')['search_path']
       end
 

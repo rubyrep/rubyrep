@@ -74,6 +74,21 @@ def create_postgres_schema(config)
         FOREIGN KEY (rr_referenced_id)
         REFERENCES rr_referenced(id)
     end_sql
+
+    create_table :rr_trigger_test, :id => false do |t|
+      t.column :first_id, :integer
+      t.column :second_id, :integer
+      t.column :name, :string
+    end
+
+    ActiveRecord::Base.connection.execute(<<-end_sql) rescue nil
+      ALTER TABLE rr_trigger_test ADD CONSTRAINT rr_trigger_test_pkey
+        PRIMARY KEY (first_id, second_id)
+    end_sql
+
+    create_table :rr_sequence_test do |t|
+      t.column :name, :string
+    end
   end
 end
 
