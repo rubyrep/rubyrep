@@ -2,6 +2,8 @@ require File.dirname(__FILE__) + '/spec_helper.rb'
 
 include RR
 
+require File.dirname(__FILE__) + "/../config/test_config.rb"
+
 describe "PostgreSQL schema support" do
   before(:each) do
     config = deep_copy(standard_config)
@@ -13,7 +15,7 @@ describe "PostgreSQL schema support" do
   after(:each) do
   end
 
-  if ENV['RR_TEST_DB'] != @org_test_db.to_s
+  if Initializer.configuration.left[:adapter] == 'postgresql'
     it "tables should show the tables from the schema and no others" do
       session = Session.new
       session.left.tables.include?('rr_simple').should be_true
