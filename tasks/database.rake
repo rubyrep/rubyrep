@@ -45,9 +45,52 @@ def drop_database(config)
   end
 end
 
+# Creates the schema and tables for the postgres schema test
+def create_postgres_schema(config)
+  return unless config[:adapter] == 'postgresql'
+  ActiveRecord::Base.establish_connection config
+  ActiveRecord::Schema.define do
+    execute <<-end_sql
+      create schema rr;
+
+      set search_path to rr;
+    end_sql
+
+    create_table :rr_simple do |t|
+      t.column :name, :string
+    end
+    execute "insert into rr_simple(id, name) values(1, 'bla')"
+
+    create_table :rr_referenced, :id => true do |t|
+      t.column :name, :string
+    end
+
+    create_table :rr_referencing, :id => true do |t|
+      t.column :rr_referenced_id, :integer
+    end
+
+    ActiveRecord::Base.connection.execute(<<-end_sql)
+      ALTER TABLE rr_referencing ADD CONSTRAINT rr_referenced_fkey
+        FOREIGN KEY (rr_referenced_id)
+        REFERENCES rr_referenced(id)
+    end_sql
+  end
+end
+
+# Drops the schema and tables that were created for the postgres schema test
+def drop_postgres_schema(config)
+  return unless config[:adapter] == 'postgresql'
+  ActiveRecord::Base.establish_connection config
+  ActiveRecord::Schema.define do
+    execute "drop schema rr cascade"
+  end
+end
+
 # Creates the sample schema in the database specified by the given 
 # configuration hash.
 def create_sample_schema(config)
+  create_postgres_schema config
+
   ActiveRecord::Base.establish_connection config
   
   ActiveRecord::Schema.define do
@@ -205,6 +248,8 @@ end
 # Removes all tables from the sample scheme
 # config: Hash of configuration values for the desired database connection
 def drop_sample_schema(config)
+  drop_postgres_schema config
+
   connection = RR::ConnectionExtenders.db_connect(config)
   ActiveRecord::Base.connection = connection
   
@@ -361,8 +406,19 @@ namespace :db do
 
     desc "Drops the sample schemas"
     task :drop_schema do
-      drop_sample_schema RR::Initializer.configuration.left rescue nil
-      drop_sample_schema RR::Initializer.configuration.right rescue nil
+      # Since Rails 2.2 ActiveRecord doesn't release the database connection
+      # anymore. Thus the dropping of the database fails.
+      # Workaround:
+      # Execute the schema removal in a sub process. Once the sub process
+      # exits, it's database connections die.
+      pid = Process.fork
+      if pid
+        Process.wait pid
+      else
+        drop_sample_schema RR::Initializer.configuration.left rescue nil
+        drop_sample_schema RR::Initializer.configuration.right rescue nil
+        Kernel.exit!
+      end
     end
   end
 end

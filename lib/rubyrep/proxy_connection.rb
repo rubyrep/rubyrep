@@ -5,6 +5,8 @@ require 'drb'
 require 'rubyrep'
 require 'forwardable'
 
+require 'active_record/connection_adapters/abstract_adapter'
+
 module RR
 
   # This class represents a remote activerecord database connection.

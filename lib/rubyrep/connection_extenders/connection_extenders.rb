@@ -61,6 +61,10 @@ module RR
       connection_module = ConnectionExtenders.extenders[extender]
       connection.extend connection_module
 
+      # Hack to get Postgres schema support under JRuby to par with the standard
+      # ruby version
+      connection.extend RR::ConnectionExtenders::JdbcPostgreSQLExtender if RUBY_PLATFORM =~ /java/ and config[:adapter].to_sym == :postgresql
+
       replication_module = ReplicationExtenders.extenders[config[:adapter].to_sym]
       connection.extend replication_module if replication_module
       
