@@ -80,6 +80,7 @@ spec/direct_table_scan_spec.rb
 spec/initializer_spec.rb
 spec/logged_change_spec.rb
 spec/postgresql_replication_spec.rb
+spec/postgresql_schema_support_spec.rb
 spec/progress_bar_spec.rb
 spec/proxied_table_scan_spec.rb
 spec/proxy_block_cursor_spec.rb
