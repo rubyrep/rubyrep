@@ -101,7 +101,6 @@ end
 
 # Prepares the database for the performance simulations
 def prepare
-  session = RR::Session.new
   [:left, :right].each {|arm| prepare_schema(RR::Initializer.configuration.send(arm))}
   puts "time required: " + Benchmark.measure {populate_data}.to_s
 end
