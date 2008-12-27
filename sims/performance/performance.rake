@@ -14,22 +14,22 @@ class RightBigScan < ActiveRecord::Base
 end
 
 # Prepares the database schema for the performance tests.
-# db_connection holds the database connection to be used.
-def prepare_schema(db_connection)
-  ActiveRecord::Base.connection = db_connection
+# * +config+: hash of datbase connection parameters
+def prepare_schema(config)
+  ActiveRecord::Base.establish_connection config
 
   ActiveRecord::Schema.define do
     drop_table :big_scan rescue nil
     create_table :big_scan do |t|
-      t.column :diff_type, :string
-      t.string :text1, :text2, :text3, :text4
-      t.text :text5
-      t.binary :text6
-      t.integer :number1, :number2, :number3
-      t.float :number4
-    end rescue nil
+        t.column :diff_type, :string
+        t.string :text1, :text2, :text3, :text4
+        t.text :text5
+        t.binary :text6
+        t.integer :number1, :number2, :number3
+        t.float :number4
+      end rescue nil
+    end
   end  
-end
 
 BIG_SCAN_RECORD_NUMBER = 5000 # number of records to create for simulation
 BIG_SCAN_SEED = 123 # random number seed to make simulation repeatable
@@ -55,10 +55,9 @@ def random_attributes
 end
 
 # Populates the big_scan tables with sample data.
-# Takes a Session object holding the according database connection.
-def populate_data(session)
-  LeftBigScan.connection = session.left.connection
-  RightBigScan.connection = session.right.connection
+def populate_data()
+  LeftBigScan.establish_connection RR::Initializer.configuration.left
+  RightBigScan.establish_connection RR::Initializer.configuration.right
   
   LeftBigScan.delete_all
   RightBigScan.delete_all
@@ -103,8 +102,8 @@ end
 # Prepares the database for the performance simulations
 def prepare
   session = RR::Session.new
-  [:left, :right].each {|arm| prepare_schema(session.send(arm).connection)}
-  puts "time required: " + Benchmark.measure {populate_data session}.to_s
+  [:left, :right].each {|arm| prepare_schema(RR::Initializer.configuration.send(arm))}
+  puts "time required: " + Benchmark.measure {populate_data}.to_s
 end
 
 namespace :sims do
