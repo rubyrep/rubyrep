@@ -45,7 +45,7 @@ module RR
     #   A committer key as registered by Committers#register.
     #   Determines the transaction management to be used during the sync.
     # * :+commit_frequency+:
-    #   Used by BufferedCommitter. Number of changes are which the open
+    #   Used by BufferedCommitter. Number of changes after which the open
     #   transactions should be committed and new transactions be started.
     # * :+table_ordering+:
     #   If true, sort tables before syncing as per foreign key dependencies.
