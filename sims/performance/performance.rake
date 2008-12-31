@@ -3,16 +3,6 @@ require 'benchmark'
 
 require File.dirname(__FILE__) + '/../sim_helper'
 
-class LeftBigScan < ActiveRecord::Base
-  set_table_name "big_scan"
-  include CreateWithKey
-end
-
-class RightBigScan < ActiveRecord::Base
-  set_table_name "big_scan"
-  include CreateWithKey
-end
-
 # Prepares the database schema for the performance tests.
 def prepare_schema
   session = RR::Session.new
@@ -38,14 +28,23 @@ BIG_SCAN_SEED = 123 # random number seed to make simulation repeatable
 # Percentage values for same, modified, left_only and right_only records in simulation
 BIG_SCAN_SAME = 95
 BIG_SCAN_MODIFIED = BIG_SCAN_SAME + 3
-BIG_SCAN_LEFT_ONLY = BIG_SCAN_MODIFIED + 1 # difference to 100% will be right_only records 
+BIG_SCAN_LEFT_ONLY = BIG_SCAN_MODIFIED + 1 # difference to 100% will be right_only records
+
+def big_scan_columns
+  @@big_scan_columns ||= nil
+  unless @@big_scan_columns
+    session = RR::Session.new
+    @@big_scan_columns = session.left.column_names('big_scan')
+  end
+  @@big_scan_columns
+end
 
 def text_columns
-  @@text_columns ||= LeftBigScan.column_names.select {|column_name| column_name =~ /^text/}
+  @@text_columns ||= big_scan_columns.select {|column_name| column_name =~ /^text/}
 end
 
 def number_columns
-  @@number_columns ||= LeftBigScan.column_names.select {|column_name| column_name =~ /^number/}
+  @@number_columns ||= big_scan_columns.select {|column_name| column_name =~ /^number/}
 end
 
 def random_attributes
@@ -57,11 +56,9 @@ end
 
 # Populates the big_scan tables with sample data.
 def populate_scan_data()
-  LeftBigScan.establish_connection RR::Initializer.configuration.left
-  RightBigScan.establish_connection RR::Initializer.configuration.right
-  
-  LeftBigScan.delete_all
-  RightBigScan.delete_all
+  session = RR::Session.new
+
+  [:left, :right].each {|database| session.send(database).execute "delete from big_scan"}
   
   srand BIG_SCAN_SEED
 
@@ -79,23 +76,22 @@ def populate_scan_data()
     case rand(100)
     when 0...BIG_SCAN_SAME
       attributes['diff_type'] = 'same'
-      LeftBigScan.create_with_key attributes
-      RightBigScan.create_with_key attributes
+      [:left, :right].each {|database| session.send(database).insert_record 'big_scan', attributes}
     when BIG_SCAN_SAME...BIG_SCAN_MODIFIED
       attributes['diff_type'] = 'conflict'
-      LeftBigScan.create_with_key attributes
+      session.left.insert_record 'big_scan', attributes
       
       attribute_name = text_columns[rand(text_columns.size)]
       attributes[attribute_name] = attributes[attribute_name] + 'modified'
       attribute_name = number_columns[rand(number_columns.size)]
       attributes[attribute_name] = attributes[attribute_name] + 10000
-      RightBigScan.create_with_key attributes
+      session.right.insert_record 'big_scan', attributes
     when BIG_SCAN_MODIFIED...BIG_SCAN_LEFT_ONLY
       attributes['diff_type'] = 'left'
-      LeftBigScan.create_with_key attributes
+      session.left.insert_record 'big_scan', attributes
     else
       attributes['diff_type'] = 'right'
-      RightBigScan.create_with_key attributes
+      session.right.insert_record 'big_scan', attributes
     end
   end
 end
@@ -109,8 +105,6 @@ BIG_REP_UPDATE = BIG_REP_INSERT + 30 # different to 100% will be deletes
 
 # Populates the big_rep tables with sample data and changes.
 def populate_rep_data
-  LeftBigScan.establish_connection RR::Initializer.configuration.left
-
   session = RR::Session.new
   initializer = RR::ReplicationInitializer.new session
 
