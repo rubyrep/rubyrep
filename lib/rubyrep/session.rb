@@ -6,7 +6,7 @@ module RR
   # Creates and holds expensive objects like e. g. database connections.
   class Session
     
-    # Deep copy of the original Configuration object
+    # The Configuration object provided to the initializer
     attr_accessor :configuration
     
     # Returns the "left" ActiveRecord / proxy database connection
