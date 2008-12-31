@@ -62,7 +62,7 @@ def populate_scan_data()
   
   srand BIG_SCAN_SEED
 
-  puts "Generating #{BIG_SCAN_RECORD_NUMBER} records in big_scan"
+  puts "\nGenerating #{BIG_SCAN_RECORD_NUMBER} records in big_scan"
   progress_bar = ProgressBar.new BIG_SCAN_RECORD_NUMBER
   
   (1..BIG_SCAN_RECORD_NUMBER).each do |i|
