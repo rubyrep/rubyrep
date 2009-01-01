@@ -231,8 +231,8 @@ module RR
             # note: savepoints have to be used for postgresql (as a failed SQL
             #       statement will otherwise invalidate the complete transaction.)
             rep_helper.session.send(target_db).execute "savepoint rr_insert"
-            rep_helper.insert_record target_db, target_table, values
             log_replication_outcome source_db, diff
+            rep_helper.insert_record target_db, target_table, values
             rep_helper.session.send(target_db).execute "release savepoint rr_insert"
           rescue Exception => e
             rep_helper.session.send(target_db).execute "rollback to savepoint rr_insert"
@@ -263,8 +263,8 @@ module RR
           diff.amend
           replicate_difference diff, remaining_attempts - 1
         else
-          rep_helper.update_record target_db, target_table, values, target_key
           log_replication_outcome source_db, diff
+          rep_helper.update_record target_db, target_table, values, target_key
         end
       end
 
@@ -278,8 +278,8 @@ module RR
         change = diff.changes[source_db]
         target_db = OTHER_SIDE[source_db]
         target_table = rep_helper.corresponding_table(source_db, change.table)
-        rep_helper.delete_record target_db, target_table, target_key
         log_replication_outcome source_db, diff
+        rep_helper.delete_record target_db, target_table, target_key
       end
 
       # Called to replicate the specified difference.
