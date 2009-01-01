@@ -33,8 +33,6 @@ describe "Big Sync" do
   # * expected_result: a hash of record quantities that should result.
   def run_sync(session, expected_result)
     begin
-      session = Session.new
-
       number_records =
         record_quantity(session, :left, :left) +
         record_quantity(session, :conflict, :left) +
