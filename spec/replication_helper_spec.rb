@@ -22,7 +22,7 @@ describe ReplicationHelper do
     helper.session.should == rep_run.session
   end
 
-  it "repllcation_run should return the current ReplicationRun instance" do
+  it "replication_run should return the current ReplicationRun instance" do
     rep_run = ReplicationRun.new(Session.new)
     helper = ReplicationHelper.new(rep_run)
     helper.replication_run.should == rep_run
