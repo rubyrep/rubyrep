@@ -233,7 +233,6 @@ module RR
             rep_helper.session.send(target_db).execute "savepoint rr_insert"
             log_replication_outcome source_db, diff
             rep_helper.insert_record target_db, target_table, values
-            rep_helper.session.send(target_db).execute "release savepoint rr_insert"
           rescue Exception => e
             rep_helper.session.send(target_db).execute "rollback to savepoint rr_insert"
             row = rep_helper.load_record target_db, target_table, source_key
