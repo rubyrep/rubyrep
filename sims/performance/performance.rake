@@ -206,6 +206,14 @@ namespace :sims do
           $stdout, $stderr))
     end
 
+    desc "Runs the big_rep simulation"
+    task :rep do
+      Spec::Runner::CommandLine.run(
+        Spec::Runner::OptionParser.parse(
+          ['--options', "spec/spec.opts", "./sims/performance/big_rep_spec.rb"],
+          $stdout, $stderr))
+    end
+
     begin
       require 'ruby-prof/task'
       RubyProf::ProfileTask.new do |t|
