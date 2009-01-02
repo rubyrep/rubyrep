@@ -115,7 +115,7 @@ module RR
           org_cursor = session.send(database).select_cursor(<<-end_sql)
             select * from #{change_log_table}
             where change_table = '#{table}'
-            and change_key = '#{current_key}' and id > #{current_id}
+            and change_key = '#{current_key}'
             order by id
           end_sql
           cursor = TypeCastingCursor.new(session.send(database),
