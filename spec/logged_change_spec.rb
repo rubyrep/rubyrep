@@ -233,6 +233,7 @@ describe LoggedChange do
         'change_type' => 'I',
         'change_time' => Time.now
       }
+      session.reload_changes
       change = LoggedChange.new session, :left
       change.load_specified 'left_table', {'id' => '5'}
       change.type.should == :update
@@ -314,6 +315,7 @@ describe LoggedChange do
         'change_type' => 'D',
         'change_time' => Time.now
       }
+      session.reload_changes
       change.load
 
       change.table.should == 'left_table'
@@ -348,6 +350,7 @@ describe LoggedChange do
         'change_type' => 'U',
         'change_time' => Time.now
       }
+      session.reload_changes
       change.load
 
       change.table.should == 'left_table'

@@ -1,4 +1,171 @@
 module RR
+  
+  class Session
+
+    # Returns the +LoggedChangeLoader+ of the specified database.
+    # * database: either :+left+ or :+right+
+    def change_loader(database)
+      @change_loaders ||= {}
+      unless change_loader = @change_loaders[database]
+        change_loader = @change_loaders[database] = LoggedChangeLoader.new(self, database)
+      end
+      change_loader
+    end
+
+    # Forces an update of the change log cache
+    def reload_changes
+      change_loader(:left).update :forced => true
+      change_loader(:right).update :forced => true
+    end
+
+  end
+
+  # Caches the entries in the change log table
+  class LoggedChangeLoader
+
+    # The current +Session+.
+    attr_accessor :session
+
+    # The current +ProxyConnection+.
+    attr_accessor :connection
+
+    # Index to the next unprocessed change in the +change_array+.
+    attr_accessor :current_index
+
+    # ID of the last cached change log record.
+    attr_accessor :current_id
+
+    # Array with all cached changes.
+    # Processed change log records are replaced with +nil+.
+    attr_accessor :change_array
+
+    # Tree (hash) structure for fast access to all cached changes.
+    # First level of tree:
+    # * key: table name
+    # * value: 2nd level tree
+    # 2nd level tree:
+    # * key: the change_key value of the according change log records.
+    # * value:
+    #   The according change log record (column_name => value hash).
+    #   Additional entry of each change log hash:
+    #   * key: 'array_index'
+    #   * value: index to the change log record in +change_array+
+    attr_accessor :change_tree
+
+    # Date of last update of the cache
+    attr_accessor :last_updated
+
+    # Initializes / resets the cache.
+    def init_cache
+      self.change_tree = {}
+      self.change_array = []
+      self.current_index = 0
+    end
+    private :init_cache
+
+    # Create a new change log record cache.
+    # * +session+: The current +Session+
+    # * +database+: Either :+left+ or :+right+
+    def initialize(session, database)
+      self.session = session
+      self.connection = session.send(database)
+
+      init_cache
+      self.current_id = -1
+      self.last_updated = 1.year.ago
+    end
+
+    # Updates the cache.
+    # Options is a hash determining when the update is actually executed:
+    # * :+expire_time+: cache is older than the given number of seconds
+    # * :+forced+: if +true+ update the cache even if not yet expired
+    def update(options = {:forced => false, :expire_time => 1})
+      return unless options[:forced] or Time.now - self.last_updated >= options[:expire_time]
+      
+      self.last_updated = Time.now
+
+      org_cursor = connection.select_cursor(<<-end_sql)
+        select * from #{change_log_table}
+        where id > #{current_id}
+        order by id
+      end_sql
+      cursor = TypeCastingCursor.new(connection,
+        change_log_table, org_cursor)
+      while cursor.next?
+        change = cursor.next_row
+        self.current_id = change['id']
+        self.change_array << change
+        change['array_index'] = self.change_array.size - 1
+
+        table_change_tree = change_tree[change['change_table']] ||= {}
+        key_changes = table_change_tree[change['change_key']] ||= []
+        key_changes << change
+      end
+      cursor.clear
+    end
+
+    # Returns the creation time of the oldest unprocessed change log record.
+    def oldest_change_time
+      change = oldest_change
+      change['change_time'] if change
+    end
+
+    # Returns the oldest unprocessed change log record (column_name => value hash).
+    def oldest_change
+      update
+      oldest_change = nil
+      unless change_array.empty?
+        while (oldest_change = change_array[self.current_index]) == nil
+          self.current_index += 1
+        end
+      end
+      oldest_change
+    end
+
+    # Returns the specified change log record (column_name => value hash).
+    # * +change_table+: the name of the table that was changed
+    # * +change_key+: the change key of the modified record
+    def load(change_table, change_key)
+      update
+      change = nil
+      table_change_tree = change_tree[change_table]
+      if table_change_tree
+        key_changes = table_change_tree[change_key]
+        if key_changes
+          # get change object and delete from key_changes
+          change = key_changes.shift
+
+          # delete change from change_array
+          change_array[change['array_index']] = nil
+
+          # delete change from database
+          connection.execute "delete from #{change_log_table} where id = #{change['id']}"
+
+          # delete key_changes if empty
+          if key_changes.empty?
+            table_change_tree.delete change_key
+          end
+
+          # delete table_change_tree if empty
+          if table_change_tree.empty?
+            change_tree.delete change_table
+          end
+
+          # reset everything if no more changes remain
+          if change_tree.empty?
+            init_cache
+          end
+        end
+      end
+      change
+    end
+
+    # Returns the name of the change log table
+    def change_log_table
+      @change_log_table ||= "#{session.configuration.options[:rep_prefix]}_change_log"
+    end
+    private :change_log_table
+  end
 
   # Describes a single logged record change.
   # 
@@ -98,9 +265,7 @@ module RR
     # Loads the change as per #table and #key. Works if the LoggedChange instance
     # is totally new or was already loaded before.
     def load
-      cursor = nil
       current_type = LONG_TYPES[type]
-      current_id = -1
 
       org_key = new_key || key
       # change to key string as can be found in change log table
@@ -109,35 +274,16 @@ module RR
       end.join(key_sep)
       current_key = org_key
 
-      loop do
-        unless cursor
-          # load change records from DB if not already done
-          org_cursor = session.send(database).select_cursor(<<-end_sql)
-            select * from #{change_log_table}
-            where change_table = '#{table}'
-            and change_key = '#{current_key}'
-            order by id
-          end_sql
-          cursor = TypeCastingCursor.new(session.send(database),
-            change_log_table, org_cursor)
-        end
-        break unless cursor.next? # no more matching changes in the change log
+      while change = session.change_loader(database).load(table, current_key)
 
-        row = cursor.next_row
-        new_type = row['change_type']
+        new_type = change['change_type']
         current_type = TYPE_CHANGES["#{current_type}#{new_type}"]
 
-        current_id = row['id']
-        session.send(database).execute "delete from #{change_log_table} where id = #{current_id}"
+        self.first_changed_at ||= change['change_time']
+        self.last_changed_at = change['change_time']
 
-        self.first_changed_at ||= row['change_time']
-        self.last_changed_at = row['change_time']
-
-
-        if row['change_type'] == 'U' and row['change_new_key'] != current_key
-          cursor.clear
-          cursor = nil
-          current_key = row['change_new_key']
+        if change['change_type'] == 'U' and change['change_new_key'] != current_key
+          current_key = change['change_new_key']
         end
       end
 
@@ -149,8 +295,6 @@ module RR
       else
         self.key = key_to_hash(current_key)
       end
-    ensure
-      cursor.clear if cursor
     end
 
     # Loads the change with the specified key for the named +table+.
@@ -165,27 +309,16 @@ module RR
     # Returns the time of the oldest change. Returns +nil+ if there are no
     # changes left.
     def oldest_change_time
-      org_cursor = session.send(database).select_cursor(<<-end_sql)
-        select change_time from #{change_log_table}
-        order by id
-      end_sql
-      cursor = TypeCastingCursor.new(session.send(database),
-        change_log_table, org_cursor)
-      return nil unless cursor.next?
-      change_time = cursor.next_row['change_time']
-      cursor.clear
-      change_time
+      session.change_loader(database).oldest_change_time
     end
 
     # Loads the oldest available change
     def load_oldest
-      row = nil
       begin
-        row = session.send(database).select_one(
-          "select change_table, change_key from #{change_log_table} order by id")
-        break unless row
-        self.key = key_to_hash(row['change_key'])
-        self.table = row['change_table']
+        change = session.change_loader(database).oldest_change
+        break unless change
+        self.key = key_to_hash(change['change_key'])
+        self.table = change['change_table']
         load
       end until type != :no_change
     end

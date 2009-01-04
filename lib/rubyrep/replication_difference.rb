@@ -52,6 +52,7 @@ module RR
 
     # Amends a difference according to new entries in the change log table
     def amend
+      session.reload_changes
       changes[:left].load
       changes[:right].load
       self.type = DIFF_TYPES[changes[:left].type][changes[:right].type]

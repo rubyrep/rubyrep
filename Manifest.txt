@@ -62,6 +62,7 @@ script/destroy
 script/generate
 script/txt2html
 setup.rb
+sims/performance/big_rep_spec.rb
 sims/performance/big_scan_spec.rb
 sims/performance/big_sync_spec.rb
 sims/performance/performance.rake

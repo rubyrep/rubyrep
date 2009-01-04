@@ -24,6 +24,7 @@ module RR
 
       loop do
         begin
+          session.reload_changes # ensure the cache of change log records is up-to-date
           diff = ReplicationDifference.new session
           diff.load
           break unless diff.loaded?
