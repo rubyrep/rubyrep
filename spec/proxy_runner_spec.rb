@@ -44,18 +44,21 @@ describe ProxyRunner do
   it "start_server should create a DatabaseProxy and start the DRB server" do
     DatabaseProxy.should_receive(:new)
     DRb.should_receive(:start_service,"druby://127.0.0.1:1234")
+    DRb.stub!(:thread).and_return(Object.new)
     DRb.thread.should_receive(:join)
     ProxyRunner.new.start_server("druby://127.0.0.1:1234")
   end
   
   it "run should not start a server if the command line is invalid" do
     DRb.should_not_receive(:start_service)
+    DRb.stub!(:thread).and_return(Object.new)
     DRb.thread.should_not_receive(:join)
     ProxyRunner.run("--nonsense")    
   end
   
   it "run should start a server if the command line is correct" do
     DRb.should_receive(:start_service)
+    DRb.stub!(:thread).and_return(Object.new)
     DRb.thread.should_receive(:join)
     ProxyRunner.run(["--port=1234"])    
   end
