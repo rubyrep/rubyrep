@@ -4,6 +4,11 @@ module RR
   # This class implements the functionality of the rrsync.rb command.
   class SyncRunner < BaseRunner
 
+    CommandRunner.register 'sync' => {
+      :command => self,
+      :description => 'Syncs records between databases'
+    }
+
     # Returns summary description string for the scan command.
     def summary_description
       "Syncs the differences of the specified tables between both databases."

@@ -6,13 +6,11 @@ describe ScanRunner do
   before(:each) do
   end
 
-  it "rrscan.rb should call ScanRunner#run" do
-    ScanRunner.should_receive(:run).with(ARGV).and_return(0)
-    Kernel.any_instance_should_receive(:exit) {
-      load File.dirname(__FILE__) + '/../bin/rrscan.rb'
-    }
+  it "should register itself with CommandRunner" do
+    CommandRunner.commands['scan'][:command].should == ScanRunner
+    CommandRunner.commands['scan'][:description].should be_an_instance_of(String)
   end
-  
+
   it "execute should scan the specified tables" do
     org_stdout = $stdout
     $stdout = StringIO.new

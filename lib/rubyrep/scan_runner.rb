@@ -3,6 +3,12 @@ $LOAD_PATH.unshift File.dirname(__FILE__) + '/../lib'
 module RR
   # This class implements the functionality of the rrscan.rb command.
   class ScanRunner < BaseRunner
+
+    CommandRunner.register 'scan' => {
+      :command => self,
+      :description => 'Scans for differing records between databases'
+    }
+
     # Returns summary description string for the scan command.
     def summary_description
       "Scans for differences of the specified tables between both databases."

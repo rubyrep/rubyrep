@@ -6,6 +6,11 @@ require 'drb'
 module RR
   # This class implements the functionality of the rrproxy.rb command.
   class ProxyRunner
+
+    CommandRunner.register 'proxy' => {
+      :command => self,
+      :description => 'Proxies connections from rubyrep commands to the database'
+    }
     
     # Default options to start a DatabaseProxy server
     DEFAULT_OPTIONS = {
@@ -22,7 +27,7 @@ module RR
       status = 0
 
       parser = OptionParser.new do |opts|
-        opts.banner = "Usage: #{$0} [options]"
+        opts.banner = "Usage: #{$0} proxy [options]"
         opts.separator ""
         opts.separator "Specific options:"
 

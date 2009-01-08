@@ -63,10 +63,8 @@ describe ProxyRunner do
     ProxyRunner.run(["--port=1234"])    
   end
   
-  it "rrproxy.rb should call ProxyRunner#run" do
-    ProxyRunner.should_receive(:run).with(ARGV).and_return(0)
-    Kernel.any_instance_should_receive(:exit) {
-      load File.dirname(__FILE__) + '/../bin/rrproxy.rb'
-    }
+  it "should register itself with CommandRunner" do
+    CommandRunner.commands['proxy'][:command].should == ProxyRunner
+    CommandRunner.commands['proxy'][:description].should be_an_instance_of(String)
   end
 end

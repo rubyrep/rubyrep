@@ -53,7 +53,7 @@ module RR
 
       parser = OptionParser.new do |opts|
         opts.banner = <<EOS
-Usage: #{$0} [options] [table_spec] [table_spec] ...
+Usage: #{$0} #{self.class.name.sub(/^.*::(.*)Runner$/, '\\1').downcase} [options] [table_spec] [table_spec] ...
 
   #{summary_description}
 

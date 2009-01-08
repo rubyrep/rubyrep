@@ -6,13 +6,11 @@ describe SyncRunner do
   before(:each) do
   end
 
-  it "rrsync.rb should call ScanRunner#run" do
-    SyncRunner.should_receive(:run).with(ARGV).and_return(0)
-    Kernel.any_instance_should_receive(:exit) {
-      load File.dirname(__FILE__) + '/../bin/rrsync.rb'
-    }
+  it "should register itself with CommandRunner" do
+    CommandRunner.commands['sync'][:command].should == SyncRunner
+    CommandRunner.commands['sync'][:description].should be_an_instance_of(String)
   end
-  
+
   it "prepare_table_pairs should sort the tables" do
     session = Session.new standard_config
     session.should_receive(:sort_table_pairs).
