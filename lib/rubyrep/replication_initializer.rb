@@ -233,10 +233,11 @@ module RR
       puts "Verifying RubyRep tables"
       ensure_infrastructure
 
-      unsynced_table_pairs = []
-
-      puts "Verifying sequence and trigger setup of replicated tables"
+      puts "Checking for and removing rubyrep triggers from unconfigured tables"
       restore_unconfigured_tables
+
+      puts "Verifying rubyrep triggers of configured tables"
+      unsynced_table_pairs = []
       table_pairs = session.sort_table_pairs(session.configured_table_pairs)
       table_pairs.each do |table_pair|
         table_options = options(table_pair[:left])
