@@ -258,6 +258,44 @@ describe ReplicationInitializer do
     initializer.exclude_rubyrep_tables
   end
 
+  it "restore_tables should remove triggers and sequences setups of unconfigured tables" do
+    session = Session.new
+    initializer = ReplicationInitializer.new session
+    begin
+      ['scanner_left_records_only', 'scanner_records'].each do |table|
+        initializer.create_trigger(:left, table)
+        initializer.create_trigger(:right, table)
+        initializer.ensure_sequence_setup(
+          {:left => table, :right => table},
+          2, 0, 1
+        )
+        session.right.insert_record table, {'id' => 100, 'name' => 'bla'}
+      end
+
+      # verify that the unconfigured tables are restored and pending changes deleted
+      initializer.restore_unconfigured_tables
+      initializer.trigger_exists?(:right, 'scanner_records').should be_false
+      session.right.outdated_sequence_values('rr', 'scanner_records', 2, 1).size.should == 1
+      session.right.select_one("select * from rr_change_log where change_table = 'scanner_records'").should be_nil
+
+      # verify that the configured tables are not touched
+      initializer.trigger_exists?(:right, 'scanner_left_records_only').should be_true
+      session.right.outdated_sequence_values('rr', 'scanner_left_records_only', 2, 1).size.should == 0
+      session.right.select_one("select * from rr_change_log where change_table = 'scanner_left_records_only'").should_not be_nil
+    ensure
+      ['scanner_left_records_only', 'scanner_records'].each do |table|
+        [:left, :right].each do |database|
+          if initializer.trigger_exists?(database, table)
+            initializer.drop_trigger(database, table)
+          end
+          initializer.clear_sequence_setup database, table
+        end
+        session.right.delete_record table, {'id' => 100}
+      end
+      session.right.execute "delete from rr_change_log"
+    end
+  end
+
   it "prepare_replication should prepare the replication" do
     session = nil
     initializer = nil
@@ -274,6 +312,7 @@ describe ReplicationInitializer do
     begin
       initializer = ReplicationInitializer.new(session)
       initializer.should_receive :ensure_infrastructure
+      initializer.should_receive :restore_unconfigured_tables
       initializer.prepare_replication
       # verify sequences have been setup
       session.left.outdated_sequence_values('rr','scanner_left_records_only', 2, 0).should == {}

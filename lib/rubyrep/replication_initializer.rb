@@ -208,6 +208,24 @@ module RR
       end
     end
 
+    # Checks for tables that have triggers but are not in the list of configured
+    # tables. Removes triggers and restores sequences of those tables.
+    def restore_unconfigured_tables
+      configured_table_pairs = session.configured_table_pairs
+      [:left, :right].each do |database|
+        configured_tables = configured_table_pairs.map {|table_pair| table_pair[database]}
+        unconfigured_tables = session.send(database).tables - configured_tables
+        unconfigured_tables.each do |table|
+          if trigger_exists?(database, table)
+            drop_trigger(database, table)
+            session.send(database).execute(
+              "delete from #{options[:rep_prefix]}_change_log where change_table = '#{table}'")
+          end
+          clear_sequence_setup(database, table)
+        end
+      end
+    end
+
     # Prepares the database / tables for replication.
     def prepare_replication
       exclude_rubyrep_tables
@@ -218,6 +236,7 @@ module RR
       unsynced_table_pairs = []
 
       puts "Verifying sequence and trigger setup of replicated tables"
+      restore_unconfigured_tables
       table_pairs = session.sort_table_pairs(session.configured_table_pairs)
       table_pairs.each do |table_pair|
         table_options = options(table_pair[:left])
