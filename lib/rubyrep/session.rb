@@ -112,8 +112,8 @@ module RR
     # will be used instead of the configured table specs.
     def configured_table_pairs(included_table_specs = [])
       resolver = TableSpecResolver.new self
-      included_table_specs = Initializer.configuration.included_table_specs if included_table_specs.empty?
-      resolver.resolve included_table_specs, Initializer.configuration.excluded_table_specs
+      included_table_specs = configuration.included_table_specs if included_table_specs.empty?
+      resolver.resolve included_table_specs, configuration.excluded_table_specs
     end
 
     # Orders the array of table pairs as per primary key / foreign key relations

@@ -3,9 +3,7 @@ License.txt
 Manifest.txt
 README.txt
 Rakefile
-bin/rrproxy.rb
-bin/rrscan.rb
-bin/rrsync.rb
+bin/rubyrep.rb
 config/hoe.rb
 config/mysql_config.rb
 config/postgres_config.rb
@@ -14,6 +12,7 @@ config/requirements.rb
 config/test_config.rb
 lib/rubyrep.rb
 lib/rubyrep/base_runner.rb
+lib/rubyrep/command_runner.rb
 lib/rubyrep/committers/buffered_committer.rb
 lib/rubyrep/committers/committers.rb
 lib/rubyrep/configuration.rb
@@ -38,6 +37,7 @@ lib/rubyrep/replication_extenders/replication_extenders.rb
 lib/rubyrep/replication_helper.rb
 lib/rubyrep/replication_initializer.rb
 lib/rubyrep/replication_run.rb
+lib/rubyrep/replication_runner.rb
 lib/rubyrep/replicators/replicators.rb
 lib/rubyrep/replicators/two_way_replicator.rb
 lib/rubyrep/scan_progress_printers/progress_bar.rb
@@ -69,6 +69,7 @@ sims/performance/performance.rake
 sims/sim_helper.rb
 spec/base_runner_spec.rb
 spec/buffered_committer_spec.rb
+spec/command_runner_spec.rb
 spec/committers_spec.rb
 spec/configuration_spec.rb
 spec/connection_extender_interface_spec.rb
@@ -95,6 +96,7 @@ spec/replication_extenders_spec.rb
 spec/replication_helper_spec.rb
 spec/replication_initializer_spec.rb
 spec/replication_run_spec.rb
+spec/replication_runner_spec.rb
 spec/replicators_spec.rb
 spec/rubyrep_spec.rb
 spec/scan_progress_printers_spec.rb

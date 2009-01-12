@@ -33,6 +33,7 @@ module RR
       :sequence_increment => 2,
       :left_sequence_offset => 0,
       :right_sequence_offset => 1,
+      :replication_interval => 1,
 
       :rep_prefix => 'rr',
       :key_sep => '|',
@@ -76,6 +77,7 @@ module RR
     #   Default sequence offset for the table in the according data base.
     #   E. g. with a +sequence_increment+ of 2, an offset of 0 will produce even,
     #   an offset of 1 will produce odd numbers.
+    # * :+replication_interval+: time in seconds between replication runs
     attr_reader :options
     
     # Merges the specified +options+ hash into the existing options
