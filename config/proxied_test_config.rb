@@ -1,3 +1,6 @@
+# Rubyrep configuration file.
+# "Proxyfies" test_config.rb.
+
 load File.dirname(__FILE__) + '/test_config.rb'
 
 # $start_proxy_as_external_process = true

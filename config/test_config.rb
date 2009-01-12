@@ -1,3 +1,10 @@
+# Simple rubyrep configuration file for use by rspec tests.
+# Can be tweaked to either use mysql or postgresql.
+#
+# IMPORTANT:
+# Due to configuration of committer :default will NOT work for manual running
+# of rubyrep commands!
+
 database = ENV['RR_TEST_DB'] ? ENV['RR_TEST_DB'] : :postgres
 # $start_proxy_as_external_process = true
 
