@@ -209,11 +209,6 @@ module RR
       self.type = :no_change
     end
 
-    # Returns the name of the change log table
-    def change_log_table
-      @change_log_table ||= "#{session.configuration.options[:rep_prefix]}_change_log"
-    end
-
     # A hash describing how the change state morph based on newly found change
     # records.
     # * key: String consisting of 2 letters
