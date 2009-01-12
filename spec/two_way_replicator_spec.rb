@@ -453,6 +453,42 @@ describe Replicators::TwoWayReplicator do
     end
   end
 
+  it "replicate_difference should handle inserts failing due the new record being deleted after the original diff was loaded" do
+    begin
+      config = deep_copy(standard_config)
+      config.options[:committer] = :never_commit
+
+      session = Session.new(config)
+
+      session.left.insert_record 'rr_change_log', {
+        'change_table' => 'extender_no_record',
+        'change_key' => 'id|1',
+        'change_type' => 'I',
+        'change_time' => Time.now
+      }
+
+      rep_run = ReplicationRun.new session
+      helper = ReplicationHelper.new(rep_run)
+      replicator = Replicators::TwoWayReplicator.new(helper)
+
+      diff = ReplicationDifference.new session
+      diff.load
+
+      session.left.insert_record 'rr_change_log', {
+        'change_table' => 'extender_no_record',
+        'change_key' => 'id|1',
+        'change_type' => 'D',
+        'change_time' => Time.now
+      }
+      replicator.replicate_difference diff, 2
+
+      # no rspec expectation: success is when we get till here without exception
+    ensure
+      Committers::NeverCommitter.rollback_current_session
+      session.left.execute "delete from rr_change_log" if session
+    end
+  end
+
   it "replicate_difference should raise Exception if all replication attempts have been exceeded" do
     rep_run = ReplicationRun.new Session.new
     helper = ReplicationHelper.new(rep_run)
