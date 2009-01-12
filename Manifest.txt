@@ -8,6 +8,7 @@ config/hoe.rb
 config/mysql_config.rb
 config/postgres_config.rb
 config/proxied_test_config.rb
+config/rep_config.rb
 config/requirements.rb
 config/test_config.rb
 lib/rubyrep.rb
