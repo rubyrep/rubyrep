@@ -73,12 +73,13 @@ module RR
     # * +details+: string with further details regarding the sync
     def log_sync_outcome(row, type, outcome, details = nil)
       ensure_event_log
-      key = if primary_key_names.size == 1
-        row[primary_key_names[0]]
+      if primary_key_names.size == 1
+        key = row[primary_key_names[0]]
       else
-        primary_key_names.map do |column_name|
+        key_parts = primary_key_names.map do |column_name|
           %Q("#{column_name}"=>#{row[column_name].to_s.inspect})
-        end.join(', ')
+        end
+        key = key_parts.join(', ')
       end
       sync_details = details == nil ? nil : details[0...ReplicationInitializer::LONG_DESCRIPTION_SIZE]
 
