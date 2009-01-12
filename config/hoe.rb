@@ -1,4 +1,5 @@
-require 'rubyrep/version'
+$LOAD_PATH.unshift File.dirname(__FILE__) + '/../lib/rubyrep'
+#require 'rubyrep/version'
 
 AUTHOR = 'Arndt Lehmann'  # can also be an array of Authors
 EMAIL = "arndtlehmann@arndtlehman.com"
