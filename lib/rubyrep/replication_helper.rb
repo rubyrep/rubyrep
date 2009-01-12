@@ -66,12 +66,13 @@ module RR
     def log_replication_outcome(diff, outcome, details = nil)
       table = diff.changes[:left].table
       key = diff.changes[:left].key
-      key = if key.size == 1
-        key.values[0]
+      if key.size == 1
+        key = key.values[0]
       else
-        session.left.primary_key_names(table).map do |column_name|
+        key_parts = session.left.primary_key_names(table).map do |column_name|
           %Q("#{column_name}"=>#{key[column_name].to_s.inspect})
-        end.join(', ')
+        end
+        key = key_parts.join(', ')
       end
       rep_details = details == nil ? nil : details[0...ReplicationInitializer::LONG_DESCRIPTION_SIZE]
       diff_dump = diff.to_yaml[0...ReplicationInitializer::DIFF_DUMP_SIZE]
