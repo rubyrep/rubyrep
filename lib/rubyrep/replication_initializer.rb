@@ -259,11 +259,15 @@ module RR
         "#{table_pair[:left]}, #{table_pair[:right]}"
       end
 
-      puts "Executing initial table syncs" unless unsynced_table_specs.empty?
-      runner = SyncRunner.new
-      runner.session = session
-      runner.options = {:table_specs => unsynced_table_specs}
-      runner.execute
+      unless unsynced_table_specs.empty?
+        puts "Executing initial table syncs"
+        runner = SyncRunner.new
+        runner.session = session
+        runner.options = {:table_specs => unsynced_table_specs}
+        runner.execute
+      end
+      
+      puts "Starting replication"
     end
   end
 

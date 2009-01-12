@@ -311,8 +311,8 @@ describe ReplicationInitializer do
     $stdout = StringIO.new
     begin
       initializer = ReplicationInitializer.new(session)
-      initializer.should_receive :ensure_infrastructure
-      initializer.should_receive :restore_unconfigured_tables
+      initializer.should_receive(:ensure_infrastructure).any_number_of_times
+      initializer.should_receive(:restore_unconfigured_tables).any_number_of_times
       initializer.prepare_replication
       # verify sequences have been setup
       session.left.outdated_sequence_values('rr','scanner_left_records_only', 2, 0).should == {}
@@ -335,6 +335,10 @@ describe ReplicationInitializer do
 
       # verify that the 'rr_change_log' table was not touched
       initializer.trigger_exists?(:left, 'rr_change_log').should be_false
+
+      # verify that syncing is done only for unsynced tables
+      SyncRunner.should_not_receive(:new)
+      initializer.prepare_replication
 
     ensure
       $stdout = org_stdout
