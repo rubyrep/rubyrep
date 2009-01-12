@@ -54,15 +54,18 @@ EOS
     def self.run(args)
       if args.empty?
         show_help
-        1
-      elsif args[0] == '--help' or (args[0] == 'help' and args.size == 1)
+        return 1
+      end
+      command = args[0]
+      command = 'help' if command == '--help'
+      if command == 'help' and args.size == 1
         show_help
         0
-      elsif args[0] == '--version'
+      elsif command == '--version'
         show_version
         0
-      elsif commands.include? args[0]
-        commands[args[0]][:command].run(args.slice(1, 1_000_000))
+      elsif commands.include? command
+        commands[command][:command].run(args.slice(1, 1_000_000))
       else
         show_help
         1
