@@ -45,7 +45,7 @@ Runs the specified rubyrep command.
 Available commands:
 EOS
       commands.sort.each do |command_name, command_hash|
-        $stderr.puts "#{command_name.center(15)} #{command_hash[:description]}"
+        $stderr.puts "  #{command_name.ljust(15)} #{command_hash[:description]}"
       end
     end
 
