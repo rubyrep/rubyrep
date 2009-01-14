@@ -42,7 +42,7 @@ module RR
     def manual_primary_keys(db_arm)
       manual_primary_keys = {}
       resolver = TableSpecResolver.new self
-      table_pairs = resolver.resolve configuration.included_table_specs
+      table_pairs = resolver.resolve configuration.included_table_specs, [], false
       table_pairs.each do |table_pair|
         key_names = configuration.options_for_table(table_pair[:left])[:primary_key_names]
         if key_names

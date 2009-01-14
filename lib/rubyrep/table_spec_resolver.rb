@@ -5,14 +5,38 @@ module RR
     
     # The +Session+ instance from which the table specifications are resolved.
     attr_accessor :session
-    
-    # Caches the table name array returned by 'left' database session
-    attr_accessor :tables
-    
+
+    # Returns the array of tables of the specified database. Caches the table array.
+    # * database: either :+left+ or :+right+
+    def tables(database)
+      @table_cache ||= {}
+      unless @table_cache[database]
+        @table_cache[database] = session.send(database).tables
+      end
+      @table_cache[database]
+    end
+
     # Creates a resolver that works based on the given +Session+ instance.
     def initialize(session)
       self.session = session
-      self.tables = session.left.tables
+    end
+
+    # Returns all those tables from the given table_pairs that do not exist.
+    # * +table_pairs+: same as described at #table_pairs_without_excluded
+    # 
+    # Returns:
+    # A hash with keys :+left+ and +:right+, with the value for each key being
+    # an array of non-existing tables for the according database.
+    # The keys only exist if there are according missing tables.
+    def non_existing_tables(table_pairs)
+      [:left, :right].inject({}) do |memo, database|
+        found_tables = table_pairs.inject([]) do |phantom_tables, table_pair|
+          phantom_tables << table_pair[database] unless tables(database).include?(table_pair[database])
+          phantom_tables
+        end
+        memo[database] = found_tables unless found_tables.empty?
+        memo
+      end
     end
     
     # Resolves the given array of table specificifications.
@@ -21,14 +45,28 @@ module RR
     # * actual regular expressions
     # If +excluded_table_specs+ is provided, removes all tables that match it
     # (even if otherwise matching +included_table_specs+).
+    #
+    # If +verify+ is +true+, raises an exception if any non-existing tables are
+    # specified.
+    # 
     # Returns an array of table name pairs in Hash form.
     # For example something like
     #   [{:left => 'my_table', :right => 'my_table_backup'}]
+    # 
     # Takes care that a table is only returned once.
-    def resolve(included_table_specs, excluded_table_specs = [])
+    def resolve(included_table_specs, excluded_table_specs = [], verify = true)
       table_pairs = expand_table_specs(included_table_specs)
       table_pairs = table_pairs_without_duplicates(table_pairs)
-      table_pairs_without_excluded(table_pairs, excluded_table_specs)
+      table_pairs = table_pairs_without_excluded(table_pairs, excluded_table_specs)
+
+      if verify
+        non_existing_tables = non_existing_tables(table_pairs)
+        unless non_existing_tables.empty?
+          raise "non-existing tables specified: #{non_existing_tables.inspect}"
+        end
+      end
+
+      table_pairs
     end
 
     # Helper for #resolve
@@ -46,7 +84,7 @@ module RR
         case table_spec
         when /^\/.*\/$/ # matches e. g. '/^user/'
           table_spec = table_spec.sub(/^\/(.*)\/$/,'\1') # remove leading and trailing slash
-          matching_tables = tables.grep(Regexp.new(table_spec, Regexp::IGNORECASE, 'U'))
+          matching_tables = tables(:left).grep(Regexp.new(table_spec, Regexp::IGNORECASE, 'U'))
           matching_tables.each do |table|
             table_pairs << {:left => table, :right => table}
           end
