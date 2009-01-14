@@ -130,7 +130,7 @@ describe ReplicationRunner do
     found
   end
 
-  it "execute should process the specified tables" do
+  it "execute should start the replication" do
     config = deep_copy(standard_config)
     config.options[:committer] = :buffered_commit
     config.options[:replication_interval] = 0.01
