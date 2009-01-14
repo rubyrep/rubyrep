@@ -25,7 +25,7 @@ describe "ConnectionExtender", :shared => true do
   it "primary_key_names called for a non-existing table should throw an exception" do
     session = Session.new
     lambda {session.left.primary_key_names('non_existing_table')} \
-      .should raise_error(RuntimeError, 'table does not exist')
+      .should raise_error(RuntimeError, /.*non_existing_table.*not exist/)
   end
 
   it "referenced_tables should identify the correct table dependencies" do

@@ -133,7 +133,7 @@ module RR
       # Returns an ordered list of primary key column names of the given table
       def primary_key_names(table)
         if not tables.include? table
-          raise "table does not exist"
+          raise "table '#{table}' does not exist"
         end
         columns = []
         result_set = @connection.connection.getMetaData.getPrimaryKeys(nil, nil, table);

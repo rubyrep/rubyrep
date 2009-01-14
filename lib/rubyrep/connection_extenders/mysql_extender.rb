@@ -49,7 +49,7 @@ module RR
           where table_schema = database() and table_name = '#{table}'
         end_sql
         if row.nil?
-          raise "table does not exist"
+          raise "table '#{table}' does not exist"
         end
         
         rows = self.select_all(<<-end_sql)

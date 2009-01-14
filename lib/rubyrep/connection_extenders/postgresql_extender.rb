@@ -131,7 +131,7 @@ module RR
           WHERE relname = '#{table}'
         end_sql
         if row.nil?
-        raise "table does not exist"
+        raise "table '#{table}' does not exist"
       end
         
       row = self.select_one(<<-end_sql)

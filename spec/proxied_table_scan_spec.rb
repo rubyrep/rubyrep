@@ -28,7 +28,7 @@ describe ProxiedTableScan do
   it "initialize should raise exception if table doesn't have primary keys" do
     session = Session.new
     lambda {ProxiedTableScan.new session, 'extender_without_key'} \
-      .should raise_error(RuntimeError, "Table extender_without_key doesn't have a primary key. Cannot scan.")
+      .should raise_error(RuntimeError, /.*extender_without_key.*primary key/)
   end
   
   it "block_size should return the :proxy_block_size value of the session options" do

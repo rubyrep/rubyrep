@@ -10,7 +10,7 @@ describe TableScan do
   it "initialize should raise exception if table doesn't have primary keys" do
     session = Session.new
     lambda {TableScan.new session, 'extender_without_key'} \
-      .should raise_error(RuntimeError, "Table extender_without_key doesn't have a primary key. Cannot scan.")
+      .should raise_error(RuntimeError, /.*extender_without_key.*primary key/)
   end
 
   it "initialize should cache the primary keys of the given table" do
