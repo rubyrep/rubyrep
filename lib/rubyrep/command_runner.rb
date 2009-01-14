@@ -40,7 +40,7 @@ module RR
       $stderr.puts <<EOS
 Usage: #{$0} [--help] [--version] command [parameters, ...]
 
-Runs the specified rubyrep command.
+Asynchronous master-master replication of relational databases.
 
 Available commands:
 EOS
