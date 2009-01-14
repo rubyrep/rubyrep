@@ -6,6 +6,11 @@ describe ReplicationRunner do
   before(:each) do
   end
 
+  it "should register itself with CommandRunner" do
+    CommandRunner.commands['replicate'][:command].should == ReplicationRunner
+    CommandRunner.commands['replicate'][:description].should be_an_instance_of(String)
+  end
+
   it "process_options should make options as nil and teturn status as 1 if command line parameters are unknown" do
     # also verify that an error message is printed
     $stderr.should_receive(:puts).any_number_of_times
