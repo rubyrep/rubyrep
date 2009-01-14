@@ -23,6 +23,7 @@ lib/rubyrep/connection_extenders/mysql_extender.rb
 lib/rubyrep/connection_extenders/postgresql_extender.rb
 lib/rubyrep/database_proxy.rb
 lib/rubyrep/direct_table_scan.rb
+lib/rubyrep/generate_runner.rb
 lib/rubyrep/initializer.rb
 lib/rubyrep/logged_change.rb
 lib/rubyrep/proxied_table_scan.rb
@@ -81,6 +82,7 @@ spec/database_rake_spec.rb
 spec/db_specific_connection_extenders_spec.rb
 spec/db_specific_replication_extenders_spec.rb
 spec/direct_table_scan_spec.rb
+spec/generate_runner_spec.rb
 spec/initializer_spec.rb
 spec/logged_change_spec.rb
 spec/postgresql_replication_spec.rb
