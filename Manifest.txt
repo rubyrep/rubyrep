@@ -3,7 +3,7 @@ License.txt
 Manifest.txt
 README.txt
 Rakefile
-bin/rubyrep.rb
+bin/rubyrep
 config/hoe.rb
 config/mysql_config.rb
 config/postgres_config.rb

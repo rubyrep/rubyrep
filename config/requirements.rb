@@ -15,7 +15,7 @@ require 'rubygems'
 end
 
 # Load gem builder / ruby-forge integration gems. Complain but continue if not available.
-%w[hoe newgem rubigen].each do |req_gem|
+%w[hoe].each do |req_gem|
   begin
     require req_gem
   rescue LoadError

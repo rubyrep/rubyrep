@@ -3,7 +3,7 @@ $LOAD_PATH.unshift File.dirname(__FILE__) + '/../lib/rubyrep'
 
 AUTHOR = 'Arndt Lehmann'  # can also be an array of Authors
 EMAIL = "arndtlehmann@arndtlehman.com"
-DESCRIPTION = "description of gem"
+DESCRIPTION = "Asynchronous master-master replication of relational databases."
 GEM_NAME = 'rubyrep' # what ppl will type to install your gem
 RUBYFORGE_PROJECT = 'rubyrep' # The unix name for your project
 HOMEPATH = "http://#{RUBYFORGE_PROJECT}.rubyforge.org"
@@ -61,6 +61,10 @@ hoe = Hoe.new(GEM_NAME, VERS) do |p|
   # == Optional
   p.changes = p.paragraphs_of("History.txt", 0..1).join("\\n\\n")
   #p.extra_deps = []     # An array of rubygem dependencies [name, version], e.g. [ ['active_support', '>= 1.3.1'] ]
+  p.extra_deps = [
+    ['activesupport', '>= 2.2.2'],
+    ['activerecord' , '>= 2.2.2']
+  ]
   
   #p.spec_extras = {}    # A hash of extra values to set in the gemspec.
   

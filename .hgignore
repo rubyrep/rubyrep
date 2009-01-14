@@ -3,3 +3,4 @@ coverage/*
 profile/*
 doc/*
 website/.*\.html$
+pkg/*

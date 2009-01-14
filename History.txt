@@ -1,4 +1,4 @@
-== 0.0.1 2007-10-23
+== 0.0.1 2009-01-14
 
 * 1 major enhancement:
   * Initial release
