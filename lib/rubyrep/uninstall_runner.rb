@@ -24,7 +24,7 @@ module RR
 
       parser = OptionParser.new do |opts|
         opts.banner = <<EOS
-Usage: #{$0} replicate [options]
+Usage: #{$0} uninstall [options]
 
   Removes all rubyrep tables, triggers, etc. from a database.
 EOS
