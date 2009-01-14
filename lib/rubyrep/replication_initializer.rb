@@ -182,7 +182,7 @@ module RR
 
     # Checks in both databases, if the activity marker tables exist and if not,
     # creates them.
-    def ensure_activity_marker_tables
+    def ensure_activity_markers
       table_name = "#{options[:rep_prefix]}_active"
       [:left, :right].each do |database|
         unless session.send(database).tables.include? table_name
@@ -198,20 +198,27 @@ module RR
       create_event_log unless event_log_exists?
     end
 
-    # Checks in both databases, if the infrastructure tables (change log, event
-    # log) exist and creates them if necessary.
-    def ensure_infrastructure
-      ensure_activity_marker_tables
-      ensure_event_log
+    # Checks in both databases, if the change log tables exists and creates them
+    # if necessary
+    def ensure_change_logs
       [:left, :right].each do |database|
         create_change_log(database) unless change_log_exists?(database)
       end
     end
 
+    # Checks in both databases, if the infrastructure tables (change log, event
+    # log) exist and creates them if necessary.
+    def ensure_infrastructure
+      ensure_activity_markers
+      ensure_change_logs
+      ensure_event_log
+    end
+
     # Checks for tables that have triggers but are not in the list of configured
     # tables. Removes triggers and restores sequences of those tables.
-    def restore_unconfigured_tables
-      configured_table_pairs = session.configured_table_pairs
+    # * +configured_table_pairs+:
+    #   An array of table pairs (e. g. [{:left => 'xy', :right => 'xy2'}]).
+    def restore_unconfigured_tables(configured_table_pairs = session.configured_table_pairs)
       [:left, :right].each do |database|
         configured_tables = configured_table_pairs.map {|table_pair| table_pair[database]}
         unconfigured_tables = session.send(database).tables - configured_tables

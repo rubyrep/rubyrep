@@ -196,20 +196,20 @@ describe ReplicationInitializer do
     initializer.change_log_exists?(:left).should be_false
   end
 
-  it "ensure_activity_marker_tables should not create the tables if they already exist" do
+  it "ensure_activity_markers should not create the tables if they already exist" do
     session = Session.new
     initializer = ReplicationInitializer.new(session)
     session.left.should_not_receive(:create_table)
-    initializer.ensure_activity_marker_tables
+    initializer.ensure_activity_markers
   end
 
-  it "ensure_activity_marker_tables should create the marker tables" do
+  it "ensure_activity_markers should create the marker tables" do
     begin
       config = deep_copy(standard_config)
       config.options[:rep_prefix] = 'rx'
       session = Session.new(config)
       initializer = ReplicationInitializer.new(session)
-      initializer.ensure_activity_marker_tables
+      initializer.ensure_activity_markers
       session.left.tables.include?('rx_active').should be_true
       session.right.tables.include?('rx_active').should be_true
     
@@ -232,23 +232,58 @@ describe ReplicationInitializer do
     initializer.ensure_infrastructure
   end
 
-  it "ensure_infrastructure should create the infrastructure tables" do
+  it "ensure_change_logs should create the change_log tables" do
+    session = nil
     begin
       config = deep_copy(standard_config)
       config.options[:rep_prefix] = 'rx'
       session = Session.new(config)
       initializer = ReplicationInitializer.new(session)
-      initializer.should_receive :ensure_activity_marker_tables
-      initializer.ensure_infrastructure
-      session.left.tables.include?('rx_change_log').should be_true
-      session.right.tables.include?('rx_change_log').should be_true
-      session.left.tables.include?('rx_event_log').should be_true
+      initializer.ensure_change_logs
     ensure
       if session
         session.left.drop_table 'rx_change_log'
         session.right.drop_table 'rx_change_log'
       end
     end
+  end
+
+  it "ensure_change_logs should do nothing if the change_log tables already exist" do
+    session = Session.new
+    initializer = ReplicationInitializer.new session
+    initializer.should_not_receive(:create_change_log)
+
+    initializer.ensure_change_logs
+  end
+
+  it "ensure_event_log should create the event_log table" do
+    session = nil
+    begin
+      config = deep_copy(standard_config)
+      config.options[:rep_prefix] = 'rx'
+      session = Session.new(config)
+      initializer = ReplicationInitializer.new(session)
+      initializer.ensure_event_log
+    ensure
+      session.left.drop_table 'rx_event_log' if session
+    end
+  end
+
+  it "ensure_event_log should do nothing if the event_log table already exist" do
+    session = Session.new
+    initializer = ReplicationInitializer.new session
+    initializer.should_not_receive(:create_event_log)
+
+    initializer.ensure_event_log
+  end
+
+  it "ensure_infrastructure should create the infrastructure tables" do
+    session = Session.new
+    initializer = ReplicationInitializer.new(session)
+    initializer.should_receive :ensure_activity_markers
+    initializer.should_receive :ensure_change_logs
+    initializer.should_receive :ensure_event_log
+    initializer.ensure_infrastructure
   end
 
   it "exclude_ruby_rep_tables should exclude the correct system tables" do
