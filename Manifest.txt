@@ -58,6 +58,7 @@ lib/rubyrep/table_spec_resolver.rb
 lib/rubyrep/table_sync.rb
 lib/rubyrep/trigger_mode_switcher.rb
 lib/rubyrep/type_casting_cursor.rb
+lib/rubyrep/uninstall_runner.rb
 lib/rubyrep/version.rb
 script/destroy
 script/generate
@@ -119,6 +120,7 @@ spec/trigger_mode_switcher_spec.rb
 spec/two_way_replicator_spec.rb
 spec/two_way_syncer_spec.rb
 spec/type_casting_cursor_spec.rb
+spec/uninstall_runner_spec.rb
 tasks/database.rake
 tasks/deployment.rake
 tasks/environment.rake
