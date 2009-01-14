@@ -212,7 +212,7 @@ describe ReplicationInitializer do
       initializer.ensure_activity_markers
       session.left.tables.include?('rx_active').should be_true
       session.right.tables.include?('rx_active').should be_true
-    
+
       # right columns?
       columns = session.left.columns('rx_active')
       columns.size.should == 1
@@ -230,6 +230,56 @@ describe ReplicationInitializer do
     initializer = ReplicationInitializer.new(session)
     session.left.should_not_receive(:create_table)
     initializer.ensure_infrastructure
+  end
+
+  it "drop_change_logs should drop the change_log tables" do
+    session = Session.new
+    initializer = ReplicationInitializer.new session
+    initializer.should_receive(:drop_change_log).with(:left)
+    initializer.should_receive(:drop_change_log).with(:right)
+
+    initializer.drop_change_logs
+  end
+
+  it "drop_change_logs should not do anything if change_log tables do not exist" do
+    config = deep_copy(standard_config)
+    config.options[:rep_prefix] = 'rx'
+    session = Session.new(config)
+    initializer = ReplicationInitializer.new session
+    initializer.should_not_receive(:drop_change_log).with(:left)
+    initializer.should_not_receive(:drop_change_log).with(:right)
+
+    initializer.drop_change_logs
+  end
+
+  it "drop_activity_markers should drop the activity_marker tables" do
+    session = Session.new
+    initializer = ReplicationInitializer.new session
+    session.left.should_receive(:drop_table).with('rr_active')
+    session.right.should_receive(:drop_table).with('rr_active')
+
+    initializer.drop_activity_markers
+  end
+
+  it "drop_activity_markers should not do anything if the activity_marker tables do not exist" do
+    config = deep_copy(standard_config)
+    config.options[:rep_prefix] = 'rx'
+    session = Session.new(config)
+    initializer = ReplicationInitializer.new session
+    session.left.should_not_receive(:drop_table).with('rr_active')
+    session.right.should_not_receive(:drop_table).with('rr_active')
+
+    initializer.drop_change_logs
+  end
+
+  it "drop_infrastructure should drop all infrastructure tables" do
+    session = Session.new
+    initializer = ReplicationInitializer.new session
+    initializer.should_receive(:drop_event_log)
+    initializer.should_receive(:drop_change_logs)
+    initializer.should_receive(:drop_activity_markers)
+
+    initializer.drop_infrastructure
   end
 
   it "ensure_change_logs should create the change_log tables" do

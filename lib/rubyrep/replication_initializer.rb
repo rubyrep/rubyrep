@@ -214,6 +214,30 @@ module RR
       ensure_event_log
     end
 
+    # Checks in both databases, if the change_log tables exist. If yes, drops them.
+    def drop_change_logs
+      [:left, :right].each do |database|
+        drop_change_log(database) if change_log_exists?(database)
+      end
+    end
+
+    # Checks in both databases, if the activity_marker tables exist. If yes, drops them.
+    def drop_activity_markers
+      table_name = "#{options[:rep_prefix]}_active"
+      [:left, :right].each do |database|
+        if session.send(database).tables.include? table_name
+          session.send(database).drop_table table_name
+        end
+      end
+    end
+
+    # Removes all rubyrep infrastructure tables from both databases.
+    def drop_infrastructure
+      drop_event_log if event_log_exists?
+      drop_change_logs
+      drop_activity_markers
+    end
+
     # Checks for tables that have triggers but are not in the list of configured
     # tables. Removes triggers and restores sequences of those tables.
     # * +configured_table_pairs+:
@@ -273,7 +297,7 @@ module RR
         runner.options = {:table_specs => unsynced_table_specs}
         runner.execute
       end
-      
+
       puts "Starting replication"
     end
   end
