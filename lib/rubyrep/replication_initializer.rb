@@ -72,16 +72,18 @@ module RR
     # numbers.
     def ensure_sequence_setup(table_pair, increment, left_offset, right_offset)
       table_options = options(table_pair[:left])
-      rep_prefix = table_options[:rep_prefix]
-      left_sequence_values = session.left.outdated_sequence_values \
-        rep_prefix, table_pair[:left], increment, left_offset
-      right_sequence_values = session.right.outdated_sequence_values \
-        rep_prefix, table_pair[:right], increment, right_offset
-      [:left, :right].each do |database|
-        offset = database == :left ? left_offset : right_offset
-        session.send(database).update_sequences \
-          rep_prefix, table_pair[database], increment, offset,
-          left_sequence_values, right_sequence_values, table_options[:sequence_adjustment_buffer]
+      if table_options[:adjust_sequences]
+        rep_prefix = table_options[:rep_prefix]
+        left_sequence_values = session.left.outdated_sequence_values \
+          rep_prefix, table_pair[:left], increment, left_offset
+        right_sequence_values = session.right.outdated_sequence_values \
+          rep_prefix, table_pair[:right], increment, right_offset
+        [:left, :right].each do |database|
+          offset = database == :left ? left_offset : right_offset
+          session.send(database).update_sequences \
+            rep_prefix, table_pair[database], increment, offset,
+            left_sequence_values, right_sequence_values, table_options[:sequence_adjustment_buffer]
+        end
       end
     end
 
@@ -91,9 +93,12 @@ module RR
     # * database: either :+left+ or :+right+
     # * +table_name+: name of the table
     def clear_sequence_setup(database, table)
-      session.send(database).clear_sequence_setup(
-        options(table)[:rep_prefix], table
-      )
+      table_options = options(table)
+      if table_options[:adjust_sequences]
+        session.send(database).clear_sequence_setup(
+          table_options[:rep_prefix], table
+        )
+      end
     end
 
     # Returns +true+ if the change log exists in the specified database.

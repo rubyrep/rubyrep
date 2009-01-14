@@ -84,6 +84,19 @@ describe ReplicationInitializer do
     end
   end
 
+  it "ensure_sequence_setup should not do anything if :adjust_sequences option is not given" do
+    config = deep_copy(Initializer.configuration)
+    config.add_table_options 'sequence_test', :adjust_sequences => false
+    session = Session.new(config)
+    initializer = ReplicationInitializer.new(session)
+
+    session.left.should_not_receive(:update_sequences)
+    session.right.should_not_receive(:update_sequences)
+
+    table_pair = {:left => 'sequence_test', :right => 'sequence_test'}
+    initializer.ensure_sequence_setup table_pair, 3, 2, 2
+  end
+
   it "ensure_sequence_setup should ensure that a table's auto generated ID values have the correct increment and offset" do
     session = nil
     begin
@@ -110,6 +123,17 @@ describe ReplicationInitializer do
         session.send(database).rollback_db_transaction if session
       end
     end
+  end
+
+  it "clear_sequence_setup should not do anything if :adjust_sequences option is not given" do
+    config = deep_copy(Initializer.configuration)
+    config.add_table_options 'sequence_test', :adjust_sequences => false
+    session = Session.new(config)
+    initializer = ReplicationInitializer.new(session)
+
+    session.left.should_not_receive(:clear_sequence_setup)
+
+    initializer.clear_sequence_setup :left, 'sequence_test'
   end
 
   it "clear_sequence_setup should remove custom sequence settings" do

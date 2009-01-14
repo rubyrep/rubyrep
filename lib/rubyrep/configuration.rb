@@ -29,6 +29,7 @@ module RR
       :table_ordering => true,
       :scan_progress_printer => :progress_bar,
       :use_ansi => true_unless_running_on_windows,
+      :adjust_sequences => true,
       :sequence_adjustment_buffer => 10,
       :sequence_increment => 2,
       :left_sequence_offset => 0,
@@ -69,6 +70,9 @@ module RR
     #   used for the initial sync of a table.)
     #   If no +:syncer+ option is specified, than a syncer as named by this
     #   option is used.
+    # * :+adjust_sequences+:
+    #   If true, adjust sequences to avoid number conflicts between left and
+    #   right database during replication.
     # * :+sequence_adjustement_buffer+:
     #   When updating a sequence, this is the additional gap to avoid sequence
     #   conflicts to appear due to concurrent record insertions.
