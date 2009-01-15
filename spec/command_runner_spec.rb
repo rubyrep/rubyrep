@@ -71,7 +71,7 @@ describe CommandRunner do
   it "rubyrep.rb should call CommandRunner#run" do
     CommandRunner.should_receive(:run).with(ARGV).and_return(0)
     Kernel.any_instance_should_receive(:exit) {
-      load File.dirname(__FILE__) + '/../bin/rubyrep.rb'
+      load File.dirname(__FILE__) + '/../bin/rubyrep'
     }
   end
 end
