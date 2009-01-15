@@ -36,8 +36,8 @@ module RR
 
     # Executes the table sync. If a block is given, yields each difference with
     # the following 2 parameters
-    # * +:type+
-    # * +:row+
+    # * +type+
+    # * +row+
     # Purpose: enable display of progress information.
     # See DirectTableScan#run for full description of yielded parameters.
     def run
