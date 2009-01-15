@@ -57,6 +57,20 @@ module RR
     #   The progress printer key as registered by ScanProgressPrinters#register.
     #   Determines how the scan progress is visualized.
     # * :+use_ansi+: Only use ANSI codes for text output if +true+.
+    # Sync specific settings
+    # * :+before_table_sync+:
+    #   A hook that is executed before a table sync.
+    #   Can be either
+    #   * a String: executed as SQL command on both databases.
+    #   * a Proc:
+    #     Called once before the table sync.
+    #     The Proc is called with one parameter: the current SyncHelper instance.
+    #     Through the sync helper there is access to the name of the synced table,
+    #     the current session, etc
+    #     Example:
+    #     lambda {|helper| $stderr.puts "Hook called for #{helper.left_table}."}
+    # * :+after_table_sync+:
+    #   Same as :+before_table_sync+ (but called after the sync is completed).
     # * :+syncer+:
     #   A syncer key as registered by TableSync#register_syncer.
     #   Determines which sync algorithm is used.

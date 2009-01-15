@@ -16,10 +16,46 @@ describe TableSync do
     end
   end
 
+  it "execute_sync_hook should work if the hook is not configured" do
+    session = Session.new standard_config
+    sync = TableSync.new(session, 'scanner_records')
+    sync.execute_sync_hook(:before_table_sync)
+  end
+
+  it "execute_sync_look should execute the given SQL command" do
+    config = deep_copy(standard_config)
+    config.add_table_options 'scanner_records', :before_table_sync => 'dummy_command'
+    session = Session.new config
+    sync = TableSync.new(session, 'scanner_records')
+
+    session.left.should_receive(:execute).with('dummy_command')
+    session.right.should_receive(:execute).with('dummy_command')
+
+    sync.execute_sync_hook(:before_table_sync)
+  end
+
+  it "execute_sync_look should execute the given Proc" do
+    config = deep_copy(standard_config)
+    received_handler = nil
+    config.add_table_options 'scanner_records',
+      :before_table_sync => lambda {|helper| received_handler = helper}
+    session = Session.new config
+    sync = TableSync.new(session, 'scanner_records')
+    sync.helper = :dummy_helper
+
+    sync.execute_sync_hook(:before_table_sync)
+
+    received_handler.should == :dummy_helper
+  end
+
   it "run should synchronize the databases" do
     config = deep_copy(standard_config)
     config.options[:committer] = :never_commit
     config.options[:logged_sync_events] = [:all_conflicts]
+    before_hook_called = false
+    after_hook_called = false
+    config.options[:before_table_sync] = lambda {|helper| before_hook_called = true}
+    config.options[:after_table_sync] = lambda { |helper| after_hook_called = true}
     session = Session.new(config)
     begin
       sync = TableSync.new(session, 'scanner_records')
@@ -35,26 +71,14 @@ describe TableSync do
       left_records = session.left.select_all("select * from scanner_records order by id")
       right_records = session.right.select_all("select * from scanner_records order by id")
       left_records.should == right_records
+
+      # verify that hooks where called
+      before_hook_called.should be_true
+      after_hook_called.should be_true
     ensure
       Committers::NeverCommitter.rollback_current_session
       session.left.execute "delete from rr_event_log"
     end
   end
 
-  #  it "run should hand it's progress reporter to the scan class" do
-  #    begin
-  #      config = deep_copy(standard_config)
-  #      config.options[:committer] = :never_commit
-  #      config.options[:delete] = true
-  #
-  #      session = Session.new(config)
-  #      sync = TableSync.new(session, 'scanner_records')
-  #
-  #      TableScan.any_instance_should_receive(:progress_reporter=) do
-  #        sync.run
-  #      end
-  #    ensure
-  #      Committers::NeverCommitter.rollback_current_session
-  #    end
-  #  end
 end
