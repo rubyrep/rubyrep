@@ -65,7 +65,7 @@ module RR
       unless @table_map
         @table_map = {:left => {}, :right => {}}
         resolver = TableSpecResolver.new self
-        table_pairs = resolver.resolve configuration.included_table_specs
+        table_pairs = resolver.resolve configuration.included_table_specs, [], false
         table_pairs.each do |table_pair|
           @table_map[:left][table_pair[:left]] = table_pair[:right]
           @table_map[:right][table_pair[:right]] = table_pair[:left]
