@@ -30,7 +30,7 @@ module RR
       :scan_progress_printer => :progress_bar,
       :use_ansi => true_unless_running_on_windows,
       :adjust_sequences => true,
-      :sequence_adjustment_buffer => 10,
+      :sequence_adjustment_buffer => 0,
       :sequence_increment => 2,
       :left_sequence_offset => 0,
       :right_sequence_offset => 1,
