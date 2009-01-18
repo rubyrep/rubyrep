@@ -213,7 +213,8 @@ module RR
               BEFORE INSERT ON #{table_name} FOR EACH ROW BEGIN
                 IF NEW.#{column_name} = 0 THEN
                   UPDATE #{sequence_table_name}
-                    SET current_value = LAST_INSERT_ID(current_value + increment);
+                    SET current_value = LAST_INSERT_ID(current_value + increment)
+                    WHERE name = '#{table_name}';
                   SET NEW.#{column_name} = LAST_INSERT_ID();
                 END IF;
               END;
