@@ -77,7 +77,7 @@ EOS
       return status
     end
 
-    # Executes an endless loop of replication runs
+    # Generates a configuration file template.
     def execute
       if File.exists?(options[:file_name])
         raise("Cowardly refuse to overwrite existing file '#{options[:file_name]}'")

@@ -67,7 +67,7 @@ EOS
       @session
     end
 
-    # Executes an endless loop of replication runs
+    # Removes all rubyrep created database objects.
     def execute
       initializer = ReplicationInitializer.new session
       initializer.restore_unconfigured_tables([])
