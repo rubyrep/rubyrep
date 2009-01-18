@@ -193,7 +193,7 @@ module RR
         current_max =
           [left_sequence_values[column_name], right_sequence_values[column_name]].max +
           adjustment_buffer
-        new_start = current_max - (current_max % increment) + offset
+        new_start = current_max - (current_max % increment) + increment + offset
 
         sequence_row = select_one("select current_value, increment, offset from #{sequence_table_name} where name = '#{table_name}'")
         if sequence_row == nil

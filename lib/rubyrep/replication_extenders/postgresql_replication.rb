@@ -147,7 +147,7 @@ module RR
           max_current_value =
             [left_current_value, right_sequence_values[sequence_name]].max +
             adjustment_buffer
-          new_start = max_current_value - (max_current_value % increment) + offset
+          new_start = max_current_value - (max_current_value % increment) + increment + offset
           execute(<<-end_sql)
             alter sequence "#{sequence_name}" increment by #{increment} restart with #{new_start}
           end_sql
