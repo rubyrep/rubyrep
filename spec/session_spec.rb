@@ -88,13 +88,35 @@ describe Session do   # here database connection caching is _not_ disabled
     session.right.manual_primary_keys.should == {'extender_without_key'=>['id']}
   end
 
-  it "manual_primary_keys should return the correct primary keys" do
+  it "manual_primary_keys should return the specified manual primary keys" do
     config = deep_copy(standard_config)
     config.included_table_specs.clear
     config.include_tables "table_with_manual_key, extender_without_key", :primary_key_names => ['id']
     session = Session.new config
     session.manual_primary_keys(:left).should == {'table_with_manual_key'=>['id']}
     session.manual_primary_keys(:right).should == {'extender_without_key'=>['id']}
+  end
+
+  it "manual_primary_keys should follow the :all_keys_limit option" do
+    config = deep_copy(standard_config)
+    config.included_table_specs.clear
+    config.include_tables "scanner_records"
+    config.include_tables "extender_without_key"
+    config.include_tables "table_with_manual_key", :primary_key_names => ['id']
+
+    config.options[:auto_key_limit] = 2
+    session = Session.new config
+    session.manual_primary_keys(:left).should == {
+      'table_with_manual_key' => ['id'],
+      'extender_without_key' => ['first_id', 'second_id']
+    }
+    session.left.primary_key_names('extender_without_key').should == ['first_id', 'second_id']
+
+    config.options[:auto_key_limit] = 1
+    session = Session.new config
+    session.manual_primary_keys(:left).should == {
+      'table_with_manual_key' => ['id']
+    }
   end
 
   it "corresponding_table should return the correct corresponding table" do
@@ -136,28 +158,28 @@ describe Session do   # here database connection caching is _not_ disabled
 
   it "sort_table_pairs should sort the tables correctly" do
     table_pairs = convert_table_array_to_table_pair_array([
-      'scanner_records',
-      'referencing_table',
-      'referenced_table',
-      'scanner_text_key',
-    ])
+        'scanner_records',
+        'referencing_table',
+        'referenced_table',
+        'scanner_text_key',
+      ])
     sorted_table_pairs = convert_table_array_to_table_pair_array([
-      'scanner_records',
-      'referenced_table',
-      'referencing_table',
-      'scanner_text_key',
-    ])
+        'scanner_records',
+        'referenced_table',
+        'referencing_table',
+        'scanner_text_key',
+      ])
 
     Session.new.sort_table_pairs(table_pairs).should == sorted_table_pairs
   end
 
   it "sort_table_pairs should not sort the tables if table_ordering is not enabled in the configuration" do
     table_pairs = convert_table_array_to_table_pair_array([
-      'scanner_records',
-      'referencing_table',
-      'referenced_table',
-      'scanner_text_key',
-    ])
+        'scanner_records',
+        'referencing_table',
+        'referenced_table',
+        'scanner_text_key',
+      ])
     config = deep_copy(standard_config)
     config.options[:table_ordering] = false
     session = Session.new config

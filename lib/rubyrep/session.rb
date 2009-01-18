@@ -32,8 +32,8 @@ module RR
     # Hash to hold under either :left or :right the according Drb / direct DatabaseProxy
     attr_accessor :proxies
 
-    # Creates a hash of manual primary key names as can be specified with
-    # Configuration#add_tables for the given database arm.
+    # Creates a hash of manual primary key names as can be specified with the
+    # Configuration options :+primary_key_names+ or :+auto_key_limit+.
     # * +db_arm: should be either :left or :right
     #
     # Returns the identified manual primary keys. This is a hash with
@@ -44,7 +44,16 @@ module RR
       resolver = TableSpecResolver.new self
       table_pairs = resolver.resolve configuration.included_table_specs, [], false
       table_pairs.each do |table_pair|
-        key_names = configuration.options_for_table(table_pair[:left])[:primary_key_names]
+        options = configuration.options_for_table(table_pair[:left])
+        key_names = options[:primary_key_names]
+        if key_names == nil and options[:auto_key_limit] > 0
+          if left.primary_key_names(table_pair[:left], :raw => true).empty?
+            column_names = left.column_names(table_pair[:left])
+            if column_names.size <= options[:auto_key_limit]
+              key_names = column_names
+            end
+          end
+        end
         if key_names
           table_name = table_pair[db_arm]
           manual_primary_keys[table_name] = key_names

@@ -84,6 +84,16 @@ describe ProxyConnection do
     @connection.primary_key_names('scanner_records').should == ['manual_key']
   end
 
+  it "primary_key_names should not cache or manually overwrite if :raw option is given" do
+    @connection.stub!(:manual_primary_keys).
+      and_return({'scanner_records' => ['manual_key']})
+    key1 = @connection.primary_key_names('scanner_records', :raw => true)
+    key1.should == ['id']
+
+    key2 = @connection.primary_key_names('scanner_records', :raw => true)
+    key1.__id__.should_not == key2.__id__
+  end
+
   it "primary_key_names should cache the primary primary keys" do
     @connection.connection.should_receive(:primary_key_names) \
       .with('dummy_table').once.and_return(['dummy_key'])

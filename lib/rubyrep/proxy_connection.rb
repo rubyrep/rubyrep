@@ -52,8 +52,16 @@ module RR
     attr_accessor :manual_primary_keys
     
     # Returns an array of primary key names for the given +table_name+.
-    # Caches the result for future calls.
-    def primary_key_names(table_name)
+    # Caches the result for future calls. Allows manual overwrites through
+    # the Configuration options +:primary_key_names+ or :+primary_key_only_limit+.
+    #
+    # Parameters:
+    # * +table_name+: name of the table
+    # * +options+: An option hash with the following valid options:
+    #   * :+raw+: if +true+, than don't use manual overwrites and don't cache
+    def primary_key_names(table_name, options = {})
+      return connection.primary_key_names(table_name) if options[:raw]
+      
       self.primary_key_names_cache ||= {}
       result = primary_key_names_cache[table_name]
       unless result

@@ -35,6 +35,7 @@ module RR
       :left_sequence_offset => 0,
       :right_sequence_offset => 1,
       :replication_interval => 1,
+      :auto_key_limit => 0,
 
       :rep_prefix => 'rr',
       :key_sep => '|',
@@ -57,6 +58,14 @@ module RR
     #   The progress printer key as registered by ScanProgressPrinters#register.
     #   Determines how the scan progress is visualized.
     # * :+use_ansi+: Only use ANSI codes for text output if +true+.
+    # * :+auto_key_limit+:
+    #   If a table has no primary keys and no primary keys have been specified
+    #   manually using the :+primary_key_names+ option, then this option can be
+    #   activated to simply use all columns of the table as a big combined key.
+    #   This option specifies up to how many columns a table may have in order
+    #   to use them as one big, combined primary key.
+    #   Typical use case: the database has a lot of tables to map many-to-many
+    #   relationshipts and no combined primary key is set up for them.
     # Sync specific settings
     # * :+before_table_sync+:
     #   A hook that is executed before a table sync.
