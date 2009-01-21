@@ -412,7 +412,7 @@ describe Replicators::TwoWayReplicator do
         'id' => '1',
         'name' => 'bla'
       }
-      session.left.insert_record 'rr_change_log', {
+      session.left.insert_record 'rr_pending_changes', {
         'change_table' => 'extender_no_record',
         'change_key' => 'id|1',
         'change_type' => 'I',
@@ -431,7 +431,7 @@ describe Replicators::TwoWayReplicator do
         'id' => '1',
         'name' => 'blub'
       }
-      session.right.insert_record 'rr_change_log', {
+      session.right.insert_record 'rr_pending_changes', {
         'change_table' => 'extender_no_record',
         'change_key' => 'id|1',
         'change_type' => 'I',
@@ -448,7 +448,7 @@ describe Replicators::TwoWayReplicator do
       if session
         session.left.execute "delete from extender_no_record"
         session.right.execute "delete from extender_no_record"
-        session.left.execute "delete from rr_change_log"
+        session.left.execute "delete from rr_pending_changes"
       end
     end
   end
@@ -460,7 +460,7 @@ describe Replicators::TwoWayReplicator do
 
       session = Session.new(config)
 
-      session.left.insert_record 'rr_change_log', {
+      session.left.insert_record 'rr_pending_changes', {
         'change_table' => 'extender_no_record',
         'change_key' => 'id|1',
         'change_type' => 'I',
@@ -474,7 +474,7 @@ describe Replicators::TwoWayReplicator do
       diff = ReplicationDifference.new session
       diff.load
 
-      session.left.insert_record 'rr_change_log', {
+      session.left.insert_record 'rr_pending_changes', {
         'change_table' => 'extender_no_record',
         'change_key' => 'id|1',
         'change_type' => 'D',
@@ -485,7 +485,7 @@ describe Replicators::TwoWayReplicator do
       # no rspec expectation: success is when we get till here without exception
     ensure
       Committers::NeverCommitter.rollback_current_session
-      session.left.execute "delete from rr_change_log" if session
+      session.left.execute "delete from rr_pending_changes" if session
     end
   end
 
@@ -513,7 +513,7 @@ describe Replicators::TwoWayReplicator do
         'id' => '2',
         'name' => 'blub'
       }
-      session.left.insert_record 'rr_change_log', {
+      session.left.insert_record 'rr_pending_changes', {
         'change_table' => 'extender_no_record',
         'change_key' => 'id|1',
         'change_new_key' => 'id|2',
@@ -530,7 +530,7 @@ describe Replicators::TwoWayReplicator do
 
       session.left.delete_record 'extender_no_record', {'id' => '2'}
 
-      session.left.insert_record 'rr_change_log', {
+      session.left.insert_record 'rr_pending_changes', {
         'change_table' => 'extender_no_record',
         'change_key' => 'id|2',
         'change_type' => 'D',
@@ -544,7 +544,7 @@ describe Replicators::TwoWayReplicator do
       if session
         session.left.execute "delete from extender_no_record"
         session.right.execute "delete from extender_no_record"
-        session.left.execute "delete from rr_change_log"
+        session.left.execute "delete from rr_pending_changes"
       end
     end
   end

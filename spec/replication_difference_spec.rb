@@ -30,7 +30,7 @@ describe ReplicationDifference do
     session = Session.new
     session.left.begin_db_transaction
     begin
-      session.left.insert_record 'rr_change_log', {
+      session.left.insert_record 'rr_pending_changes', {
         'change_table' => 'scanner_records',
         'change_key' => 'id|1',
         'change_type' => 'I',
@@ -51,7 +51,7 @@ describe ReplicationDifference do
     session = Session.new
     session.right.begin_db_transaction
     begin
-      session.right.insert_record 'rr_change_log', {
+      session.right.insert_record 'rr_pending_changes', {
         'change_table' => 'scanner_records',
         'change_key' => 'id|1',
         'change_type' => 'D',
@@ -77,20 +77,20 @@ describe ReplicationDifference do
     session.left.begin_db_transaction
     session.right.begin_db_transaction
     begin
-      session.left.insert_record 'rr_change_log', {
+      session.left.insert_record 'rr_pending_changes', {
         'change_table' => 'dummy_table',
         'change_key' => 'id|2',
         'change_type' => 'I',
         'change_time' => Time.now
       }
-      session.left.insert_record 'rr_change_log', {
+      session.left.insert_record 'rr_pending_changes', {
         'change_table' => 'table_with_manual_key',
         'change_key' => 'id|1',
         'change_new_key' => 'id|1',
         'change_type' => 'U',
         'change_time' => 5.seconds.from_now
       }
-      session.right.insert_record 'rr_change_log', {
+      session.right.insert_record 'rr_pending_changes', {
         'change_table' => 'extender_without_key',
         'change_key' => 'id|1',
         'change_type' => 'D',
@@ -118,7 +118,7 @@ describe ReplicationDifference do
     session.left.begin_db_transaction
     session.right.begin_db_transaction
     begin
-      session.right.insert_record 'rr_change_log', {
+      session.right.insert_record 'rr_pending_changes', {
         'change_table' => 'scanner_records',
         'change_key' => 'id|1',
         'change_type' => 'I',
@@ -137,7 +137,7 @@ describe ReplicationDifference do
       diff.changes[:right].key.should == {'id' => '1'}
 
       # should recognize new changes
-      session.left.insert_record 'rr_change_log', {
+      session.left.insert_record 'rr_pending_changes', {
         'change_table' => 'scanner_records',
         'change_key' => 'id|1',
         'change_type' => 'D',

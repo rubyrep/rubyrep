@@ -20,7 +20,7 @@ describe "PostgreSQLReplication", :shared => true do
         :trigger_name => 'rr_trigger_test',
         :table => 'trigger_test',
         :keys => ['first_id', 'second_id'],
-        :log_table => 'rr_change_log',
+        :log_table => 'rr_pending_changes',
         :key_sep => '|',
         :exclude_rr_activity => false,
       }
@@ -31,7 +31,7 @@ describe "PostgreSQLReplication", :shared => true do
         'name' => 'bla'
       }
 
-      row = session.left.select_one("select * from rr_change_log")
+      row = session.left.select_one("select * from rr_pending_changes")
       row.delete 'id'
       row.delete 'change_time'
       row.should == {

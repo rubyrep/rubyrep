@@ -113,7 +113,7 @@ def populate_rep_data
     initializer.drop_trigger(database, 'big_rep') rescue nil
     session.send(database).execute "delete from big_rep"
     session.send(database).execute "insert into big_rep select * from big_scan where diff_type = 'same'"
-    session.send(database).execute "delete from rr_change_log"
+    session.send(database).execute "delete from rr_pending_changes"
     initializer.create_trigger(database, 'big_rep')
   end
 
@@ -163,11 +163,11 @@ def populate_rep_data
   [:left, :right].each do |database|
     session.send(database).execute "delete from big_rep_backup"
     session.send(database).execute "insert into big_rep_backup select * from big_rep"
-    session.send(database).drop_table "big_rep_change_log" rescue nil
-    session.send(database).execute "create table big_rep_change_log as select * from rr_change_log"
+    session.send(database).drop_table "big_rep_pending_changes" rescue nil
+    session.send(database).execute "create table big_rep_pending_changes as select * from rr_pending_changes"
     initializer.drop_trigger database, 'big_rep'
     session.send(database).execute "delete from big_rep"
-    session.send(database).execute "delete from rr_change_log"
+    session.send(database).execute "delete from rr_pending_changes"
   end
 end
 

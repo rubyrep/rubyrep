@@ -30,8 +30,8 @@ describe "Big Rep" do
   # Returns the number of changes that remain to be replicated
   # * +session+: current Session instance
   def number_changes(session)
-    record_quantity(session, :left, 'rr_change_log') +
-      record_quantity(session, :right, 'rr_change_log')
+    record_quantity(session, :left, 'rr_pending_changes') +
+      record_quantity(session, :right, 'rr_pending_changes')
   end
 
   # Runs a replication of the big_rep table.
@@ -47,7 +47,7 @@ describe "Big Rep" do
     begin
       [:left, :right].each do |database|
         session.send(database).execute "insert into big_rep select * from big_rep_backup"
-        session.send(database).execute "insert into rr_change_log select * from big_rep_change_log"
+        session.send(database).execute "insert into rr_pending_changes select * from big_rep_pending_changes"
         initializer.create_trigger database, 'big_rep'
       end
 
@@ -82,7 +82,7 @@ describe "Big Rep" do
       [:left, :right].each do |database|
         initializer.drop_trigger database, 'big_rep'
         session.send(database).execute "delete from big_rep"
-        session.send(database).execute "delete from rr_change_log"
+        session.send(database).execute "delete from rr_pending_changes"
       end
     end
   end

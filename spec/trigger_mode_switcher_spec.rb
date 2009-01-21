@@ -56,7 +56,7 @@ describe TriggerModeSwitcher do
         'name' => 'bla'
       }
 
-      rows = session.left.select_all("select * from rr_change_log order by id")
+      rows = session.left.select_all("select * from rr_pending_changes order by id")
       rows.each {|row| row.delete 'id'; row.delete 'change_time'}
       rows.should == [{
         'change_table' => 'trigger_test',
@@ -70,7 +70,7 @@ describe TriggerModeSwitcher do
         session.left.execute 'delete from rr_active'
         session.left.execute 'delete from trigger_test'
         session.left.execute 'delete from rr_active'
-        session.left.execute 'delete from rr_change_log'
+        session.left.execute 'delete from rr_pending_changes'
       end
     end
   end

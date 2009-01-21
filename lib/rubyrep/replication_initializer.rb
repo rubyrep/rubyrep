@@ -35,7 +35,7 @@ module RR
         :trigger_name => "#{options[:rep_prefix]}_#{table}",
         :table => table,
         :keys => session.send(database).primary_key_names(table),
-        :log_table => "#{options[:rep_prefix]}_change_log",
+        :log_table => "#{options[:rep_prefix]}_pending_changes",
         :activity_table => "#{options[:rep_prefix]}_active",
         :key_sep => options[:key_sep],
         :exclude_rr_activity => false,
@@ -104,7 +104,7 @@ module RR
     # Returns +true+ if the change log exists in the specified database.
     # * database: either :+left+ or :+right+
     def change_log_exists?(database)
-      session.send(database).tables.include? "#{options[:rep_prefix]}_change_log"
+      session.send(database).tables.include? "#{options[:rep_prefix]}_pending_changes"
     end
 
     # Returns +true+ if the replication log exists.
@@ -115,7 +115,7 @@ module RR
     # Drops the change log table in the specified database
     # * database: either :+left+ or :+right+
     def drop_change_log(database)
-      session.send(database).drop_table "#{options[:rep_prefix]}_change_log"
+      session.send(database).drop_table "#{options[:rep_prefix]}_pending_changes"
     end
 
     # Drops the replication log table.
@@ -168,14 +168,14 @@ module RR
     # * database: either :+left+ or :+right+
     def create_change_log(database)
       silence_ddl_notices(database) do
-        session.send(database).create_table "#{options[:rep_prefix]}_change_log", :id => false do |t|
+        session.send(database).create_table "#{options[:rep_prefix]}_pending_changes", :id => false do |t|
           t.column :change_table, :string
           t.column :change_key, :string
           t.column :change_new_key, :string
           t.column :change_type, :string
           t.column :change_time, :timestamp
         end
-        session.send(database).add_big_primary_key "#{options[:rep_prefix]}_change_log", 'id'
+        session.send(database).add_big_primary_key "#{options[:rep_prefix]}_pending_changes", 'id'
       end
     end
 
@@ -255,7 +255,7 @@ module RR
           if trigger_exists?(database, table)
             drop_trigger(database, table)
             session.send(database).execute(
-              "delete from #{options[:rep_prefix]}_change_log where change_table = '#{table}'")
+              "delete from #{options[:rep_prefix]}_pending_changes where change_table = '#{table}'")
           end
           clear_sequence_setup(database, table)
         end

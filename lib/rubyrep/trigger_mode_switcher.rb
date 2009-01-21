@@ -33,7 +33,7 @@ module RR
           :trigger_name => "#{options[:rep_prefix]}_#{table}",
           :table => table,
           :keys => session.send(database).primary_key_names(table),
-          :log_table => "#{options[:rep_prefix]}_change_log",
+          :log_table => "#{options[:rep_prefix]}_pending_changes",
           :activity_table => "#{options[:rep_prefix]}_active",
           :key_sep => options[:key_sep],
           :exclude_rr_activity => exclude_rr_activity,

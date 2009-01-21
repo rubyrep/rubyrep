@@ -210,7 +210,7 @@ def create_sample_schema(config)
       t.column :name, :string
     end
 
-    create_table :rr_change_log do |t|
+    create_table :rr_pending_changes do |t|
       t.column :change_table, :string
       t.column :change_key, :string
       t.column :change_new_key, :string
@@ -282,7 +282,7 @@ def drop_sample_schema(config)
     drop_table :referenced_table rescue nil
     drop_table :referenced_table2 rescue nil
     drop_table :table_with_manual_key
-    drop_table :rr_change_log rescue nil
+    drop_table :rr_pending_changes rescue nil
     drop_table :rr_active rescue nil
     drop_table :trigger_test rescue nil
     drop_table :sequence_test rescue nil

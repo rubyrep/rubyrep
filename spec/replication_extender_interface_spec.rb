@@ -17,7 +17,7 @@ describe "ReplicationExtender", :shared => true do
         :trigger_name => 'rr_trigger_test',
         :table => 'trigger_test',
         :keys => ['first_id', 'second_id'],
-        :log_table => 'rr_change_log',
+        :log_table => 'rr_pending_changes',
         :key_sep => '|',
         :exclude_rr_activity => false,
       }
@@ -36,7 +36,7 @@ describe "ReplicationExtender", :shared => true do
         'second_id' => 9,
       }
 
-      rows = session.left.connection.select_all("select * from rr_change_log order by id")
+      rows = session.left.connection.select_all("select * from rr_pending_changes order by id")
 
       # Verify that the timestamps are created correctly
       rows.each do |row|
@@ -52,7 +52,7 @@ describe "ReplicationExtender", :shared => true do
       ]
     ensure
       session.left.execute 'delete from trigger_test' if session
-      session.left.execute 'delete from rr_change_log' if session
+      session.left.execute 'delete from rr_pending_changes' if session
       session.left.rollback_db_transaction if session
     end
   end
@@ -66,7 +66,7 @@ describe "ReplicationExtender", :shared => true do
         :trigger_name => 'rr_trigger_test',
         :table => 'trigger_test',
         :keys => ['first_id', 'second_id'],
-        :log_table => 'rr_change_log',
+        :log_table => 'rr_pending_changes',
         :key_sep => '|',
         :exclude_rr_activity => true,
         :activity_table => "rr_active",
@@ -88,7 +88,7 @@ describe "ReplicationExtender", :shared => true do
         'name' => 'bla'
       }
 
-      rows = session.left.connection.select_all("select * from rr_change_log order by id")
+      rows = session.left.connection.select_all("select * from rr_pending_changes order by id")
       rows.each {|row| row.delete 'id'; row.delete 'change_time'}
       rows.should == [{
           'change_table' => 'trigger_test',
@@ -98,7 +98,7 @@ describe "ReplicationExtender", :shared => true do
         }]
     ensure
       session.left.execute 'delete from trigger_test' if session
-      session.left.execute 'delete from rr_change_log' if session
+      session.left.execute 'delete from rr_pending_changes' if session
       session.left.rollback_db_transaction if session
     end
   end
@@ -112,7 +112,7 @@ describe "ReplicationExtender", :shared => true do
         :trigger_name => 'rr_extender_no_record',
         :table => 'extender_no_record',
         :keys => ['id'],
-        :log_table => 'rr_change_log',
+        :log_table => 'rr_pending_changes',
         :key_sep => '|',
       }
       session.left.create_replication_trigger params
@@ -120,7 +120,7 @@ describe "ReplicationExtender", :shared => true do
         'id' => 9,
         'name' => 'bla'
       }
-      rows = session.left.connection.select_all("select * from rr_change_log order by id")
+      rows = session.left.connection.select_all("select * from rr_pending_changes order by id")
       rows.each {|row| row.delete 'id'; row.delete 'change_time'}
       rows.should == [{
           'change_table' => 'extender_no_record',
@@ -131,7 +131,7 @@ describe "ReplicationExtender", :shared => true do
     ensure
       if session
         session.left.execute 'delete from extender_no_record'
-        session.left.execute 'delete from rr_change_log'
+        session.left.execute 'delete from rr_pending_changes'
         session.left.drop_replication_trigger('rr_extender_no_record', 'extender_no_record')
         session.left.rollback_db_transaction
       end
@@ -147,7 +147,7 @@ describe "ReplicationExtender", :shared => true do
         :trigger_name => 'rr_scanner_text_key',
         :table => 'scanner_text_key',
         :keys => ['text_id'],
-        :log_table => 'rr_change_log',
+        :log_table => 'rr_pending_changes',
         :key_sep => '|',
       }
       session.left.create_replication_trigger params
@@ -155,7 +155,7 @@ describe "ReplicationExtender", :shared => true do
         'text_id' => 'よろしくお願(ねが)いします yoroshiku onegai shimasu: I humbly ask for your favor.',
         'name' => 'bla'
       }
-      rows = session.left.connection.select_all("select * from rr_change_log order by id")
+      rows = session.left.connection.select_all("select * from rr_pending_changes order by id")
       rows.each {|row| row.delete 'id'; row.delete 'change_time'}
       rows.should == [{
           'change_table' => 'scanner_text_key',
@@ -170,7 +170,7 @@ describe "ReplicationExtender", :shared => true do
     ensure
       if session
         session.left.execute "delete from scanner_text_key where text_id = 'よろしくお願(ねが)いします yoroshiku onegai shimasu: I humbly ask for your favor.'"
-        session.left.execute 'delete from rr_change_log'
+        session.left.execute 'delete from rr_pending_changes'
         session.left.drop_replication_trigger('rr_scanner_text_key', 'scanner_text_key')
         session.left.rollback_db_transaction
       end
@@ -189,7 +189,7 @@ describe "ReplicationExtender", :shared => true do
         :trigger_name => 'rr_trigger_test',
         :table => 'trigger_test',
         :keys => ['first_id'],
-        :log_table => 'rr_change_log',
+        :log_table => 'rr_pending_changes',
         :key_sep => '|',
       }
       session.left.create_replication_trigger params

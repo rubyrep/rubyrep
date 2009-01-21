@@ -47,7 +47,7 @@ describe ReplicationInitializer do
         'name' => 'bla'
       }
 
-      row = session.left.select_one("select * from rr_change_log")
+      row = session.left.select_one("select * from rr_pending_changes")
       row.delete 'id'
       row.delete 'change_time'
       row.should == {
@@ -58,7 +58,7 @@ describe ReplicationInitializer do
       }
     ensure
       session.left.execute 'delete from trigger_test' if session
-      session.left.execute 'delete from rr_change_log' if session
+      session.left.execute 'delete from rr_pending_changes' if session
       session.left.rollback_db_transaction if session
     end
   end
@@ -209,11 +209,11 @@ describe ReplicationInitializer do
     initializer.change_log_exists?(:left).should be_true
 
     # verify that replication log has 8 byte, auto-generating primary key
-    session.left.insert_record 'r2_change_log', {'change_key' => 'bla'}
-    session.left.select_one("select id from r2_change_log where change_key = 'bla'")['id'].
+    session.left.insert_record 'r2_pending_changes', {'change_key' => 'bla'}
+    session.left.select_one("select id from r2_pending_changes where change_key = 'bla'")['id'].
       to_i.should > 0
-    session.left.insert_record 'r2_change_log', {'id' => 1e18.to_i, 'change_key' => 'blub'}
-    session.left.select_one("select id from r2_change_log where change_key = 'blub'")['id'].
+    session.left.insert_record 'r2_pending_changes', {'id' => 1e18.to_i, 'change_key' => 'blub'}
+    session.left.select_one("select id from r2_pending_changes where change_key = 'blub'")['id'].
       to_i.should == 1e18.to_i
 
     initializer.drop_change_log(:left)
@@ -316,8 +316,8 @@ describe ReplicationInitializer do
       initializer.ensure_change_logs
     ensure
       if session
-        session.left.drop_table 'rx_change_log'
-        session.right.drop_table 'rx_change_log'
+        session.left.drop_table 'rx_pending_changes'
+        session.right.drop_table 'rx_pending_changes'
       end
     end
   end
@@ -385,12 +385,12 @@ describe ReplicationInitializer do
       initializer.restore_unconfigured_tables
       initializer.trigger_exists?(:right, 'scanner_records').should be_false
       session.right.outdated_sequence_values('rr', 'scanner_records', 2, 1).size.should == 1
-      session.right.select_one("select * from rr_change_log where change_table = 'scanner_records'").should be_nil
+      session.right.select_one("select * from rr_pending_changes where change_table = 'scanner_records'").should be_nil
 
       # verify that the configured tables are not touched
       initializer.trigger_exists?(:right, 'scanner_left_records_only').should be_true
       session.right.outdated_sequence_values('rr', 'scanner_left_records_only', 2, 1).size.should == 0
-      session.right.select_one("select * from rr_change_log where change_table = 'scanner_left_records_only'").should_not be_nil
+      session.right.select_one("select * from rr_pending_changes where change_table = 'scanner_left_records_only'").should_not be_nil
     ensure
       ['scanner_left_records_only', 'scanner_records'].each do |table|
         [:left, :right].each do |database|
@@ -401,7 +401,7 @@ describe ReplicationInitializer do
         end
         session.right.delete_record table, {'id' => 100}
       end
-      session.right.execute "delete from rr_change_log"
+      session.right.execute "delete from rr_pending_changes"
     end
   end
 
@@ -413,7 +413,7 @@ describe ReplicationInitializer do
     config = deep_copy(standard_config)
     config.options[:committer] = :buffered_commit
     config.options[:use_ansi] = false
-    config.include_tables 'rr_change_log' # added to verify that it is ignored
+    config.include_tables 'rr_pending_changes' # added to verify that it is ignored
 
     session = Session.new(config)
 
@@ -433,17 +433,17 @@ describe ReplicationInitializer do
       left_records.should == right_records
 
       # verify rubyrep activity is _not_ logged
-      session.right.select_all("select * from rr_change_log").should be_empty
+      session.right.select_all("select * from rr_pending_changes").should be_empty
 
       # verify other data changes are logged
       initializer.trigger_exists?(:left, 'scanner_left_records_only').should be_true
       session.left.insert_record 'scanner_left_records_only', {'id' => 10, 'name' => 'bla'}
-      changes = session.left.select_all("select change_key from rr_change_log")
+      changes = session.left.select_all("select change_key from rr_pending_changes")
       changes.size.should == 1
       changes[0]['change_key'].should == 'id|10'
 
-      # verify that the 'rr_change_log' table was not touched
-      initializer.trigger_exists?(:left, 'rr_change_log').should be_false
+      # verify that the 'rr_pending_changes' table was not touched
+      initializer.trigger_exists?(:left, 'rr_pending_changes').should be_false
 
       # verify that syncing is done only for unsynced tables
       SyncRunner.should_not_receive(:new)
@@ -455,7 +455,7 @@ describe ReplicationInitializer do
         session.left.execute "delete from scanner_left_records_only where id = 10"
         session.right.execute "delete from scanner_left_records_only"
         [:left, :right].each do |database|
-          session.send(database).execute "delete from rr_change_log"
+          session.send(database).execute "delete from rr_pending_changes"
         end
       end
       if initializer

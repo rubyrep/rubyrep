@@ -40,7 +40,7 @@ describe ReplicationRun do
         'id' => '1',
         'name' => 'bla'
       }
-      session.left.insert_record 'rr_change_log', {
+      session.left.insert_record 'rr_pending_changes', {
         'change_table' => 'extender_no_record',
         'change_key' => 'id|1',
         'change_type' => 'I',
@@ -59,7 +59,7 @@ describe ReplicationRun do
       if session
         session.left.execute "delete from extender_no_record"
         session.right.execute "delete from extender_no_record"
-        session.left.execute "delete from rr_change_log"
+        session.left.execute "delete from rr_pending_changes"
       end
     end
   end
@@ -70,13 +70,13 @@ describe ReplicationRun do
     session.right.begin_db_transaction
     begin
 
-      session.left.insert_record 'rr_change_log', {
+      session.left.insert_record 'rr_pending_changes', {
         'change_table' => 'extender_no_record',
         'change_key' => 'id|1',
         'change_type' => 'D',
         'change_time' => Time.now
       }
-      session.right.insert_record 'rr_change_log', {
+      session.right.insert_record 'rr_pending_changes', {
         'change_table' => 'extender_no_record',
         'change_key' => 'id|1',
         'change_type' => 'D',
@@ -99,7 +99,7 @@ describe ReplicationRun do
     session.right.begin_db_transaction
     begin
 
-      session.left.insert_record 'rr_change_log', {
+      session.left.insert_record 'rr_pending_changes', {
         'change_table' => 'extender_no_record',
         'change_key' => 'id|1',
         'change_type' => 'D',
@@ -158,7 +158,7 @@ describe ReplicationRun do
       if session
         session.left.execute "delete from extender_no_record"
         session.right.execute "delete from extender_no_record"
-        session.left.execute "delete from rr_change_log"
+        session.left.execute "delete from rr_pending_changes"
       end
       initializer.drop_trigger :left, 'extender_no_record' if initializer
     end

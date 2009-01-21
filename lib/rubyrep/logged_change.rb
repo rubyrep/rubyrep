@@ -162,7 +162,7 @@ module RR
 
     # Returns the name of the change log table
     def change_log_table
-      @change_log_table ||= "#{session.configuration.options[:rep_prefix]}_change_log"
+      @change_log_table ||= "#{session.configuration.options[:rep_prefix]}_pending_changes"
     end
     private :change_log_table
   end

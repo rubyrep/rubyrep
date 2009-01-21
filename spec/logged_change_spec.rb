@@ -18,20 +18,20 @@ describe LoggedChange do
     session = Session.new
     session.left.begin_db_transaction
     begin
-      session.left.insert_record 'rr_change_log', {
+      session.left.insert_record 'rr_pending_changes', {
         'change_table' => 'left_table',
         'change_key' => 'id|1',
         'change_type' => 'I',
         'change_time' => Time.now
       }
-      session.left.insert_record 'rr_change_log', {
+      session.left.insert_record 'rr_pending_changes', {
         'change_table' => 'right_table',
         'change_key' => 'id|2',
         'change_new_key' => 'id|2',
         'change_type' => 'U',
         'change_time' => Time.now
       }
-      session.left.insert_record 'rr_change_log', {
+      session.left.insert_record 'rr_pending_changes', {
         'change_table' => 'left_table',
         'change_key' => 'id|2',
         'change_type' => 'I',
@@ -56,7 +56,7 @@ describe LoggedChange do
     session = Session.new config
     session.left.begin_db_transaction
     begin
-      session.left.insert_record 'rr_change_log', {
+      session.left.insert_record 'rr_pending_changes', {
         'change_table' => 'scanner_records',
         'change_key' => 'id1|1|id2|2',
         'change_type' => 'I',
@@ -77,7 +77,7 @@ describe LoggedChange do
     session = Session.new
     session.left.begin_db_transaction
     begin
-      session.left.insert_record 'rr_change_log', {
+      session.left.insert_record 'rr_pending_changes', {
         'change_table' => 'left_table',
         'change_key' => 'id|1',
         'change_type' => 'I',
@@ -87,7 +87,7 @@ describe LoggedChange do
       change.load_specified 'left_table', {'id' => 1}
 
       session.left.
-        select_one("select * from rr_change_log where change_key = 'id|1'").
+        select_one("select * from rr_pending_changes where change_key = 'id|1'").
         should be_nil
     ensure
       session.left.rollback_db_transaction
@@ -100,13 +100,13 @@ describe LoggedChange do
     begin
       t1 = 5.seconds.ago
       t2 = 5.seconds.from_now
-      session.left.insert_record 'rr_change_log', {
+      session.left.insert_record 'rr_pending_changes', {
         'change_table' => 'left_table',
         'change_key' => 'id|1',
         'change_type' => 'I',
         'change_time' => t1
       }
-      session.left.insert_record 'rr_change_log', {
+      session.left.insert_record 'rr_pending_changes', {
         'change_table' => 'left_table',
         'change_key' => 'id|1',
         'change_new_key' => 'id|1',
@@ -127,14 +127,14 @@ describe LoggedChange do
     session = Session.new
     session.left.begin_db_transaction
     begin
-      session.left.insert_record 'rr_change_log', {
+      session.left.insert_record 'rr_pending_changes', {
         'change_table' => 'left_table',
         'change_key' => 'id|1',
         'change_new_key' => 'id|2',
         'change_type' => 'U',
         'change_time' => Time.now
       }
-      session.left.insert_record 'rr_change_log', {
+      session.left.insert_record 'rr_pending_changes', {
         'change_table' => 'left_table',
         'change_key' => 'id|2',
         'change_new_key' => 'id|3',
@@ -156,20 +156,20 @@ describe LoggedChange do
     session = Session.new
     session.left.begin_db_transaction
     begin
-      session.left.insert_record 'rr_change_log', {
+      session.left.insert_record 'rr_pending_changes', {
         'change_table' => 'left_table',
         'change_key' => 'id|1',
         'change_type' => 'I',
         'change_time' => Time.now
       }
-      session.left.insert_record 'rr_change_log', {
+      session.left.insert_record 'rr_pending_changes', {
         'change_table' => 'left_table',
         'change_key' => 'id|1',
         'change_new_key' => 'id|2',
         'change_type' => 'U',
         'change_time' => Time.now
       }
-      session.left.insert_record 'rr_change_log', {
+      session.left.insert_record 'rr_pending_changes', {
         'change_table' => 'left_table',
         'change_key' => 'id|2',
         'change_type' => 'D',
@@ -190,25 +190,25 @@ describe LoggedChange do
     begin
 
       # first test case
-      session.left.insert_record 'rr_change_log', {
+      session.left.insert_record 'rr_pending_changes', {
         'change_table' => 'left_table',
         'change_key' => 'id|1',
         'change_type' => 'I',
         'change_time' => Time.now
       }
-      session.left.insert_record 'rr_change_log', {
+      session.left.insert_record 'rr_pending_changes', {
         'change_table' => 'left_table',
         'change_key' => 'id|1',
         'change_type' => 'D',
         'change_time' => Time.now
       }
-      session.left.insert_record 'rr_change_log', {
+      session.left.insert_record 'rr_pending_changes', {
         'change_table' => 'left_table',
         'change_key' => 'id|1',
         'change_type' => 'I',
         'change_time' => Time.now
       }
-      session.left.insert_record 'rr_change_log', {
+      session.left.insert_record 'rr_pending_changes', {
         'change_table' => 'left_table',
         'change_key' => 'id|1',
         'change_new_key' => 'id|2',
@@ -221,13 +221,13 @@ describe LoggedChange do
       change.key.should == {'id' => '2'}
 
       # second test case
-      session.left.insert_record 'rr_change_log', {
+      session.left.insert_record 'rr_pending_changes', {
         'change_table' => 'left_table',
         'change_key' => 'id|5',
         'change_type' => 'D',
         'change_time' => Time.now
       }
-      session.left.insert_record 'rr_change_log', {
+      session.left.insert_record 'rr_pending_changes', {
         'change_table' => 'left_table',
         'change_key' => 'id|5',
         'change_type' => 'I',
@@ -248,7 +248,7 @@ describe LoggedChange do
     session = Session.new
     session.left.begin_db_transaction
     begin
-      session.left.insert_record 'rr_change_log', {
+      session.left.insert_record 'rr_pending_changes', {
         'change_table' => 'scanner_records',
         'change_key' => 'id|1',
         'change_type' => 'I',
@@ -300,7 +300,7 @@ describe LoggedChange do
         :id => '1',
         :name => 'bla'
       }
-      session.left.insert_record 'rr_change_log', {
+      session.left.insert_record 'rr_pending_changes', {
         'change_table' => 'left_table',
         'change_key' => 'id|1',
         'change_new_key' => 'id|1',
@@ -309,7 +309,7 @@ describe LoggedChange do
       }
       change = LoggedChange.new session, :left
       change.load_specified 'left_table', {'id' => '1'}
-      session.left.insert_record 'rr_change_log', {
+      session.left.insert_record 'rr_pending_changes', {
         'change_table' => 'left_table',
         'change_key' => 'id|1',
         'change_type' => 'D',
@@ -334,7 +334,7 @@ describe LoggedChange do
         :id => '1',
         :name => 'bla'
       }
-      session.left.insert_record 'rr_change_log', {
+      session.left.insert_record 'rr_pending_changes', {
         'change_table' => 'left_table',
         'change_key' => 'id|1',
         'change_new_key' => 'id|2',
@@ -343,7 +343,7 @@ describe LoggedChange do
       }
       change = LoggedChange.new session, :left
       change.load_specified 'left_table', {'id' => '1'}
-      session.left.insert_record 'rr_change_log', {
+      session.left.insert_record 'rr_pending_changes', {
         'change_table' => 'left_table',
         'change_key' => 'id|2',
         'change_new_key' => 'id|3',
@@ -372,13 +372,13 @@ describe LoggedChange do
     session.left.begin_db_transaction
     begin
       time = Time.now
-      session.left.insert_record 'rr_change_log', {
+      session.left.insert_record 'rr_pending_changes', {
         'change_table' => 'left_table',
         'change_key' => 'id|1',
         'change_type' => 'I',
         'change_time' => time
       }
-      session.left.insert_record 'rr_change_log', {
+      session.left.insert_record 'rr_pending_changes', {
         'change_table' => 'left_table',
         'change_key' => 'id|2',
         'change_type' => 'I',
@@ -409,13 +409,13 @@ describe LoggedChange do
     session = Session.new
     session.left.begin_db_transaction
     begin
-      session.left.insert_record 'rr_change_log', {
+      session.left.insert_record 'rr_pending_changes', {
         'change_table' => 'left_table',
         'change_key' => 'id|1',
         'change_type' => 'I',
         'change_time' => Time.now
       }
-      session.left.insert_record 'rr_change_log', {
+      session.left.insert_record 'rr_pending_changes', {
         'change_table' => 'left_table',
         'change_key' => 'id|2',
         'change_type' => 'I',
@@ -434,19 +434,19 @@ describe LoggedChange do
     session = Session.new
     session.left.begin_db_transaction
     begin
-      session.left.insert_record 'rr_change_log', {
+      session.left.insert_record 'rr_pending_changes', {
         'change_table' => 'left_table',
         'change_key' => 'id|1',
         'change_type' => 'I',
         'change_time' => Time.now
       }
-      session.left.insert_record 'rr_change_log', {
+      session.left.insert_record 'rr_pending_changes', {
         'change_table' => 'left_table',
         'change_key' => 'id|1',
         'change_type' => 'D',
         'change_time' => Time.now
       }
-      session.left.insert_record 'rr_change_log', {
+      session.left.insert_record 'rr_pending_changes', {
         'change_table' => 'left_table',
         'change_key' => 'id|2',
         'change_type' => 'I',
