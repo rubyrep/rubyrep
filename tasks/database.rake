@@ -218,7 +218,7 @@ def create_sample_schema(config)
       t.column :change_time, :timestamp
     end
 
-    create_table :rr_event_log do |t|
+    create_table :rr_logged_events do |t|
       t.column :activity, :string
       t.column :change_table, :string
       t.column :diff_type, :string

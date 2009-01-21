@@ -43,7 +43,7 @@ describe SyncHelper do
         'my_long_description'
       )
       
-      row = session.left.select_one("select * from rr_event_log order by id desc")
+      row = session.left.select_one("select * from rr_logged_events order by id desc")
       row['activity'].should == 'sync'
       row['change_table'].should == 'scanner_records'
       row['diff_type'].should == 'my_sync_type'
@@ -73,7 +73,7 @@ describe SyncHelper do
         'my_long_description'
       )
 
-      row = session.left.select_one("select * from rr_event_log order by id desc")
+      row = session.left.select_one("select * from rr_logged_events order by id desc")
       row['change_key'].should == '"first_id"=>"1", "second_id"=>"2"'
     ensure
       session.left.rollback_db_transaction if session

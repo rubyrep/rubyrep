@@ -77,7 +77,7 @@ module RR
       rep_details = details == nil ? nil : details[0...ReplicationInitializer::LONG_DESCRIPTION_SIZE]
       diff_dump = diff.to_yaml[0...ReplicationInitializer::DIFF_DUMP_SIZE]
       
-      session.left.insert_record "#{options[:rep_prefix]}_event_log", {
+      session.left.insert_record "#{options[:rep_prefix]}_logged_events", {
         :activity => 'replication',
         :change_table => table,
         :diff_type => diff.type.to_s,

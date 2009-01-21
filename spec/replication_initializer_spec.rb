@@ -180,7 +180,7 @@ describe ReplicationInitializer do
     config.options[:rep_prefix] = 'r2'
     session = Session.new(config)
     initializer = ReplicationInitializer.new(session)
-    initializer.drop_event_log if initializer.event_log_exists?
+    initializer.drop_logged_events if initializer.event_log_exists?
 
     $stderr.stub! :write
     initializer.event_log_exists?.should be_false
@@ -188,8 +188,8 @@ describe ReplicationInitializer do
     initializer.event_log_exists?.should be_true
 
     # verify that replication log has 8 byte, auto-generating primary key
-    session.left.insert_record 'r2_event_log', {'id' => 1e18.to_i, 'change_key' => 'blub'}
-    session.left.select_one("select id from r2_event_log where change_key = 'blub'")['id'].
+    session.left.insert_record 'r2_logged_events', {'id' => 1e18.to_i, 'change_key' => 'blub'}
+    session.left.select_one("select id from r2_logged_events where change_key = 'blub'")['id'].
       to_i.should == 1e18.to_i
 
     initializer.drop_event_log
@@ -339,7 +339,7 @@ describe ReplicationInitializer do
       initializer = ReplicationInitializer.new(session)
       initializer.ensure_event_log
     ensure
-      session.left.drop_table 'rx_event_log' if session
+      session.left.drop_table 'rx_logged_events' if session
     end
   end
 

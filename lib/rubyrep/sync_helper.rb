@@ -83,7 +83,7 @@ module RR
       end
       sync_details = details == nil ? nil : details[0...ReplicationInitializer::LONG_DESCRIPTION_SIZE]
 
-      session.left.insert_record "#{sync_options[:rep_prefix]}_event_log", {
+      session.left.insert_record "#{sync_options[:rep_prefix]}_logged_events", {
         :activity => 'sync',
         :change_table => left_table,
         :diff_type => type.to_s,

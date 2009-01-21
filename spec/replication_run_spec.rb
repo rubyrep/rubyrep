@@ -109,7 +109,7 @@ describe ReplicationRun do
       run.replicator.stub!(:replicate_difference).and_return {raise Exception, 'dummy message'}
       run.run
 
-      row = session.left.select_one("select * from rr_event_log")
+      row = session.left.select_one("select * from rr_logged_events")
       row['description'].should == 'dummy message'
       row['long_description'].should =~ /Exception/
     ensure
@@ -149,7 +149,7 @@ describe ReplicationRun do
       }
 
       # also verify that event was logged
-      row = session.left.select_one("select * from rr_event_log")
+      row = session.left.select_one("select * from rr_logged_events")
       row['diff_type'].should == 'left'
       row['change_key'].should == '1'
       row['description'].should == 'replicated'

@@ -109,7 +109,7 @@ module RR
 
     # Returns +true+ if the replication log exists.
     def event_log_exists?
-      session.left.tables.include? "#{options[:rep_prefix]}_event_log"
+      session.left.tables.include? "#{options[:rep_prefix]}_logged_events"
     end
 
     # Drops the change log table in the specified database
@@ -120,7 +120,7 @@ module RR
 
     # Drops the replication log table.
     def drop_event_log
-      session.left.drop_table "#{options[:rep_prefix]}_event_log"
+      session.left.drop_table "#{options[:rep_prefix]}_logged_events"
     end
 
     # Size of the replication log column diff_dump
@@ -148,7 +148,7 @@ module RR
     # Creates the replication log table.
     def create_event_log
       silence_ddl_notices(:left) do
-        session.left.create_table "#{options[:rep_prefix]}_event_log", :id => false do |t|
+        session.left.create_table "#{options[:rep_prefix]}_logged_events", :id => false do |t|
           t.column :activity, :string
           t.column :change_table, :string
           t.column :diff_type, :string
@@ -160,7 +160,7 @@ module RR
           t.column :event_time, :timestamp
           t.column :diff_dump, :string, :limit => DIFF_DUMP_SIZE
         end
-        session.left.add_big_primary_key "#{options[:rep_prefix]}_event_log", 'id'
+        session.left.add_big_primary_key "#{options[:rep_prefix]}_logged_events", 'id'
       end
     end
 

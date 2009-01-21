@@ -94,7 +94,7 @@ describe ReplicationHelper do
 
       helper.log_replication_outcome diff, 'ignore', 'ignored'
 
-      row = session.left.select_one("select * from rr_event_log order by id desc")
+      row = session.left.select_one("select * from rr_logged_events order by id desc")
       row['activity'].should == 'replication'
       row['change_table'].should == 'extender_combined_key'
       row['diff_type'].should == 'conflict'

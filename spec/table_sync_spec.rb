@@ -62,7 +62,7 @@ describe TableSync do
       sync.run
 
       # Verify that sync events are logged
-      row = session.left.select_one("select * from rr_event_log where change_key = '2' order by id")
+      row = session.left.select_one("select * from rr_logged_events where change_key = '2' order by id")
       row['change_table'].should == 'scanner_records'
       row['diff_type'].should == 'conflict'
       row['description'].should == 'update_right'
@@ -77,7 +77,7 @@ describe TableSync do
       after_hook_called.should be_true
     ensure
       Committers::NeverCommitter.rollback_current_session
-      session.left.execute "delete from rr_event_log"
+      session.left.execute "delete from rr_logged_events"
     end
   end
 
