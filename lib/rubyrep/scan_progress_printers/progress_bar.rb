@@ -19,7 +19,7 @@ module RR
 
       # Returns the length (in characters) of the progress bar.
       def max_markers
-        @max_marker ||= arg ? arg.to_i : MAX_MARKERS
+        @max_markers ||= arg ? arg.to_i : MAX_MARKERS
       end
 
       # Creates a new progress bar.
@@ -30,15 +30,14 @@ module RR
       def initialize(max_steps, session, left_table, right_table)
         @use_ansi = session.configuration.options_for_table(left_table)[:use_ansi]
         @max_steps, @current_steps = max_steps, 0
-        @max_markers = MAX_MARKERS
-        @steps_per_marker = @max_steps.to_f / @max_markers
+        @steps_per_marker = @max_steps.to_f / max_markers
         @current_markers, @current_percentage = 0, 0
       end
   
       # Increases progress by +step_increment+ steps.
       def step(step_increment = 1)
         @current_steps+= step_increment
-        new_markers = @max_steps != 0 ? (@current_steps / @steps_per_marker).to_i : @max_markers
+        new_markers = @max_steps != 0 ? (@current_steps / @steps_per_marker).to_i : max_markers
 
         new_percentage = @max_steps != 0 ? @current_steps * 100 / @max_steps : 100
         if @use_ansi and new_percentage != @current_percentage
