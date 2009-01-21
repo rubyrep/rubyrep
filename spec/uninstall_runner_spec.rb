@@ -80,7 +80,7 @@ describe UninstallRunner do
 
     initializer.trigger_exists?(:left, 'scanner_records').should be_false
     initializer.change_log_exists?(:left).should be_false
-    session.right.tables.include?('rx_active').should be_false
+    session.right.tables.include?('rx_running_flags').should be_false
     initializer.event_log_exists?.should be_false
   end
 end

@@ -27,7 +27,7 @@ module RR
 
       # Returns the name of the activity marker table
       def activity_marker_table
-        @activity_marker_table ||= "#{session.configuration.options[:rep_prefix]}_active"
+        @activity_marker_table ||= "#{session.configuration.options[:rep_prefix]}_running_flags"
       end
 
       # Returns +true+ if the activity marker table should be maintained.

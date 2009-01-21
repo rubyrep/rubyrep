@@ -49,7 +49,7 @@ describe TriggerModeSwitcher do
         'second_id' => 2,
         'name' => 'blub'
       }
-      session.left.execute "insert into rr_active values(1)"
+      session.left.execute "insert into rr_running_flags values(1)"
       session.left.insert_record 'trigger_test', {
         'first_id' => 1,
         'second_id' => 3,
@@ -67,9 +67,8 @@ describe TriggerModeSwitcher do
     ensure
       initializer.drop_trigger :left, 'trigger_test' if initializer
       if session
-        session.left.execute 'delete from rr_active'
+        session.left.execute 'delete from rr_running_flags'
         session.left.execute 'delete from trigger_test'
-        session.left.execute 'delete from rr_active'
         session.left.execute 'delete from rr_pending_changes'
       end
     end

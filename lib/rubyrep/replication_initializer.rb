@@ -36,7 +36,7 @@ module RR
         :table => table,
         :keys => session.send(database).primary_key_names(table),
         :log_table => "#{options[:rep_prefix]}_pending_changes",
-        :activity_table => "#{options[:rep_prefix]}_active",
+        :activity_table => "#{options[:rep_prefix]}_running_flags",
         :key_sep => options[:key_sep],
         :exclude_rr_activity => false,
       }
@@ -188,7 +188,7 @@ module RR
     # Checks in both databases, if the activity marker tables exist and if not,
     # creates them.
     def ensure_activity_markers
-      table_name = "#{options[:rep_prefix]}_active"
+      table_name = "#{options[:rep_prefix]}_running_flags"
       [:left, :right].each do |database|
         unless session.send(database).tables.include? table_name
           session.send(database).create_table table_name, :id => false do |t|
@@ -228,7 +228,7 @@ module RR
 
     # Checks in both databases, if the activity_marker tables exist. If yes, drops them.
     def drop_activity_markers
-      table_name = "#{options[:rep_prefix]}_active"
+      table_name = "#{options[:rep_prefix]}_running_flags"
       [:left, :right].each do |database|
         if session.send(database).tables.include? table_name
           session.send(database).drop_table table_name

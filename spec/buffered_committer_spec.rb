@@ -50,7 +50,7 @@ describe Committers::BufferedCommitter do
     stub_begin_transaction session
     stub_execute session
     committer = Committers::BufferedCommitter.new(session)
-    committer.activity_marker_table.should == 'rx_active'
+    committer.activity_marker_table.should == 'rx_running_flags'
   end
 
   it "maintain_activity_status should return true if activity marker table exists" do
@@ -97,15 +97,15 @@ describe Committers::BufferedCommitter do
       session = Session.new
       session.left.should_receive(:begin_db_transaction)
       session.right.should_receive(:begin_db_transaction)
-      session.left.select_one("select * from rr_active").should be_nil # verify starting situation
+      session.left.select_one("select * from rr_running_flags").should be_nil # verify starting situation
       committer = Committers::BufferedCommitter.new(session)
 
       # rubyrep activity should be marked
-      session.left.select_one("select * from rr_active").should_not be_nil
-      session.right.select_one("select * from rr_active").should_not be_nil
+      session.left.select_one("select * from rr_running_flags").should_not be_nil
+      session.right.select_one("select * from rr_running_flags").should_not be_nil
     ensure
-      session.left.execute "delete from rr_active" if session
-      session.right.execute "delete from rr_active" if session
+      session.left.execute "delete from rr_running_flags" if session
+      session.right.execute "delete from rr_running_flags" if session
     end
   end
 
@@ -128,8 +128,8 @@ describe Committers::BufferedCommitter do
     stub_execute session
     committer = Committers::BufferedCommitter.new(session)
 
-    session.left.should_receive(:execute).with("delete from rr_active")
-    session.right.should_receive(:execute).with("delete from rr_active")
+    session.left.should_receive(:execute).with("delete from rr_running_flags")
+    session.right.should_receive(:execute).with("delete from rr_running_flags")
     committer.commit_db_transactions
   end
 
@@ -165,8 +165,8 @@ describe Committers::BufferedCommitter do
     stub_execute session
     committer = Committers::BufferedCommitter.new(session)
 
-    session.left.should_receive(:execute).with("insert into rr_active values(1)")
-    session.right.should_receive(:execute).with("insert into rr_active values(1)")
+    session.left.should_receive(:execute).with("insert into rr_running_flags values(1)")
+    session.right.should_receive(:execute).with("insert into rr_running_flags values(1)")
     committer.begin_db_transactions
   end
 

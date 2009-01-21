@@ -69,11 +69,11 @@ describe "ReplicationExtender", :shared => true do
         :log_table => 'rr_pending_changes',
         :key_sep => '|',
         :exclude_rr_activity => true,
-        :activity_table => "rr_active",
+        :activity_table => "rr_running_flags",
       }
       session.left.create_replication_trigger params
 
-      session.left.insert_record 'rr_active', {
+      session.left.insert_record 'rr_running_flags', {
         'active' => 1
       }
       session.left.insert_record 'trigger_test', {
@@ -81,7 +81,7 @@ describe "ReplicationExtender", :shared => true do
         'second_id' => 2,
         'name' => 'bla'
       }
-      session.left.connection.execute('delete from rr_active')
+      session.left.connection.execute('delete from rr_running_flags')
       session.left.insert_record 'trigger_test', {
         'first_id' => 1,
         'second_id' => 3,

@@ -234,17 +234,17 @@ describe ReplicationInitializer do
       session = Session.new(config)
       initializer = ReplicationInitializer.new(session)
       initializer.ensure_activity_markers
-      session.left.tables.include?('rx_active').should be_true
-      session.right.tables.include?('rx_active').should be_true
+      session.left.tables.include?('rx_running_flags').should be_true
+      session.right.tables.include?('rx_running_flags').should be_true
 
       # right columns?
-      columns = session.left.columns('rx_active')
+      columns = session.left.columns('rx_running_flags')
       columns.size.should == 1
       columns[0].name.should == 'active'
     ensure
       if session
-        session.left.drop_table 'rx_active'
-        session.right.drop_table 'rx_active'
+        session.left.drop_table 'rx_running_flags'
+        session.right.drop_table 'rx_running_flags'
       end
     end
   end
@@ -279,8 +279,8 @@ describe ReplicationInitializer do
   it "drop_activity_markers should drop the activity_marker tables" do
     session = Session.new
     initializer = ReplicationInitializer.new session
-    session.left.should_receive(:drop_table).with('rr_active')
-    session.right.should_receive(:drop_table).with('rr_active')
+    session.left.should_receive(:drop_table).with('rr_running_flags')
+    session.right.should_receive(:drop_table).with('rr_running_flags')
 
     initializer.drop_activity_markers
   end
@@ -290,8 +290,8 @@ describe ReplicationInitializer do
     config.options[:rep_prefix] = 'rx'
     session = Session.new(config)
     initializer = ReplicationInitializer.new session
-    session.left.should_not_receive(:drop_table).with('rr_active')
-    session.right.should_not_receive(:drop_table).with('rr_active')
+    session.left.should_not_receive(:drop_table).with('rr_running_flags')
+    session.right.should_not_receive(:drop_table).with('rr_running_flags')
 
     initializer.drop_change_logs
   end

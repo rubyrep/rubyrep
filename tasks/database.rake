@@ -231,7 +231,7 @@ def create_sample_schema(config)
       t.column :diff_dump, :string, :limit => RR::ReplicationInitializer::DIFF_DUMP_SIZE
     end
 
-    create_table :rr_active, :id => false do |t|
+    create_table :rr_running_flags, :id => false do |t|
       t.column :active, :integer
     end
 
@@ -283,7 +283,7 @@ def drop_sample_schema(config)
     drop_table :referenced_table2 rescue nil
     drop_table :table_with_manual_key
     drop_table :rr_pending_changes rescue nil
-    drop_table :rr_active rescue nil
+    drop_table :rr_running_flags rescue nil
     drop_table :trigger_test rescue nil
     drop_table :sequence_test rescue nil
     drop_table :left_table rescue nil
