@@ -11,11 +11,26 @@ describe ProxyConnection do
   it "initialize should connect to the database" do
     @connection.connection.active?.should == true
   end
+
+  it "initialize should store the configuratin" do
+    @connection.config.should == Initializer.configuration.left
+  end
   
   it "destroy should disconnect from the database" do
     @connection.destroy
 
     @connection.connection.active?.should == false
+  end
+
+  it "refresh should not do anything if the connection is still active" do
+    ConnectionExtenders.should_not_receive(:db_connect)
+    @connection.refresh
+  end
+
+  it "refresh should reestablish the connection if it is no more active" do
+    @connection.destroy
+    @connection.refresh
+    @connection.connection.should be_active
   end
   
   it "cursors should return the current cursor hash or an empty hash if nil" do

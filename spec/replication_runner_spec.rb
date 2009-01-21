@@ -135,6 +135,29 @@ describe ReplicationRunner do
     found
   end
 
+  it "execute should catch and print exceptions" do
+    org_stderr = $stderr
+    $stderr = StringIO.new
+    begin
+      session = Session.new
+      runner = ReplicationRunner.new
+      runner.stub!(:session).and_return(session)
+      runner.stub!(:init_waiter)
+      runner.stub!(:prepare_replication)
+      runner.stub!(:pause_replication)
+      runner.should_receive(:termination_requested).twice.and_return(false, true)
+
+      session.should_receive(:refresh).and_return {raise "refresh failed"}
+
+      runner.execute
+      
+      $stderr.string.should =~ /Exception caught.*refresh failed/
+      $stderr.string.should =~ /replication_runner.rb:[0-9]+:in/
+    ensure
+      $stderr = org_stderr
+    end
+  end
+
   it "execute should start the replication" do
     config = deep_copy(standard_config)
     config.options[:committer] = :buffered_commit

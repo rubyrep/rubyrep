@@ -143,6 +143,11 @@ module RR
         table_pairs
       end
     end
+
+    # Refreshes (reestablish if no more active) the database connections.
+    def refresh
+      [:left, :right].each {|database| send(database).refresh}
+    end
         
     # Creates a new rubyrep session with the provided Configuration
     def initialize(config = Initializer::configuration)

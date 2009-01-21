@@ -3,7 +3,7 @@ require 'yaml'
 
 include RR
 
-describe Session do # database connection caching is diabled
+describe Session do # database connection caching is disabled
   before(:each) do
     Initializer.configuration = standard_config
     @@old_cache_status = ConnectionExtenders.use_db_connection_cache(false)
@@ -86,6 +86,21 @@ describe Session do   # here database connection caching is _not_ disabled
     session = Session.new config
     session.left.manual_primary_keys.should == {'table_with_manual_key'=>['id']}
     session.right.manual_primary_keys.should == {'extender_without_key'=>['id']}
+  end
+
+  it "refresh should reestablsih the database connections if no more active" do
+    session = Session.new
+    session.right.destroy
+    session.right.connection.should_not be_active
+    session.refresh
+    session.right.connection.should be_active
+  end
+
+  it "refresh should not do anyting if the connection is still active" do
+    session = Session.new
+    old_connection_id = session.right.connection.object_id
+    session.refresh
+    session.right.connection.object_id.should == old_connection_id
   end
 
   it "manual_primary_keys should return the specified manual primary keys" do

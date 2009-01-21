@@ -16,6 +16,9 @@ module RR
     
     # The database connection
     attr_accessor :connection
+
+    # A hash as described by ActiveRecord::Base#establish_connection
+    attr_accessor :config
     
     # Forward certain methods to the proxied database connection
     def_delegators \
@@ -85,7 +88,15 @@ module RR
     # +config+ is a hash as described by ActiveRecord::Base#establish_connection
     def initialize(config)
       self.connection = ConnectionExtenders.db_connect config
+      self.config = config
       self.manual_primary_keys = {}
+    end
+
+    # Checks if the connection is still active and if not, reestablished it.
+    def refresh
+      unless self.connection.active?
+        self.connection = ConnectionExtenders.db_connect config
+      end
     end
     
     # Destroys the session

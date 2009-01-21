@@ -104,8 +104,18 @@ EOS
       prepare_replication
 
       until termination_requested do
-        run = ReplicationRun.new session
-        run.run
+        begin
+          session.refresh
+          run = ReplicationRun.new session
+          run.run
+        rescue Exception => e
+          now = Time.now.iso8601
+          $stderr.puts "#{now} Exception caught: #{e}"
+          if @last_exception_message != e.to_s # only print backtrace if something changed
+            @last_exception_message = e.to_s
+            $stderr.puts e.backtrace.map {|line| line.gsub(/^/, "#{' ' * now.length} ")}
+          end
+        end
         pause_replication
       end
     end
