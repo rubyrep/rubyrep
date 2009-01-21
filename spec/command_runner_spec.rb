@@ -26,12 +26,12 @@ describe CommandRunner do
     }
   end
 
-  it "show_help should print a short help" do
+  it "run should print a short help if --help is specified" do
     org_stderr = $stderr
     $stderr = StringIO.new
     begin
       CommandRunner.register 'c1' => {:description => 'desc 1'}, 'c2' => {:description => 'desc 2'}
-      CommandRunner.show_help
+      CommandRunner.run(['--help'])
       $stderr.string.should =~ /Usage/
       $stderr.string.should =~ /c1.*desc 1\n/
       $stderr.string.should =~ /c2.*desc 2\n/
@@ -41,14 +41,28 @@ describe CommandRunner do
   end
 
   it "run should print help if no command line parameters are given" do
-    CommandRunner.should_receive(:show_help)
-    CommandRunner.run([]).should == 1
+    org_stderr = $stderr
+    $stderr = StringIO.new
+    begin
+      CommandRunner.run([]).should == 1
+      $stderr.string.should =~ /Available commands/
+    ensure
+      $stderr = org_stderr
+    end
   end
 
   it "run should print help if --help or help without further params is given" do
-    CommandRunner.should_receive(:show_help).twice
-    CommandRunner.run(['--help']).should == 0
-    CommandRunner.run(['help']).should == 0
+    org_stderr = $stderr
+    $stderr = StringIO.new
+    begin
+      CommandRunner.run(['--help']).should == 0
+      $stderr.string.should =~ /Available commands/
+      $stderr = StringIO.new
+      CommandRunner.run(['help']).should == 0
+      $stderr.string.should =~ /Available commands/
+    ensure
+      $stderr = org_stderr
+    end
   end
 
   it "run should print version if --version is given" do
@@ -64,11 +78,38 @@ describe CommandRunner do
   end
 
   it "run should print help if unknown command is given" do
-    CommandRunner.should_receive(:show_help)
-    CommandRunner.run('non-existing-command').should == 1
+    org_stderr = $stderr
+    $stderr = StringIO.new
+    begin
+      CommandRunner.run('non-existing-command').should == 1
+      $stderr.string.should =~ /Available commands/
+    ensure
+      $stderr = org_stderr
+    end
   end
 
-  it "rubyrep.rb should call CommandRunner#run" do
+  it "run should print stacktrace if --verbose option is given" do
+    org_stderr = $stderr
+    $stderr = StringIO.new
+    begin
+      c = mock('dummy_command')
+      c.stub!(:run).and_return {raise 'bla'}
+      CommandRunner.register 'dummy_command' => {:command => c}
+      CommandRunner.run(['--verbose', 'dummy_command', '-c', 'non_existing_file']).should == 1
+      $stderr.string.should =~ /Exception caught/
+      $stderr.string.should =~ /command_runner.rb:[0-9]+:in /
+
+      # also verify that no stacktrace is printed if --verbose is not specified
+      $stderr = StringIO.new
+      CommandRunner.run(['dummy_command', '-c', 'non_existing_file']).should == 1
+      $stderr.string.should =~ /Exception caught/
+      $stderr.string.should_not =~ /command_runner.rb:[0-9]+:in /
+    ensure
+      $stderr = org_stderr
+    end
+  end
+
+  it "rubyrep should call CommandRunner#run" do
     CommandRunner.should_receive(:run).with(ARGV).and_return(0)
     Kernel.any_instance_should_receive(:exit) {
       load File.dirname(__FILE__) + '/../bin/rubyrep'
@@ -85,5 +126,20 @@ describe HelpRunner do
   it "run should call help for the specified command" do
     CommandRunner.should_receive(:run).with(['dummy_command', '--help'])
     HelpRunner.run(['dummy_command'])
+  end
+
+  it "run should print help for itself if '--help' or 'help' is specified" do
+    org_stderr = $stderr
+    $stderr = StringIO.new
+    begin
+      HelpRunner.run('--help')
+      $stderr.string.should =~ /help.*command/
+
+      $stderr = StringIO.new
+      HelpRunner.run('help')
+      $stderr.string.should =~ /help.*command/
+    ensure
+      $stderr = org_stderr
+    end
   end
 end
