@@ -28,12 +28,13 @@ def install_redmine(database, name = nil)
 end
 
 desc "Deploys two Redmine test installations"
-task :deploy_redmine do
+namespace :deploy do
+  task :redmine do
 
-  database = ENV['RR_TEST_DB'] ? ENV['RR_TEST_DB'] : :postgres
-  install_redmine database
+    database = ENV['RR_TEST_DB'] ? ENV['RR_TEST_DB'] : :postgres
+    install_redmine database
 
-  puts(<<EOS)
+    puts(<<EOS)
 # Setup finished
 # Start the redmine instances on ports 3000 and 3001 respectively
 # with the following commands:
@@ -42,4 +43,5 @@ task :deploy_redmine do
 # Start the replication with
 ruby ./bin/rubyrep replicate -c ./config/redmine_config.rb
 EOS
+  end
 end
