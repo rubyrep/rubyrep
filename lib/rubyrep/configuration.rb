@@ -125,6 +125,11 @@ module RR
       @excluded_table_specs ||= []
     end
     
+    # Ensures that rubyrep infrastructure tables are excluded
+    def exclude_rubyrep_tables
+      exclude_tables Regexp.new("^#{options[:rep_prefix]}_.*")
+    end
+    
     # A list of tables having table specific options that should be considered
     # during processing (scanned, synced, ...)
     # +tables_with_options+ is a 2 element array with

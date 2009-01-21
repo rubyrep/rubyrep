@@ -77,6 +77,28 @@ describe Configuration do
     config.options_for_table('a')[:bla].should == :blub
   end
 
+  it "include_tables should include the specified table specs" do
+    config = Configuration.new
+    config.include_tables('a')
+    config.include_tables(/b/)
+    config.included_table_specs.include?('a').should be_true
+    config.included_table_specs.include?(/b/).should be_true
+  end
+
+  it "exclude_tables should exclude the specified table specs" do
+    config = Configuration.new
+    config.exclude_tables('a')
+    config.exclude_tables(/b/)
+    config.excluded_table_specs.include?('a').should be_true
+    config.excluded_table_specs.include?(/b/).should be_true
+  end
+
+  it "exclude_rubyrep_tables should exclude the rubyrep infrastructure tables" do
+    config = Configuration.new
+    config.exclude_rubyrep_tables
+    config.excluded_table_specs.include?(/^rr_.*/).should be_true
+  end
+
   it "excluded_table_specs should return the list of excluded table specifications" do
     config = Configuration.new
     config.exclude_tables('a')

@@ -363,8 +363,8 @@ describe ReplicationInitializer do
   it "exclude_ruby_rep_tables should exclude the correct system tables" do
     config = deep_copy(standard_config)
     initializer = ReplicationInitializer.new(Session.new(config))
-    initializer.session.configuration.should_receive(:exclude_tables).with(/^rr_.*/)
     initializer.exclude_rubyrep_tables
+    initializer.session.configuration.excluded_table_specs.include?(/^rr_.*/).should be_true
   end
 
   it "restore_tables should remove triggers and sequences setups of unconfigured tables" do

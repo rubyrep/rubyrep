@@ -155,6 +155,7 @@ EOS
 
     # Executes a run based on the established options.
     def execute
+      session.configuration.exclude_rubyrep_tables
       table_pairs.each do |table_pair|
         report_printer.scan table_pair[:left], table_pair[:right] do
           processor = create_processor \

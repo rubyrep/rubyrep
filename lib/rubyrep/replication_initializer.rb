@@ -181,8 +181,7 @@ module RR
 
     # Adds to the current session's configuration an exclusion of rubyrep tables.
     def exclude_rubyrep_tables
-      r = Regexp.new "^#{options[:rep_prefix]}_.*"
-      session.configuration.exclude_tables r
+      session.configuration.exclude_rubyrep_tables
     end
 
     # Checks in both databases, if the activity marker tables exist and if not,
