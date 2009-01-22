@@ -174,38 +174,38 @@ module RR
     # standard ruby version
     module JdbcPostgreSQLExtender
 
-        # Returns the list of a table's column names, data types, and default values.
-        #
-        # The underlying query is roughly:
-        #  SELECT column.name, column.type, default.value
-        #    FROM column LEFT JOIN default
-        #      ON column.table_id = default.table_id
-        #     AND column.num = default.column_num
-        #   WHERE column.table_id = get_table_id('table_name')
-        #     AND column.num > 0
-        #     AND NOT column.is_dropped
-        #   ORDER BY column.num
-        #
-        # If the table name is not prefixed with a schema, the database will
-        # take the first match from the schema search path.
-        #
-        # Query implementation notes:
-        #  - format_type includes the column size constraint, e.g. varchar(50)
-        #  - ::regclass is a function that gives the id for a table name
-        def column_definitions(table_name) #:nodoc:
-          rows = select_all(<<-end_sql)
+      # Returns the list of a table's column names, data types, and default values.
+      #
+      # The underlying query is roughly:
+      #  SELECT column.name, column.type, default.value
+      #    FROM column LEFT JOIN default
+      #      ON column.table_id = default.table_id
+      #     AND column.num = default.column_num
+      #   WHERE column.table_id = get_table_id('table_name')
+      #     AND column.num > 0
+      #     AND NOT column.is_dropped
+      #   ORDER BY column.num
+      #
+      # If the table name is not prefixed with a schema, the database will
+      # take the first match from the schema search path.
+      #
+      # Query implementation notes:
+      #  - format_type includes the column size constraint, e.g. varchar(50)
+      #  - ::regclass is a function that gives the id for a table name
+      def column_definitions(table_name) #:nodoc:
+        rows = select_all(<<-end_sql)
             SELECT a.attname as name, format_type(a.atttypid, a.atttypmod) as type, d.adsrc as default, a.attnotnull as notnull
               FROM pg_attribute a LEFT JOIN pg_attrdef d
                 ON a.attrelid = d.adrelid AND a.attnum = d.adnum
              WHERE a.attrelid = '#{table_name}'::regclass
                AND a.attnum > 0 AND NOT a.attisdropped
              ORDER BY a.attnum
-          end_sql
+        end_sql
           
-          rows.map do |row|
-            [row['name'], row['type'], row['default'], row['notnull']]
-          end
+        rows.map do |row|
+          [row['name'], row['type'], row['default'], row['notnull']]
         end
+      end
 
       # Returns the list of all column definitions for a table.
       def columns(table_name, name = nil)
@@ -233,6 +233,16 @@ module RR
             FROM pg_tables
            WHERE schemaname IN (#{schemas})
         SQL
+      end
+
+      # Converts the given Time object into the correctly formatted string
+      # representation.
+      # 
+      # Monkeypatched as activerecord-jdbcpostgresql-adapter (at least in version
+      # 0.8.2) does otherwise "loose" the microseconds when writing Time values
+      # to the database.
+      def quoted_date(value)
+        "#{value.strftime("%Y-%m-%d %H:%M:%S")}#{value.respond_to?(:usec) ? ".#{value.usec.to_s.rjust(6, '0')}" : ""}"
       end
     end
   end
