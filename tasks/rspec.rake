@@ -47,7 +47,6 @@ namespace :spec do
     end
   end
   
-  JRUBY_HOME = "#{ENV['HOME']}/usr/jruby"
   desc "Run the specs for all supported databases and ruby platforms" 
   task :all_rubies do
     puts "Running spec:all_dbs in standard ruby"
