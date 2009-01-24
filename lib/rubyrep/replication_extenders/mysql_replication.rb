@@ -154,8 +154,6 @@ module RR
         current_max = 0
         sequence_row = select_one("select current_value, increment, offset from #{sequence_table_name} where name = '#{table_name}'")
         if sequence_row == nil
-          # no sequence exists yet for the table, create it and the according
-          # sequence trigger
           current_max = select_one(<<-end_sql)['current_max'].to_i
             select max(#{column_name}) as current_max from #{table_name}
           end_sql
