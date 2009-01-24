@@ -117,10 +117,11 @@ module RR
           and t.relname = '#{table_name}'
         end_sql
         sequence_names.each do |sequence_name|
-          val1 = select_one("select nextval('#{sequence_name}')")['nextval'].to_i
-          val2 = select_one("select nextval('#{sequence_name}')")['nextval'].to_i
-          unless val2 - val1 == increment and val2 % increment == offset
-            sequence_values[sequence_name] = val2
+          row = select_one("select last_value, increment_by from #{sequence_name}")
+          current_value = row['last_value'].to_i
+          current_increment = row['increment_by'].to_i
+          unless current_increment == increment and current_value % increment == offset
+            sequence_values[sequence_name] = current_value
           end
         end
         sequence_values
