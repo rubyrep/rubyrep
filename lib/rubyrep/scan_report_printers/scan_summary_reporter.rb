@@ -22,10 +22,10 @@ module RR::ScanReportPrinters
     # Hold the result of the current scan. A hash with a running count of
     #  +:conflict+, +:left+ (only) or +:right+ (only) records.
     attr_accessor :scan_result
-    
+
     # A scan run is to be started using this scan result printer.
     # +arg+ is the command line argument as yielded by OptionParser#on.
-    def initialize(arg)
+    def initialize(_, arg)
       self.only_totals = (arg != 'detailed')
     end
     

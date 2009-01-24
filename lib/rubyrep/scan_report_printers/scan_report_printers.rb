@@ -10,7 +10,8 @@ module RR
   # functionality:
   #
   #   # Creation of a new ScanReportPrinter.
-  #   # +arg+ is the command line argument as yielded by OptionParser#on.
+  #   # * +session+: the current Session object
+  #   # * +arg+: command line argument as yielded by OptionParser#on.
   #   def initialize(arg)
   #
   #   # A scan of the given 'left' table and corresponding 'right' table is executed.
@@ -50,8 +51,7 @@ module RR
     # Registers all report printer command line options into the given
     # OptionParser.
     # Once the command line is parsed with OptionParser#parse! it will
-    # create the correct printer as per specified command line options and
-    # yield it.
+    # yield the printer class and the optional command line parameter.
     #
     # Note:
     # If multiple printers are specified in the command line, all are created
@@ -59,7 +59,7 @@ module RR
     def self.on_printer_selection(opts)
       printers.each do |printer|
         opts.on(*printer[:opts]) do |arg|
-          yield printer[:printer_class].new(arg)
+          yield printer[:printer_class], arg
         end
       end
     end

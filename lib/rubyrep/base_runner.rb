@@ -17,14 +17,21 @@ module RR
     # * +:table_specs+: array of table specification strings
     attr_accessor :options
 
+    # The class for the selected report printer
+    attr_accessor :report_printer_class
+
+    # The specified option parameter for the report printer
+    attr_accessor :report_printer_arg
+
     # Returns the active ScanReportPrinters instance (as selected through the
     # command line options OR if none was selected, the default one).
     def report_printer
-      @report_printer ||= ScanReportPrinters::ScanSummaryReporter.new(nil)
+      unless @report_printer
+        printer_class = report_printer_class || ScanReportPrinters::ScanSummaryReporter
+        @report_printer ||= printer_class.new(session, report_printer_arg)
+      end
+      @report_printer
     end
-
-    # Sets the active ScanReportPrinter
-    attr_writer :report_printer
 
     # Returns the command line selected ScanProgressPrinters class
     attr_accessor :selected_progress_printer
@@ -69,8 +76,9 @@ EOS
         opts.separator ""
         opts.separator "  Specific options:"
 
-        ScanReportPrinters.on_printer_selection(opts) do |printer|
-          self.report_printer = printer
+        ScanReportPrinters.on_printer_selection(opts) do |printer_class, arg|
+          self.report_printer_class = printer_class
+          self.report_printer_arg = arg
         end
 
         ScanProgressPrinters.on_printer_selection(opts) do |printer|

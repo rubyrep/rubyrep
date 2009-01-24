@@ -66,14 +66,13 @@ describe BaseRunner do
     begin
       ScanReportPrinters.instance_eval { class_variable_set :@@report_printers, nil }
       
-      printer_y_class = mock("printer_y")
-      printer_y_class.should_receive(:new).and_return(:printer_y_instance)
-      
-      ScanReportPrinters.register printer_y_class, "-y", "--printer_y[=arg]", "description"
+      ScanReportPrinters.register :dummy_printer_class, "-y", "--printer_y[=arg]", "description"
       
       runner = BaseRunner.new
-      runner.process_options ["-c", "config_path", "-y", "arg_for_y", "table_spec"]
-      runner.report_printer.should == :printer_y_instance
+      runner.stub!(:session)
+      runner.process_options ["-c", "config_path", "--printer_y=arg_for_y", "table_spec"]
+      runner.report_printer_class.should == :dummy_printer_class
+      runner.report_printer_arg.should == 'arg_for_y'
     ensure
       ScanReportPrinters.instance_eval { class_variable_set :@@report_printers, org_printers }
     end
@@ -123,14 +122,21 @@ describe BaseRunner do
     }
   end
 
-  it "report_printer should return the printer as assigned by report_printer=" do
+  it "report_printer should create and return the printer as specified per command line options" do
+    printer_class = mock("printer class")
+    printer_class.should_receive(:new).with(:dummy_session, :dummy_arg).and_return(:dummy_printer)
     runner = BaseRunner.new
-    runner.report_printer= :dummy
-    runner.report_printer.should == :dummy
+    runner.stub!(:session).and_return(:dummy_session)
+    runner.report_printer_class = printer_class
+    runner.report_printer_arg = :dummy_arg
+    runner.report_printer.should == :dummy_printer
+    runner.report_printer # ensure the printer object is cached
   end
   
   it "report_printer should return the ScanSummaryReporter if no other printer was chosen" do
-    BaseRunner.new.report_printer.should be_an_instance_of(ScanReportPrinters::ScanSummaryReporter)
+    runner = BaseRunner.new
+    runner.stub!(:session)
+    runner.report_printer.should be_an_instance_of(ScanReportPrinters::ScanSummaryReporter)
   end
 
   it "progress_printer should return the config file specified printer if none was give via command line" do
@@ -150,7 +156,7 @@ describe BaseRunner do
     printer.should_receive(:scanning_finished)
     printer.should_receive(:respond_to?).with(:scanning_finished).and_return(true)
     runner = BaseRunner.new
-    runner.report_printer = printer
+    runner.stub!(:report_printer).and_return(printer)
     runner.signal_scanning_completion
   end
   
@@ -159,7 +165,7 @@ describe BaseRunner do
     printer.should_not_receive(:scanning_finished)
     printer.should_receive(:respond_to?).with(:scanning_finished).and_return(false)
     runner = BaseRunner.new
-    runner.report_printer = printer
+    runner.stub!(:report_printer).and_return(printer)
     runner.signal_scanning_completion
   end
 
@@ -168,7 +174,6 @@ describe BaseRunner do
     $stdout = StringIO.new
     begin
       runner = BaseRunner.new
-      runner.report_printer = ScanReportPrinters::ScanSummaryReporter.new(nil)
       runner.options = {
         :config_file => "#{File.dirname(__FILE__)}/../config/test_config.rb",
         :table_specs => ["scanner_records", "extender_one_record"]

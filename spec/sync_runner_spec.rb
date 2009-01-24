@@ -38,7 +38,6 @@ describe SyncRunner do
     $stdout = StringIO.new
     begin
       sync_runner = SyncRunner.new
-      sync_runner.report_printer = ScanReportPrinters::ScanSummaryReporter.new(nil)
       sync_runner.options = {
         :config_file => "#{File.dirname(__FILE__)}/../config/test_config.rb",
         :table_specs => ["scanner_records"]

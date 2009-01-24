@@ -35,30 +35,31 @@ describe ScanReportPrinters do
     end
   end
 
-  it "on_printer_selection should create and yield the correct printer" do
+  it "on_printer_selection should create and yield the printer class and option argument" do
     org_printers = ScanReportPrinters.printers
     begin
       ScanReportPrinters.instance_eval { class_variable_set :@@report_printers, nil }
 
-      # register a printer which will not be selected in the command line options
+      # register a printer class which will not be selected in the command line options
       printer_x = mock("printer_x")
-      printer_x.should_not_receive :new
       ScanReportPrinters.register printer_x, "-x", "--printer_x"
 
-      # register a printer that will be selected in the command line options
+      # register a printer class that will be selected in the command line options
       printer_y = mock("printer_y")
-      printer_y.should_receive(:new).with("dummy_arg").and_return(:printer_y_instance)
 
       ScanReportPrinters.register printer_y, "-y", "--printer_y[=arg]", "description"
 
-      selected_printer = nil
+      selected_printer_class = nil
+      selected_arg = nil
       parser = OptionParser.new
-      ScanReportPrinters.on_printer_selection(parser) do |printer|
-        selected_printer = printer
+      ScanReportPrinters.on_printer_selection(parser) do |printer_class, arg|
+        selected_printer_class = printer_class
+        selected_arg = arg
       end
       parser.parse!(["--printer_y=dummy_arg"])
 
-      selected_printer.should == :printer_y_instance
+      selected_printer_class.should == printer_y
+      selected_arg.should == 'dummy_arg'
     ensure
       ScanReportPrinters.instance_eval { class_variable_set :@@report_printers, org_printers }
     end
