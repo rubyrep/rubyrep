@@ -45,6 +45,7 @@ lib/rubyrep/replicators/replicators.rb
 lib/rubyrep/replicators/two_way_replicator.rb
 lib/rubyrep/scan_progress_printers/progress_bar.rb
 lib/rubyrep/scan_progress_printers/scan_progress_printers.rb
+lib/rubyrep/scan_report_printers/scan_detail_reporter.rb
 lib/rubyrep/scan_report_printers/scan_report_printers.rb
 lib/rubyrep/scan_report_printers/scan_summary_reporter.rb
 lib/rubyrep/scan_runner.rb
@@ -104,6 +105,7 @@ spec/replication_run_spec.rb
 spec/replication_runner_spec.rb
 spec/replicators_spec.rb
 spec/rubyrep_spec.rb
+spec/scan_detail_reporter_spec.rb
 spec/scan_progress_printers_spec.rb
 spec/scan_report_printers_spec.rb
 spec/scan_runner_spec.rb
@@ -127,6 +129,7 @@ spec/uninstall_runner_spec.rb
 tasks/database.rake
 tasks/deployment.rake
 tasks/environment.rake
+tasks/java.rake
 tasks/redmine_test.rake
 tasks/rspec.rake
 tasks/rubyrep.tailor
