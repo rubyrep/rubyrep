@@ -132,12 +132,12 @@ describe HelpRunner do
     org_stderr = $stderr
     $stderr = StringIO.new
     begin
-      HelpRunner.run('--help')
-      $stderr.string.should =~ /help.*command/
+      HelpRunner.run(['--help'])
+      $stderr.string.should =~ /Shows the help for the specified command/
 
       $stderr = StringIO.new
-      HelpRunner.run('help')
-      $stderr.string.should =~ /help.*command/
+      HelpRunner.run(['help'])
+      $stderr.string.should =~ /Shows the help for the specified command/
     ensure
       $stderr = org_stderr
     end
