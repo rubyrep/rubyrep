@@ -60,6 +60,19 @@ class RR::Session
   def inspect; 'session'; end
 end
 
+class ActiveRecord::Base
+  class << self
+    # Hack:
+    # The default inspect method (as per activerecord version 2.2.2) tries to
+    # send commands to the database.
+    # This leads to rcov failing.
+    # As workaround this is disabling the attempts to connect to the database.
+    def inspect
+      super
+    end
+  end
+end
+
 # If number_of_calls is :once, mock ActiveRecord for 1 call.
 # If number_of_calls is :twice, mock ActiveRecord for 2 calls.
 def mock_active_record(number_of_calls)
