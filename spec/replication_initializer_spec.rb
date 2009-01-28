@@ -367,7 +367,7 @@ describe ReplicationInitializer do
     initializer.session.configuration.excluded_table_specs.include?(/^rr_.*/).should be_true
   end
 
-  it "restore_tables should remove triggers and sequences setups of unconfigured tables" do
+  it "restore_unconfigured_tables should remove triggers and sequences setups of unconfigured tables" do
     session = Session.new
     initializer = ReplicationInitializer.new session
     begin
