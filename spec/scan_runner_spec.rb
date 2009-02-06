@@ -15,6 +15,7 @@ describe ScanRunner do
     org_stdout = $stdout
     $stdout = StringIO.new
     begin
+      Initializer.configuration = Configuration.new
       scan_runner = ScanRunner.new
       scan_runner.options = {
         :config_file => "#{File.dirname(__FILE__)}/../config/test_config.rb",
@@ -22,10 +23,10 @@ describe ScanRunner do
       }
 
       scan_runner.execute
-      
+
       $stdout.string.should =~ /scanner_records.* 5\n/
       $stdout.string.should =~ /extender_one_record.* 0\n/
-    ensure 
+    ensure
       $stdout = org_stdout
     end
   end
