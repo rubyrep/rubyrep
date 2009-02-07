@@ -105,6 +105,9 @@ describe ReplicationInitializer do
       session.left.begin_db_transaction
       session.right.begin_db_transaction
 
+      session.left.execute "delete from sequence_test"
+      session.right.execute "delete from sequence_test"
+
       # Note:
       # Calling ensure_sequence_setup twice with different values to ensure that
       # it is actually does something.
