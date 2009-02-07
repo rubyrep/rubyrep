@@ -121,12 +121,12 @@ module RR
       #   specified via Configuration#options.
       #   Is used to create the sequences table.
       # * +table_name+: name of the table
-      # * +increment+: increment of the sequence
-      # * +offset+: offset
       # Return value: a hash with
       # * key: sequence name
-      # * value: current sequence value
-      def outdated_sequence_values(rep_prefix, table_name, increment, offset)
+      # * value: a hash with
+      #   * :+increment+: current sequence increment
+      #   * :+value+: current value
+      def sequence_values(rep_prefix, table_name)
         # check if the table has an auto_increment column, return if not
         sequence_row = select_one(<<-end_sql)
           show columns from #{table_name} where extra = 'auto_increment'
@@ -151,19 +151,23 @@ module RR
           end_sql
         end
 
-        current_max = 0
         sequence_row = select_one("select current_value, increment, offset from #{sequence_table_name} where name = '#{table_name}'")
         if sequence_row == nil
           current_max = select_one(<<-end_sql)['current_max'].to_i
             select max(#{column_name}) as current_max from #{table_name}
           end_sql
-          return {column_name => current_max}
-        elsif sequence_row['increment'].to_i != increment or sequence_row['offset'].to_i != offset
-          # sequence exists but with incorrect values; update it
-          current_max = sequence_row['current_value'].to_i
-          return {column_name => current_max}
+          return {column_name => {
+              :increment => 1,
+              :value => current_max
+            }
+          }
+        else
+          return {column_name => {
+              :increment => sequence_row['increment'].to_i,
+              :value => sequence_row['offset'].to_i
+            }
+          }
         end
-        return {}
       end
 
       # Ensures that the sequences of the named table (normally the primary key
@@ -189,7 +193,7 @@ module RR
         # check if the sequences table exists, create if necessary
         sequence_table_name = "#{rep_prefix}_sequences"
         current_max =
-          [left_sequence_values[column_name], right_sequence_values[column_name]].max +
+          [left_sequence_values[column_name][:value], right_sequence_values[column_name][:value]].max +
           adjustment_buffer
         new_start = current_max - (current_max % increment) + increment + offset
 

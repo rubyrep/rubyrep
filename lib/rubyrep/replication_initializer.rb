@@ -74,10 +74,8 @@ module RR
       table_options = options(table_pair[:left])
       if table_options[:adjust_sequences]
         rep_prefix = table_options[:rep_prefix]
-        left_sequence_values = session.left.outdated_sequence_values \
-          rep_prefix, table_pair[:left], increment, left_offset
-        right_sequence_values = session.right.outdated_sequence_values \
-          rep_prefix, table_pair[:right], increment, right_offset
+        left_sequence_values = session.left.sequence_values rep_prefix, table_pair[:left]
+        right_sequence_values = session.right.sequence_values rep_prefix, table_pair[:right]
         [:left, :right].each do |database|
           offset = database == :left ? left_offset : right_offset
           session.send(database).update_sequences \

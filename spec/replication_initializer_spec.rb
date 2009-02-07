@@ -384,12 +384,12 @@ describe ReplicationInitializer do
       # verify that the unconfigured tables are restored and pending changes deleted
       initializer.restore_unconfigured_tables
       initializer.trigger_exists?(:right, 'scanner_records').should be_false
-      session.right.outdated_sequence_values('rr', 'scanner_records', 2, 1).size.should == 1
+      session.right.sequence_values('rr', 'scanner_records').values[0][:increment].should == 1
       session.right.select_one("select * from rr_pending_changes where change_table = 'scanner_records'").should be_nil
 
       # verify that the configured tables are not touched
       initializer.trigger_exists?(:right, 'scanner_left_records_only').should be_true
-      session.right.outdated_sequence_values('rr', 'scanner_left_records_only', 2, 1).size.should == 0
+      session.right.sequence_values('rr', 'scanner_left_records_only').values[0][:increment].should == 2
       session.right.select_one("select * from rr_pending_changes where change_table = 'scanner_left_records_only'").should_not be_nil
     ensure
       ['scanner_left_records_only', 'scanner_records'].each do |table|
@@ -424,8 +424,8 @@ describe ReplicationInitializer do
       initializer.should_receive(:restore_unconfigured_tables).any_number_of_times
       initializer.prepare_replication
       # verify sequences have been setup
-      session.left.outdated_sequence_values('rr','scanner_left_records_only', 2, 0).should == {}
-      session.right.outdated_sequence_values('rr','scanner_left_records_only', 2, 1).should == {}
+      session.left.sequence_values('rr','scanner_left_records_only').values[0][:increment].should == 2
+      session.right.sequence_values('rr','scanner_left_records_only').values[0][:increment].should == 2
 
       # verify table was synced
       left_records = session.left.select_all("select * from  scanner_left_records_only order by id")

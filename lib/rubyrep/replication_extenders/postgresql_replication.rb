@@ -101,13 +101,13 @@ module RR
       # Parameters:
       # * +rep_prefix+: not used (necessary) for the Postgres
       # * +table_name+: name of the table
-      # * +increment+: increment of the sequence
-      # * +offset+: offset
       # Return value: a hash with
       # * key: sequence name
-      # * value: current sequence value
-      def outdated_sequence_values(rep_prefix, table_name, increment, offset)
-        sequence_values = {}
+      # * value: a hash with
+      #   * :+increment+: current sequence increment
+      #   * :+value+: current value
+      def sequence_values(rep_prefix, table_name)
+        result = {}
         sequence_names = select_all(<<-end_sql).map { |row| row['relname'] }
           select s.relname
           from pg_class as t
@@ -118,13 +118,12 @@ module RR
         end_sql
         sequence_names.each do |sequence_name|
           row = select_one("select last_value, increment_by from #{sequence_name}")
-          current_value = row['last_value'].to_i
-          current_increment = row['increment_by'].to_i
-          unless current_increment == increment and current_value % increment == offset
-            sequence_values[sequence_name] = current_value
-          end
+          result[sequence_name] = {
+            :increment => row['increment_by'].to_i,
+            :value => row['last_value'].to_i
+          }
         end
-        sequence_values
+        result
       end
 
       # Ensures that the sequences of the named table (normally the primary key
@@ -145,13 +144,18 @@ module RR
           rep_prefix, table_name, increment, offset,
           left_sequence_values, right_sequence_values, adjustment_buffer)
         left_sequence_values.each do |sequence_name, left_current_value|
-          max_current_value =
-            [left_current_value, right_sequence_values[sequence_name]].max +
-            adjustment_buffer
-          new_start = max_current_value - (max_current_value % increment) + increment + offset
-          execute(<<-end_sql)
+          row = select_one("select last_value, increment_by from #{sequence_name}")
+          current_increment = row['increment_by'].to_i
+          current_value = row['last_value'].to_i
+          unless current_increment == increment and current_value % increment == offset
+            max_current_value =
+              [left_current_value[:value], right_sequence_values[sequence_name][:value]].max +
+              adjustment_buffer
+            new_start = max_current_value - (max_current_value % increment) + increment + offset
+            execute(<<-end_sql)
             alter sequence "#{sequence_name}" increment by #{increment} restart with #{new_start}
-          end_sql
+            end_sql
+          end
         end
       end
 

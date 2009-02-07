@@ -29,7 +29,7 @@ module RR
       :referenced_tables,
       :create_or_replace_replication_trigger_function,
       :create_replication_trigger, :drop_replication_trigger, :replication_trigger_exists?,
-      :outdated_sequence_values, :update_sequences, :clear_sequence_setup,
+      :sequence_values, :update_sequences, :clear_sequence_setup,
       :create_table, :drop_table, :add_big_primary_key
     
     # Caching the primary keys. This is a hash with
