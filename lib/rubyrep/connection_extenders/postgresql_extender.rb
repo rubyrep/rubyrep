@@ -51,9 +51,14 @@ class Fetcher
     self.row_buffer_size = row_buffer_size
   end
 
+  # Executes the specified SQL staements, returning the result
+  def execute(sql)
+    connection.execute sql
+  end
+
   # Returns true if there are more rows to read.
   def next?
-    @current_result ||= connection.execute("FETCH FORWARD #{row_buffer_size} FROM #{cursor_name}")
+    @current_result ||= execute("FETCH FORWARD #{row_buffer_size} FROM #{cursor_name}")
     @current_result.next?
   end
 
@@ -74,8 +79,8 @@ class Fetcher
       @current_result.clear
       @current_result = nil
     end
-    result = connection.execute("CLOSE #{cursor_name}")
-    result.clear
+    result = execute("CLOSE #{cursor_name}")
+    result.clear if result
   end
 end
 

@@ -117,14 +117,12 @@ module RR
 
       # Executes the given sql query with the otional name written in the 
       # ActiveRecord log file.
+      # * +row_buffer_size+: not used.
       # Returns the results as a Cursor object supporting
       #   * next? - returns true if there are more rows to read
       #   * next_row - returns the row as a column => value hash and moves the cursor to the next row
       #   * clear - clearing the cursor (making allocated memory available for GC)
-      def select_cursor(sql, name = nil)
-        #result = execute sql, name
-        #result
-        #puts @connection.connection.methods.sort.to_yaml
+      def select_cursor(sql, row_buffer_size = nil)
         statement = @connection.connection.createStatement
         result_set = statement.executeQuery(sql)
         result_set.send :extend, JdbcResultSet
@@ -170,9 +168,45 @@ module RR
       end
     end
 
-    # Hack to get schema support for Postgres under JRuby on par with the 
-    # standard ruby version
+    require 'connection_extenders/postgresql_extender'
+
+    # Adds the correct query executioner functionality to the base class
+    class JdbcFetcher < Fetcher
+      # Executes the given statements and returns the result set.
+      def execute(sql)
+        statement = connection.instance_variable_get(:@connection).connection.createStatement
+        execute_method = sql =~ /close/i ? :execute : :executeQuery
+        result_set = statement.send(execute_method, sql)
+        result_set.send :extend, RR::ConnectionExtenders::JdbcSQLExtender::JdbcResultSet
+      end
+    end
+
+    # PostgreSQL specific functionality not provided by the standard JDBC
+    # connection extender:
+    # * Integration of memory efficient select_cursor.
+    # * Hack to get schema support for Postgres under JRuby on par with the
+    #   standard ruby version.
     module JdbcPostgreSQLExtender
+
+      # Executes the given sql query with the otional name written in the
+      # ActiveRecord log file.
+      #
+      # :+row_buffer_size+ controls how many records are ready into memory at a
+      # time. Implemented using the PostgeSQL "DECLARE CURSOR" and "FETCH" constructs.
+      # This is necessary as the postgresql driver always reads the
+      # complete resultset into memory.
+      #
+      # Returns the results as a Cursor object supporting
+      #   * next? - returns true if there are more rows to read
+      #   * next_row - returns the row as a column => value hash and moves the cursor to the next row
+      #   * clear - clearing the cursor (making allocated memory available for GC)
+      def select_cursor(sql, row_buffer_size = 1000)
+        cursor_name = "RR_#{Time.now.to_i}#{rand(1_000_000)}"
+
+        statement = @connection.connection.createStatement
+        statement.execute("DECLARE #{cursor_name} NO SCROLL CURSOR WITH HOLD FOR " + sql)
+        JdbcFetcher.new(self, cursor_name, row_buffer_size)
+      end
 
       # Returns the list of a table's column names, data types, and default values.
       #
