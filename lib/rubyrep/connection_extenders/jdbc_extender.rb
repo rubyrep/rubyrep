@@ -171,7 +171,7 @@ module RR
     require 'connection_extenders/postgresql_extender'
 
     # Adds the correct query executioner functionality to the base class
-    class JdbcFetcher < Fetcher
+    class JdbcPostgreSQLFetcher < PostgreSQLFetcher
       # Executes the given statements and returns the result set.
       def execute(sql)
         statement = connection.instance_variable_get(:@connection).connection.createStatement
@@ -205,7 +205,7 @@ module RR
 
         statement = @connection.connection.createStatement
         statement.execute("DECLARE #{cursor_name} NO SCROLL CURSOR WITH HOLD FOR " + sql)
-        JdbcFetcher.new(self, cursor_name, row_buffer_size)
+        JdbcPostgreSQLFetcher.new(self, cursor_name, row_buffer_size)
       end
 
       # Returns the list of a table's column names, data types, and default values.

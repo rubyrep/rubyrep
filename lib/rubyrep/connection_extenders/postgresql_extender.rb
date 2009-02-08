@@ -29,61 +29,6 @@ class PGresult
   end
 end
 
-# Fetches results from a PostgreSQL cursor object.
-class Fetcher
-
-  # The current database connection
-  attr_accessor :connection
-
-  # Name of the cursor from which to fetch
-  attr_accessor :cursor_name
-
-  # Number of rows to be read at once
-  attr_accessor :row_buffer_size
-
-  # Creates a new fetcher.
-  # * +connection+: the current database connection
-  # * +cursor_name+: name of the cursor from which to fetch
-  # * +row_buffer_size+: number of records to read at once
-  def initialize(connection, cursor_name, row_buffer_size)
-    self.connection = connection
-    self.cursor_name = cursor_name
-    self.row_buffer_size = row_buffer_size
-  end
-
-  # Executes the specified SQL staements, returning the result
-  def execute(sql)
-    connection.execute sql
-  end
-
-  # Returns true if there are more rows to read.
-  def next?
-    @current_result ||= execute("FETCH FORWARD #{row_buffer_size} FROM #{cursor_name}")
-    @current_result.next?
-  end
-
-  # Returns the row as a column => value hash and moves the cursor to the next row.
-  def next_row
-    raise("no more rows available") unless next?
-    row = @current_result.next_row
-    unless @current_result.next?
-      @current_result.clear
-      @current_result = nil
-    end
-    row
-  end
-
-  # Closes the cursor and frees up all ressources
-  def clear
-    if @current_result
-      @current_result.clear
-      @current_result = nil
-    end
-    result = execute("CLOSE #{cursor_name}")
-    result.clear if result
-  end
-end
-
 # Hack:
 # For some reasons these methods were removed in Rails 2.2.2, thus breaking
 # the binary and multi-lingual data loading.
@@ -165,6 +110,61 @@ end
 module RR
   module ConnectionExtenders
 
+    # Fetches results from a PostgreSQL cursor object.
+    class PostgreSQLFetcher
+
+      # The current database connection
+      attr_accessor :connection
+
+      # Name of the cursor from which to fetch
+      attr_accessor :cursor_name
+
+      # Number of rows to be read at once
+      attr_accessor :row_buffer_size
+
+      # Creates a new fetcher.
+      # * +connection+: the current database connection
+      # * +cursor_name+: name of the cursor from which to fetch
+      # * +row_buffer_size+: number of records to read at once
+      def initialize(connection, cursor_name, row_buffer_size)
+        self.connection = connection
+        self.cursor_name = cursor_name
+        self.row_buffer_size = row_buffer_size
+      end
+
+      # Executes the specified SQL staements, returning the result
+      def execute(sql)
+        connection.execute sql
+      end
+
+      # Returns true if there are more rows to read.
+      def next?
+        @current_result ||= execute("FETCH FORWARD #{row_buffer_size} FROM #{cursor_name}")
+        @current_result.next?
+      end
+
+      # Returns the row as a column => value hash and moves the cursor to the next row.
+      def next_row
+        raise("no more rows available") unless next?
+        row = @current_result.next_row
+        unless @current_result.next?
+          @current_result.clear
+          @current_result = nil
+        end
+        row
+      end
+
+      # Closes the cursor and frees up all ressources
+      def clear
+        if @current_result
+          @current_result.clear
+          @current_result = nil
+        end
+        result = execute("CLOSE #{cursor_name}")
+        result.clear if result
+      end
+    end
+
     # Provides various PostgreSQL specific functionality required by Rubyrep.
     module PostgreSQLExtender
       RR::ConnectionExtenders.register :postgresql => self
@@ -184,7 +184,7 @@ module RR
       def select_cursor(sql, row_buffer_size = 1000)
         cursor_name = "RR_#{Time.now.to_i}#{rand(1_000_000)}"
         execute("DECLARE #{cursor_name} NO SCROLL CURSOR WITH HOLD FOR " + sql)
-        Fetcher.new(self, cursor_name, row_buffer_size)
+        PostgreSQLFetcher.new(self, cursor_name, row_buffer_size)
       end
       
       # Returns an ordered list of primary key column names of the given table
