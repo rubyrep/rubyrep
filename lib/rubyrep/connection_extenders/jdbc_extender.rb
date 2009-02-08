@@ -122,8 +122,9 @@ module RR
       #   * next? - returns true if there are more rows to read
       #   * next_row - returns the row as a column => value hash and moves the cursor to the next row
       #   * clear - clearing the cursor (making allocated memory available for GC)
-      def select_cursor(sql, row_buffer_size = nil)
+      def select_cursor(sql, row_buffer_size = 1000)
         statement = @connection.connection.createStatement
+        statement.setFetchSize row_buffer_size
         result_set = statement.executeQuery(sql)
         result_set.send :extend, JdbcResultSet
       end
