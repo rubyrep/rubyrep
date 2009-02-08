@@ -53,7 +53,10 @@ module RR
         if new_markers > @current_markers
           print '.'  * (new_markers - @current_markers)
           @current_markers = new_markers
-          print '.' * (max_markers - @current_markers) + ' ' if @current_steps == @max_steps
+          $stdout.flush
+        end
+        if @current_steps == @max_steps
+          print '.' * (max_markers - @current_markers) + ' '
           $stdout.flush
         end
       end

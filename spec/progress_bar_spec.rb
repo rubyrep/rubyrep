@@ -54,6 +54,12 @@ describe ProgressBar do
     $stdout.string.count('.').should == ProgressBar::MAX_MARKERS
   end
 
+  it "step should work around weird floating point rounding issues" do
+    bar = ProgressBar.new(56, Session.new(standard_config), 'bla', 'blub')
+    (1..56).each {bar.step 1}
+    $stdout.string.count('.').should == ProgressBar::MAX_MARKERS
+  end
+
   it "if max_steps is 0, any step call should go to 100% progress" do
     config = deep_copy(standard_config)
     config.options[:use_ansi] = true
