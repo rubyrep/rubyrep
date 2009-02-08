@@ -186,12 +186,9 @@ module RR
     #   * +:to+: nil OR the hash of primary key => value pairs designating the end of the selection
     #   * +:row_keys+: an array of primary key => value hashes specify the target rows.
     def table_select_query(table, options = {})
-      options.each_key do |key| 
-        raise "options must only include :from, :to or :row_keys" unless [:from, :to, :row_keys].include? key
-      end
       query = "select #{quote_column_list(table)}"
       query << " from #{quote_table_name(table)}"
-      query << " where" unless options.empty?
+      query << " where" if [:from, :to, :row_keys].any? {|key| options.include? key}
       first_condition = true
       if options[:from]
         first_condition = false

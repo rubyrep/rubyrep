@@ -32,12 +32,13 @@ module RR
 
       # Executes the given sql query with the optional name written in the 
       # ActiveRecord log file.
+      # :+row_buffer_size+ is not currently used.
       # Returns the results as a Cursor object supporting
       #   * next? - returns true if there are more rows to read
       #   * next_row - returns the row as a column => value hash and moves the cursor to the next row
       #   * clear - clearing the cursor (making allocated memory available for GC)
-      def select_cursor(sql, name = nil)
-        result = execute sql, name
+      def select_cursor(sql, row_buffer_size = 1000)
+        result = execute sql
         result.send :extend, MysqlResultExtender
         result
       end

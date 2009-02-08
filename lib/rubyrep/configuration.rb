@@ -23,6 +23,7 @@ module RR
     # Default #options for a new Configuration object.
     DEFAULT_OPTIONS = {
       :proxy_block_size => 1000,
+      :row_buffer_size => 1000,
       :replicator => :two_way,
       :committer => :buffered_commit,
       :commit_frequency => 1000,
@@ -44,6 +45,10 @@ module RR
     # General options.
     # Possible settings:
     # * :+proxy_block_size+: The proxy cursor will calculate the checksum for block_size number of records each.
+    # * :+row_buffer_size+:
+    #   The number of rows that is read into memory at once.
+    #   Only needed for database drivers that don't stream results one-by-one to the client.
+    #   Currently implemented for PostgreSQL only.
     # * :+committer+:
     #   A committer key as registered by Committers#register.
     #   Determines the transaction management to be used during the sync.

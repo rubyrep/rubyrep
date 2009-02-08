@@ -19,6 +19,11 @@ module RR
     # Receives the active ScanProgressPrinters class
     attr_accessor :progress_printer
 
+    # Returns a hash of scan options for this table scan.
+    def scan_options
+      @scan_options ||= session.configuration.options_for_table(left_table)
+    end
+
     # Inform new progress to progress printer
     # +steps+ is the number of processed records.
     def update_progress(steps)

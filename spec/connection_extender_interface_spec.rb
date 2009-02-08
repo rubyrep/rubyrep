@@ -49,6 +49,14 @@ describe "ConnectionExtender", :shared => true do
     result.next?.should be_false
   end
   
+  it "select_cursor should work if row_buffer_size is smaller than table size" do
+    session = Session.new
+    result = session.left.select_cursor "select * from scanner_records order by id", 2
+    result.next_row
+    result.next_row
+    result.next_row['id'].should == '3'
+  end
+
   it "select_cursor should allow iterating through records" do
     session = Session.new
     result = session.left.select_cursor "select * from extender_one_record"

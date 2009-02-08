@@ -33,9 +33,13 @@ module RR
     def run(&blck)
       left_cursor = right_cursor = nil
       left_cursor = TypeCastingCursor.new(session.left, left_table, 
-        session.left.select_cursor(session.left.table_select_query(left_table)))
+        session.left.select_cursor(
+          session.left.table_select_query(left_table),
+          scan_options[:row_buffer_size]))
       right_cursor = TypeCastingCursor.new(session.right, right_table, 
-        session.right.select_cursor(session.left.table_select_query(right_table))) 
+        session.right.select_cursor(
+          session.left.table_select_query(right_table),
+          scan_options[:row_buffer_size]))
       left_row = right_row = nil
       update_progress 0 # ensures progress bar is printed even if there are no records
       while left_row or right_row or left_cursor.next? or right_cursor.next?
