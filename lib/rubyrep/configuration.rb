@@ -15,9 +15,9 @@ module RR
     attr_accessor :right
     
     # Returns true unless running on windows...
-    def self.true_unless_running_on_windows
+    def self.true_if_running_in_a_terminal_and_not_under_windows
       # Not using RUBY_PLATFORM as it should also work under JRuby
-      not ENV['OS'] =~ /windows/i
+      $stdout.tty? and not ENV['OS'] =~ /windows/i
     end
 
     # Default #options for a new Configuration object.
@@ -29,7 +29,7 @@ module RR
       :commit_frequency => 1000,
       :table_ordering => true,
       :scan_progress_printer => :progress_bar,
-      :use_ansi => true_unless_running_on_windows,
+      :use_ansi => true_if_running_in_a_terminal_and_not_under_windows,
       :adjust_sequences => true,
       :sequence_adjustment_buffer => 0,
       :sequence_increment => 2,
