@@ -33,5 +33,25 @@ describe "PostgreSQL schema support" do
         session.left.rollback_db_transaction if session
       end
     end
+
+    it "should not round microsecond times to incorrect value" do
+      session = nil
+      begin
+        session = Session.new
+        session.left.begin_db_transaction
+        session.left.insert_record('extender_type_check',
+          {'id' => 2, 'timestamp' => Time.local(2009, "feb", 16, 13, 37, 11, 126291)}
+        )
+
+        org_cursor = session.left.select_cursor("select id, timestamp from extender_type_check where id = 2")
+        cursor = TypeCastingCursor.new session.left, 'extender_type_check', org_cursor
+
+        row = cursor.next_row
+        row['timestamp'].usec.should == 126291
+        cursor.clear
+      ensure
+        session.left.rollback_db_transaction if session
+      end
+    end
   end
 end

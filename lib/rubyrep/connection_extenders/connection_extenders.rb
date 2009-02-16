@@ -1,3 +1,16 @@
+class ActiveRecord::ConnectionAdapters::Column
+  # Bug in ActiveRecord parsing of PostgreSQL timestamps with microseconds:
+  # Certain values are incorrectly rounded, thus ending up with timestamps
+  # that are off by one microsecond.
+  # This monkey patch fixes the problem.
+  def self.fast_string_to_time(string)
+    if string =~ Format::ISO_DATETIME
+      microsec = ($7.to_f * 1_000_000).round # used to be #to_i instead
+      new_time $1.to_i, $2.to_i, $3.to_i, $4.to_i, $5.to_i, $6.to_i, microsec
+    end
+  end
+end
+
 module RR
   
   # Connection extenders provide additional database specific functionality
