@@ -9,7 +9,7 @@ def install_redmine(database, name = nil)
 
     FileUtils.cd '..'
     unless File.exists?(name)
-      system "svn checkout http://redmine.rubyforge.org/svn/trunk #{name}"
+      system "svn checkout -r 2145 http://redmine.rubyforge.org/svn/trunk #{name}"
     end
     FileUtils.cd name
     ENV['RAILS_ENV'] = 'production'
