@@ -7,7 +7,7 @@ def install_redmine(database, name = nil)
     database = database.to_s
     database.sub!(/^postgres$/, 'postgresql')
 
-    FileUtils.cd '..'
+    FileUtils.cd(File.expand_path("~"))
     unless File.exists?(name)
       system "svn checkout -r 2145 http://redmine.rubyforge.org/svn/trunk #{name}"
     end
@@ -38,8 +38,8 @@ namespace :deploy do
 # Setup finished
 # Start the redmine instances on ports 3000 and 3001 respectively
 # with the following commands:
-(cd ../leftmine; ruby ./script/server -p 3000 -e production)
-(cd ../rightmine; ruby ./script/server -p 3001 -e production)
+(cd ~/leftmine; ruby ./script/server -p 3000 -e production)
+(cd ~/rightmine; ruby ./script/server -p 3001 -e production)
 # Start the replication with
 ruby ./bin/rubyrep replicate -c ./config/redmine_config.rb
 EOS
