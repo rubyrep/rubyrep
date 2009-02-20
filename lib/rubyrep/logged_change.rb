@@ -84,13 +84,12 @@ module RR
       
       self.last_updated = Time.now
 
-      org_cursor = connection.select_cursor(<<-end_sql)
-        select * from #{change_log_table}
-        where id > #{current_id}
-        order by id
-      end_sql
-      cursor = TypeCastingCursor.new(connection,
-        change_log_table, org_cursor)
+      cursor = connection.select_cursor(
+        :table => change_log_table,
+        :from => {'id' => current_id},
+        :exclude_starting_row => true,
+        :type_cast => true
+      )
       while cursor.next?
         change = cursor.next_row
         self.current_id = change['id']

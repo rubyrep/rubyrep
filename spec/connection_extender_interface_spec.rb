@@ -45,13 +45,13 @@ describe "ConnectionExtender", :shared => true do
 
   it "select_cursor should handle zero result queries" do
     session = Session.new
-    result = session.left.select_cursor "select * from extender_no_record"
+    result = session.left.select_cursor :table => 'extender_no_record'
     result.next?.should be_false
   end
   
   it "select_cursor should work if row_buffer_size is smaller than table size" do
     session = Session.new
-    result = session.left.select_cursor "select * from scanner_records order by id", 2
+    result = session.left.select_cursor(:table => 'scanner_records', :row_buffer_size => 2)
     result.next_row
     result.next_row
     result.next_row['id'].should == '3'
@@ -59,20 +59,20 @@ describe "ConnectionExtender", :shared => true do
 
   it "select_cursor should allow iterating through records" do
     session = Session.new
-    result = session.left.select_cursor "select * from extender_one_record"
+    result = session.left.select_cursor :table => 'extender_one_record'
     result.next?.should be_true
     result.next_row.should == {'id' => "1", 'name' => 'Alice'}
   end
   
   it "select_cursor next_row should raise if there are no records" do
     session = Session.new
-    result = session.left.select_cursor "select * from extender_no_record"
+    result = session.left.select_cursor :table => 'extender_no_record'
     lambda {result.next_row}.should raise_error(RuntimeError, 'no more rows available')  
   end
   
   it "select_cursor next_row should handle multi byte characters correctly" do
     session = Session.new
-    result = session.left.select_cursor "select id, multi_byte from extender_type_check"
+    result = session.left.select_cursor :query => "select id, multi_byte from extender_type_check"
     row = result.next_row
     row.should == {
       'id' => "1", 
@@ -83,8 +83,9 @@ describe "ConnectionExtender", :shared => true do
   it "select_cursor should read null values correctly" do
     session = Session.new
     result = session.left.select_cursor(
-      "select first_id, second_id, name from extender_combined_key
-       where (first_id, second_id) = (3, 1)")
+      :table => 'extender_combined_key',
+      :row_keys => [{'first_id' => 3, 'second_id' => 1}]
+    )
     result.next_row.should == {'first_id' => '3', 'second_id' => '1', 'name' => nil}
   end
   
@@ -98,7 +99,7 @@ describe "ConnectionExtender", :shared => true do
       sql = "insert into extender_type_check(id, binary_test) values(2, '#{org_data}')"
       session.left.execute sql
 
-      org_cursor = session.left.select_cursor("select id, binary_test from extender_type_check where id = 2")
+      org_cursor = session.left.select_cursor(:query => "select id, binary_test from extender_type_check where id = 2")
       cursor = TypeCastingCursor.new session.left, 'extender_type_check', org_cursor
       result_data = cursor.next_row['binary_test']
     ensure
@@ -117,7 +118,7 @@ describe "ConnectionExtender", :shared => true do
       sql = "insert into extender_type_check(id, text_test) values(2, '#{org_data}')"
       session.left.execute sql
 
-      org_cursor = session.left.select_cursor("select id, text_test from extender_type_check where id = 2")
+      org_cursor = session.left.select_cursor(:query => "select id, text_test from extender_type_check where id = 2")
       cursor = TypeCastingCursor.new session.left, 'extender_type_check', org_cursor
       result_data = cursor.next_row['text_test']
     ensure
@@ -128,7 +129,7 @@ describe "ConnectionExtender", :shared => true do
   
   it "cursors returned by select_cursor should support clear" do
     session = Session.new
-    result = session.left.select_cursor "select * from extender_one_record"
+    result = session.left.select_cursor :table => 'extender_one_record'
     result.next?.should be_true
     result.should respond_to(:clear)
     result.clear

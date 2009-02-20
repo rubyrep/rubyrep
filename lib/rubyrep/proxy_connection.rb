@@ -21,9 +21,9 @@ module RR
     attr_accessor :config
     
     # Forward certain methods to the proxied database connection
-    def_delegators \
-      :connection, :columns, :quote_column_name,
-      :quote_table_name, :select_cursor, :execute,
+    def_delegators :connection,
+      :columns, :quote_column_name,
+      :quote_table_name, :execute,
       :select_one, :select_all, :tables,
       :begin_db_transaction, :rollback_db_transaction, :commit_db_transaction,
       :referenced_tables,
@@ -82,6 +82,33 @@ module RR
     # Store a cursor in the register to protect it from the garbage collector.
     def save_cursor(cursor)
       cursors[cursor] = cursor
+    end
+
+    # default number of records that are read into memory at a time during
+    # select queries
+    DEFAULT_ROW_BUFFER_SIZE = 1000
+
+    # Returns a cusor as produced by the #select_cursor method of the connection
+    # extenders.
+    #
+    # Two modes of operation: Either
+    # * execute the specified query (takes precedense) OR
+    # * first build the query based on options forwarded to #table_select_query
+    # +options+ is a hash with
+    # * :+query+: executes the given query
+    # * :+type_cast+: if +true+, build a type casting cursor around the result
+    # * :+table+: name of the table from which to read data
+    # * further options as taken by #table_select_query to build the query
+    # * :+row_buffer_size+:
+    #   Integer controlling how many rows a read into memory at one time.
+    def select_cursor(options)
+      row_buffer_size = options[:row_buffer_size] || DEFAULT_ROW_BUFFER_SIZE
+      query = options[:query] || table_select_query(options[:table], options)
+      cursor = connection.select_cursor query, row_buffer_size
+      if options[:type_cast]
+        cursor = TypeCastingCursor.new(self, options[:table], cursor)
+      end
+      cursor
     end
     
     # Create a session on the proxy side according to provided configuration hash.
@@ -182,9 +209,10 @@ module RR
 
     # Returns an SQL query string for the given +table+ based on the provided +options+.
     # +options+ is a hash that can contain any of the following:
-    #   * +:from+: nil OR the hash of primary key => value pairs designating the start of the selection
-    #   * +:to+: nil OR the hash of primary key => value pairs designating the end of the selection
-    #   * +:row_keys+: an array of primary key => value hashes specify the target rows.
+    #   * :+from+: nil OR the hash of primary key => value pairs designating the start of the selection
+    #   * :+exclude_starting_row+: if true, do not include the row specified by :+from+
+    #   * :+to+: nil OR the hash of primary key => value pairs designating the end of the selection
+    #   * :+row_keys+: an array of primary key => value hashes specify the target rows.
     def table_select_query(table, options = {})
       query = "select #{quote_column_list(table)}"
       query << " from #{quote_table_name(table)}"
@@ -192,7 +220,8 @@ module RR
       first_condition = true
       if options[:from]
         first_condition = false
-        query << row_condition(table, options[:from], '>=')
+        matching_condition = options[:exclude_starting_row] ? '>' : '>='
+        query << row_condition(table, options[:from], matching_condition)
       end
       if options[:to]
         query << ' and' unless first_condition

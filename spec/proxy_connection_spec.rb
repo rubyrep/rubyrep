@@ -120,6 +120,30 @@ describe ProxyConnection do
     @connection.primary_key_names('dummy_table').should == ['dummy_key']
   end
 
+  it "select_cursor should forwarded the handed over query" do
+    @connection.connection.should_receive(:select_cursor).with('bla', 123)
+    @connection.select_cursor(:query => 'bla', :row_buffer_size => 123)
+  end
+
+  it "select_cursor should use the default row buffer size if no explicit value is specified" do
+    @connection.connection.should_receive(:select_cursor) \
+      .with('bla', ProxyConnection::DEFAULT_ROW_BUFFER_SIZE)
+    @connection.select_cursor(:query => 'bla')
+  end
+
+  it "select_cursor should construct the query and execute it" do
+    @connection.connection.should_receive(:select_cursor) \
+      .with(sql_to_regexp('select "id", "name" from "scanner_records" order by "id"'), ProxyConnection::DEFAULT_ROW_BUFFER_SIZE)
+    @connection.select_cursor(:table => 'scanner_records')
+  end
+
+  it "select_cursor should return a type casting cursor if :type_cast option is specified" do
+    @connection.select_cursor(:table => 'scanner_records').
+      should_not be_an_instance_of(TypeCastingCursor)
+    @connection.select_cursor(:table => 'scanner_records', :type_cast => true).
+      should be_an_instance_of(TypeCastingCursor)
+  end
+
   it "table_select_query should handle queries without any conditions" do
     @connection.table_select_query('scanner_records') \
       .should =~ sql_to_regexp("\
@@ -134,6 +158,16 @@ describe ProxyConnection do
          where ('id') >= (1) order by 'id'")
   end
   
+  it "table_select_query should handle queries with an exclusive from condition" do
+    @connection.table_select_query(
+      'scanner_records',
+      :from => {'id' => 1},
+      :exclude_starting_row => true
+    ).should =~ sql_to_regexp("\
+      select 'id', 'name' from 'scanner_records' \
+      where ('id') > (1) order by 'id'")
+  end
+
   it "table_select_query should handle queries with only a to condition" do
     @connection.table_select_query('scanner_text_key', :to => {'text_id' => 'k1'}) \
       .should =~ sql_to_regexp("\
@@ -253,8 +287,11 @@ describe ProxyConnection do
       }
       @connection.insert_record('extender_type_check', test_data)
 
-      org_cursor = @connection.select_cursor("select * from extender_type_check where id = 2")
-      cursor = TypeCastingCursor.new @connection, 'extender_type_check', org_cursor
+      cursor = @connection.select_cursor(
+        :table => 'extender_type_check',
+        :row_keys => [{'id' => 2}],
+        :type_cast => true
+      )
       result_data = cursor.next_row
       result_data.should == test_data
     ensure
@@ -332,7 +369,7 @@ describe ProxyConnection do
       }
       @connection.update_record('extender_type_check', test_data)
 
-      org_cursor = @connection.select_cursor("select * from extender_type_check where id = 1")
+      org_cursor = @connection.select_cursor(:query => "select * from extender_type_check where id = 1")
       cursor = TypeCastingCursor.new @connection, 'extender_type_check', org_cursor
       result_data = cursor.next_row
       result_data.should == test_data

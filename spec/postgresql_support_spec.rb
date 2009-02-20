@@ -23,7 +23,7 @@ describe "PostgreSQL schema support" do
           {'id' => 2, 'timestamp' => Time.local(2009, "feb", 16, 20, 48, 1, 543)}
         )
 
-        org_cursor = session.left.select_cursor("select id, timestamp from extender_type_check where id = 2")
+        org_cursor = session.left.select_cursor(:query => "select id, timestamp from extender_type_check where id = 2")
         cursor = TypeCastingCursor.new session.left, 'extender_type_check', org_cursor
 
         row = cursor.next_row
@@ -43,7 +43,7 @@ describe "PostgreSQL schema support" do
           {'id' => 2, 'timestamp' => Time.local(2009, "feb", 16, 13, 37, 11, 126291)}
         )
 
-        org_cursor = session.left.select_cursor("select id, timestamp from extender_type_check where id = 2")
+        org_cursor = session.left.select_cursor(:query => "select id, timestamp from extender_type_check where id = 2")
         cursor = TypeCastingCursor.new session.left, 'extender_type_check', org_cursor
 
         row = cursor.next_row

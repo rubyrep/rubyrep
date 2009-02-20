@@ -38,10 +38,10 @@ module RR
     # * +table+: name of the table
     # * +key+: A column_name => value hash for all primary key columns.
     def load_record(database, table, key)
-      query = session.send(database).table_select_query(table, :row_keys => [key])
-      cursor = TypeCastingCursor.new(
-        session.send(database), table,
-        session.send(database).select_cursor(query)
+      cursor = session.send(database).select_cursor(
+        :table => table,
+        :row_keys => [key],
+        :type_cast => true
       )
       row = nil
       row = cursor.next_row if cursor.next?

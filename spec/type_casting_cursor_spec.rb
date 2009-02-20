@@ -16,7 +16,7 @@ describe TypeCastingCursor do
   
   it "next_row should delegate next? and clear to the original cursor" do
     session = Session.new
-    org_cursor = session.left.select_cursor("select id from extender_type_check where id = 1")
+    org_cursor = session.left.select_cursor(:query => "select id from extender_type_check where id = 1")
     
     cursor = TypeCastingCursor.new session.left, 'extender_type_check', org_cursor
     cursor.next?.should be_true
@@ -27,7 +27,7 @@ describe TypeCastingCursor do
   
   it "next_row should cast rows - including uncommon data types - correctly" do
     session = Session.new
-    org_cursor = session.left.select_cursor("select id, decimal_test, timestamp, binary_test from extender_type_check where id = 1")
+    org_cursor = session.left.select_cursor(:query => "select id, decimal_test, timestamp, binary_test from extender_type_check where id = 1")
     cursor = TypeCastingCursor.new session.left, 'extender_type_check', org_cursor
 
     row = cursor.next_row

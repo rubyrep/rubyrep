@@ -30,14 +30,8 @@ module RR
     # Initiate a query for the specified row range.
     # +options+: An option hash that is used to construct the SQL query. See ProxyCursor#construct_query for details.
     def prepare_fetch(options = {})
-      row_buffer_size = options[:row_buffer_size] || 1000
-      self.cursor = TypeCastingCursor.new(
-        connection,
-        table, 
-        connection.select_cursor(
-          connection.table_select_query(table, options),
-          row_buffer_size
-        )
+      self.cursor = connection.select_cursor(
+        options.merge(:table => table, :type_cast => true)
       )
     end
     
