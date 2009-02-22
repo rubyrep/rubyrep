@@ -55,6 +55,7 @@ describe "ConnectionExtender", :shared => true do
     result.next_row
     result.next_row
     result.next_row['id'].should == '3'
+    result.clear
   end
 
   it "select_cursor should allow iterating through records" do

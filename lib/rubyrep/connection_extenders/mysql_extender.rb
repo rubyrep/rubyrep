@@ -24,7 +24,79 @@ module MysqlResultExtender
 end
 
 module RR
+
+  # Overwrites #select_cursor to allow fetching of MySQL results in chunks
+  class ProxyConnection
+
+    # Allow selecting of MySQL results in chunks.
+    # For full documentation of method interface refer to ProxyConnection#select_cursor.
+    def select_cursor_with_mysql_chunks(options)
+      if config[:adapter] != 'mysql' or !options.include?(:row_buffer_size) or options.include?(:query)
+        select_cursor_without_mysql_chunks options
+      else
+        ConnectionExtenders::MysqlFetcher.new(self, options)
+      end
+    end
+    alias_method_chain :select_cursor, :mysql_chunks unless method_defined?(:select_cursor_without_mysql_chunks)
+
+  end
+
   module ConnectionExtenders
+
+    # Fetches MySQL results in chunks
+    class MysqlFetcher
+
+      # The current database ProxyConnection
+      attr_accessor :connection
+
+      # hash of select options
+      attr_accessor :options
+
+      # column_name => value hash of the last returned row
+      attr_accessor :last_row
+
+      # Creates a new fetcher.
+      # * +connection+: the current database connection
+      # * +cursor_name+: name of the cursor from which to fetch
+      # * +row_buffer_size+: number of records to read at once
+      def initialize(connection, options)
+        self.connection = connection
+        self.options = options.clone
+      end
+
+      # Returns +true+ if there are more rows to read.
+      def next?
+        unless @current_result
+          if last_row
+            options.merge! :from => last_row, :exclude_starting_row => true
+          end
+          options[:query] = 
+            connection.table_select_query(options[:table], options) +
+            " limit #{options[:row_buffer_size]}"
+          @current_result = connection.select_cursor_without_mysql_chunks(options)
+        end
+        @current_result.next?
+      end
+
+      # Returns the row as a column => value hash and moves the cursor to the next row.
+      def next_row
+        raise("no more rows available") unless next?
+        self.last_row = @current_result.next_row
+        unless @current_result.next?
+          @current_result.clear
+          @current_result = nil
+        end
+        self.last_row
+      end
+
+      # Closes the cursor and frees up all ressources
+      def clear
+        if @current_result
+          @current_result.clear
+          @current_result = nil
+        end
+      end
+    end
 
     # Provides various MySQL specific functionality required by Rubyrep.
     module MysqlExtender

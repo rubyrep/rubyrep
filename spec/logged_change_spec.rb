@@ -363,7 +363,9 @@ describe LoggedChange do
   end
 
   it "oldest_change_time should return nil if there are no changes" do
-    change = LoggedChange.new Session.new, :left
+    session = Session.new
+    session.left.execute "delete from rr_pending_changes"
+    change = LoggedChange.new session, :left
     change.oldest_change_time.should be_nil
   end
 
