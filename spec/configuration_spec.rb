@@ -85,12 +85,24 @@ describe Configuration do
     config.included_table_specs.include?(/b/).should be_true
   end
 
+  it "include_table should alias to include_tables" do
+    config = Configuration.new
+    config.include_table('a')
+    config.included_table_specs.include?('a').should be_true
+  end
+
   it "exclude_tables should exclude the specified table specs" do
     config = Configuration.new
     config.exclude_tables('a')
     config.exclude_tables(/b/)
     config.excluded_table_specs.include?('a').should be_true
     config.excluded_table_specs.include?(/b/).should be_true
+  end
+
+  it "exclude_table should alias to exclude_tables" do
+    config = Configuration.new
+    config.exclude_table('a')
+    config.excluded_table_specs.include?('a').should be_true
   end
 
   it "exclude_rubyrep_tables should exclude the rubyrep infrastructure tables" do
@@ -162,6 +174,12 @@ describe Configuration do
       Syncers::TwoWaySyncer.default_options.clone.
       merge(config.options).
       merge(:bla => :blub, :foo => :bar)
+  end
+
+  it "add_table_option should alias to add_table_options" do
+    config = Configuration.new
+    config.add_table_option(/a/, {:bla => :blub})
+    config.options_for_table('a')[:bla].should == :blub
   end
 
   it "add_table_options should include default syncer options" do

@@ -151,6 +151,7 @@ module RR
       included_table_specs << table_spec unless included_table_specs.include?(table_spec)
       add_table_options(table_spec, options) if options
     end
+    alias_method :include_table, :include_tables
 
     # Excludes the specified table from the list of tables that should be
     # processed.
@@ -159,6 +160,7 @@ module RR
     def exclude_tables(table_spec)
       excluded_table_specs << table_spec unless excluded_table_specs.include?(table_spec)
     end
+    alias_method :exclude_table, :exclude_tables
     
     # Adds the specified options for the provided +table_spec+.
     # A +table_spec+ can be either
@@ -181,6 +183,7 @@ module RR
       end
       table_options.merge! options
     end
+    alias_method :add_table_option, :add_table_options
 
     # Yields all table specs that have been set up with the given option
     # * +key+: the option key
