@@ -8,7 +8,7 @@ module RR
 
     CommandRunner.register 'uninstall' => {
       :command => self,
-      :description => 'Removes all rubyrep tables, triggers, etc. from a database'
+      :description => 'Removes all rubyrep tables, triggers, etc. from "left" and "right" database'
     }
     
     # Provided options. Possible values:
@@ -26,7 +26,7 @@ module RR
         opts.banner = <<EOS
 Usage: #{$0} uninstall [options]
 
-  Removes all rubyrep tables, triggers, etc. from a database.
+  Removes all rubyrep tables, triggers, etc. from "left" and "right" database.
 EOS
         opts.separator ""
         opts.separator "  Specific options:"
