@@ -121,7 +121,7 @@ describe "Big Sync" do
     Initializer.configuration.options = {
       :committer => :never_commit,
       :syncer => :two_way,
-      :sync_conflict_handling => :update_left,
+      :sync_conflict_handling => :right_wins,
       :proxy_block_size => 100,
     }
 

@@ -17,8 +17,8 @@ module RR
     # * :+sync_conflict_handling+:
     #   Handling of conflicting records. Can be any of the following:
     #   * :+ignore+: No action. *Default* *Setting*
-    #   * :+update_left+: Update left database with the field values in the right db.
-    #   * :+update_right+: Update right database with the field values in the left db.
+    #   * :+left_wins+: Update right database with the field values in the left db.
+    #   * :+right_wins+: Update left database with the field values in the right db.
     #   * +Proc+ object:
     #     If a Proc object is given, it is responsible for dealing with the
     #     record. Called with the following parameters:
@@ -75,7 +75,7 @@ module RR
       # Raises an ArgumentError if option is invalid
       def validate_conflict_handling_option(option)
         unless option.respond_to? :call
-          unless [:ignore, :update_left, :update_right].include? option
+          unless [:ignore, :right_wins, :left_wins].include? option
             raise ArgumentError.new("#{option.inspect} not a valid :sync_conflict_handling option")
           end
         end
@@ -160,9 +160,9 @@ module RR
           log_sync_outcome type, option, row unless option.respond_to?(:call)
           if option == :ignore
             # nothing to do
-          elsif option == :update_left
+          elsif option == :right_wins
             sync_helper.update_record :left, row[1]
-          elsif option == :update_right
+          elsif option == :left_wins
             sync_helper.update_record :right, row[0]
           else #option must be a Proc
             option.call sync_helper, type, row

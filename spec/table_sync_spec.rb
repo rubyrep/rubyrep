@@ -65,7 +65,7 @@ describe TableSync do
       row = session.left.select_one("select * from rr_logged_events where change_key = '2' order by id")
       row['change_table'].should == 'scanner_records'
       row['diff_type'].should == 'conflict'
-      row['description'].should == 'update_right'
+      row['description'].should == 'left_wins'
 
       # verify that the table was synchronized
       left_records = session.left.select_all("select * from scanner_records order by id")

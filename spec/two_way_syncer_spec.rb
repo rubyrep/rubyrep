@@ -83,7 +83,7 @@ describe Syncers::TwoWaySyncer do
         :rep_prefix => 'rr',
         :left_record_handling => :insert,
         :right_record_handling => :insert,
-        :sync_conflict_handling => :update_left,
+        :sync_conflict_handling => :right_wins,
         :logged_sync_events => [:ignored_changes, :ignored_conflicts]
       })
     helper.stub!(:insert_record)
@@ -99,13 +99,13 @@ describe Syncers::TwoWaySyncer do
     helper = SyncHelper.new(sync)
     helper.should_receive(:log_sync_outcome).with(:dummy_row, 'left_record', :insert).ordered
     helper.should_receive(:log_sync_outcome).with(:dummy_row, 'right_record', :insert).ordered
-    helper.should_receive(:log_sync_outcome).with(:left_dummy_row, 'conflict', :update_left).ordered
+    helper.should_receive(:log_sync_outcome).with(:left_dummy_row, 'conflict', :right_wins).ordered
     helper.stub!(:sync_options).and_return(
       {
         :rep_prefix => 'rr',
         :left_record_handling => :insert,
         :right_record_handling => :insert,
-        :sync_conflict_handling => :update_left,
+        :sync_conflict_handling => :right_wins,
         :logged_sync_events => [:all_changes, :all_conflicts]
       })
     helper.stub!(:insert_record)
@@ -222,14 +222,14 @@ describe Syncers::TwoWaySyncer do
     syncer.sync_difference(:right, :dummy_right)
   end
 
-  it "sync_difference should update the left database if conflict handling is specified with :update_left" do
+  it "sync_difference should update the left database if conflict handling is specified with :right_wins" do
     sync = TableSync.new(Session.new, 'scanner_records')
     helper = SyncHelper.new(sync)
     helper.stub!(:sync_options).and_return(
       {
         :left_record_handling => :ignore,
         :right_record_handling => :ignore,
-        :sync_conflict_handling => :update_left,
+        :sync_conflict_handling => :right_wins,
         :logged_sync_events => [:ignored_conflicts]
       })
 
@@ -238,14 +238,14 @@ describe Syncers::TwoWaySyncer do
     syncer.sync_difference(:conflict, [:dummy_left, :dummy_right])
   end
 
-  it "sync_difference should update the right database if conflict handling is specified with :update_right" do
+  it "sync_difference should update the right database if conflict handling is specified with :left_wins" do
     sync = TableSync.new(Session.new, 'scanner_records')
     helper = SyncHelper.new(sync)
     helper.stub!(:sync_options).and_return(
       {
         :left_record_handling => :ignore,
         :right_record_handling => :ignore,
-        :sync_conflict_handling => :update_right,
+        :sync_conflict_handling => :left_wins,
         :logged_sync_events => [:ignored_conflicts]
       })
 
