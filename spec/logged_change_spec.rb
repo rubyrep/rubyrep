@@ -51,7 +51,7 @@ describe LoggedChange do
   it "load_specified should accept a column_name => value hash as key" do
     config = deep_copy(standard_config)
     config.included_table_specs.clear
-    config.include_tables "scanner_records", :primary_key_names => ['id1', 'id2']
+    config.include_tables "scanner_records", :key => ['id1', 'id2']
 
     session = Session.new config
     session.left.begin_db_transaction

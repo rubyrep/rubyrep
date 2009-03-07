@@ -45,7 +45,7 @@ module RR
       table_pairs = resolver.resolve configuration.included_table_specs, [], false
       table_pairs.each do |table_pair|
         options = configuration.options_for_table(table_pair[:left])
-        key_names = options[:primary_key_names]
+        key_names = options[:key]
         if key_names == nil and options[:auto_key_limit] > 0
           if left.primary_key_names(table_pair[:left], :raw => true).empty?
             column_names = left.column_names(table_pair[:left])
@@ -56,7 +56,7 @@ module RR
         end
         if key_names
           table_name = table_pair[db_arm]
-          manual_primary_keys[table_name] = key_names
+          manual_primary_keys[table_name] = [key_names].flatten
         end
       end
       manual_primary_keys

@@ -106,18 +106,26 @@ describe Session do   # here database connection caching is _not_ disabled
   it "manual_primary_keys should return the specified manual primary keys" do
     config = deep_copy(standard_config)
     config.included_table_specs.clear
-    config.include_tables "table_with_manual_key, extender_without_key", :primary_key_names => ['id']
+    config.include_tables "table_with_manual_key, extender_without_key", :key => ['id']
     session = Session.new config
     session.manual_primary_keys(:left).should == {'table_with_manual_key'=>['id']}
     session.manual_primary_keys(:right).should == {'extender_without_key'=>['id']}
   end
 
-  it "manual_primary_keys should follow the :all_keys_limit option" do
+  it "manual_primary_keys should accept keys that are not packed into an array" do
+    config = deep_copy(standard_config)
+    config.included_table_specs.clear
+    config.include_tables "table_with_manual_key", :key => 'id'
+    session = Session.new config
+    session.manual_primary_keys(:left).should == {'table_with_manual_key'=>['id']}
+  end
+
+  it "manual_primary_keys should follow the :auto_key_limit option" do
     config = deep_copy(standard_config)
     config.included_table_specs.clear
     config.include_tables "scanner_records"
     config.include_tables "extender_without_key"
-    config.include_tables "table_with_manual_key", :primary_key_names => ['id']
+    config.include_tables "table_with_manual_key", :key => 'id'
 
     config.options[:auto_key_limit] = 2
     session = Session.new config

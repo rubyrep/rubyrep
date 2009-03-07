@@ -15,6 +15,6 @@ RR::Initializer::run do |config|
   config.options = {
   }
   config.include_tables 'scanner_left_records_only'
-  config.include_tables 'table_with_manual_key', :primary_key_names => ['id']
+  config.include_tables 'table_with_manual_key', :key => 'id'
   config.include_tables 'extender_combined_key'
 end
