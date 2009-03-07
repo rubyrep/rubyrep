@@ -401,6 +401,15 @@ describe LoggedChange do
     }
   end
 
+  it "key_from_raw_key should work with multi character key_sep strings" do
+    change = LoggedChange.new Session.new, :left
+    change.stub!(:key_sep).and_return('BLA')
+    change.key_to_hash("aBLA1BLAbBLA2").should == {
+      'a' => '1',
+      'b' => '2'
+    }
+  end
+
   it "load_oldest should not load a change if none available" do
     change = LoggedChange.new Session.new, :left
     change.should_not_receive :load_specified
