@@ -88,7 +88,7 @@ spec/generate_runner_spec.rb
 spec/initializer_spec.rb
 spec/logged_change_spec.rb
 spec/postgresql_replication_spec.rb
-spec/postgresql_schema_support_spec.rb
+spec/postgresql_support_spec.rb
 spec/progress_bar_spec.rb
 spec/proxied_table_scan_spec.rb
 spec/proxy_block_cursor_spec.rb
@@ -135,9 +135,3 @@ tasks/rspec.rake
 tasks/rubyrep.tailor
 tasks/stats.rake
 tasks/task_helper.rb
-tasks/website.rake
-website/index.html
-website/index.txt
-website/javascripts/rounded_corners_lite.inc.js
-website/stylesheets/screen.css
-website/template.rhtml

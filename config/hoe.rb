@@ -2,7 +2,7 @@ $LOAD_PATH.unshift File.dirname(__FILE__) + '/../lib/rubyrep'
 #require 'rubyrep/version'
 
 AUTHOR = 'Arndt Lehmann'  # can also be an array of Authors
-EMAIL = "arndtlehmann@arndtlehman.com"
+EMAIL = "mail@arndtlehman.com"
 DESCRIPTION = "Asynchronous master-master replication of relational databases."
 GEM_NAME = 'rubyrep' # what ppl will type to install your gem
 RUBYFORGE_PROJECT = 'rubyrep' # The unix name for your project
@@ -11,7 +11,7 @@ DOWNLOAD_PATH = "http://rubyforge.org/projects/#{RUBYFORGE_PROJECT}"
 
 @config_file = "~/.rubyforge/user-config.yml"
 @config = nil
-RUBYFORGE_USERNAME = "unknown"
+RUBYFORGE_USERNAME = "alehmann"
 def rubyforge_username
   unless @config
     begin
@@ -33,11 +33,8 @@ REV = nil
 # UNCOMMENT IF REQUIRED: 
 # REV = `svn info`.each {|line| if line =~ /^Revision:/ then k,v = line.split(': '); break v.chomp; else next; end} rescue nil
 VERS = RR::VERSION::STRING + (REV ? ".#{REV}" : "")
-RDOC_OPTS = ['--quiet', '--title', 'rubyrep documentation',
-    "--opname", "index.html",
-    "--line-numbers", 
-    "--main", "README",
-    "--inline-source"]
+
+ENV['RDOCOPT'] = "-S -f html -T hanna"
 
 class Hoe
   def extra_deps 
@@ -72,4 +69,4 @@ end
 
 CHANGES = hoe.paragraphs_of('History.txt', 0..1).join("\\n\\n")
 PATH    = (RUBYFORGE_PROJECT == GEM_NAME) ? RUBYFORGE_PROJECT : "#{RUBYFORGE_PROJECT}/#{GEM_NAME}"
-hoe.remote_rdoc_dir = File.join(PATH.gsub(/^#{RUBYFORGE_PROJECT}\/?/,''), 'rdoc')
+hoe.remote_rdoc_dir = File.join(PATH.gsub(/^#{RUBYFORGE_PROJECT}\/?/,''))

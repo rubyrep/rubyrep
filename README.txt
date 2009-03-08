@@ -1,32 +1,21 @@
 = rubyrep
 
-* FIX (url)
+== MISSION:
 
-== DESCRIPTION:
+Development of an open-source solution for asynchronous, master-master replication of relational databases that is
+* ridiculously easy to use
+* database independent
 
-FIX (describe your package)
 
-== FEATURES/PROBLEMS:
+== MORE INFORMATION:
 
-* FIX (list of features or problems)
-
-== SYNOPSIS:
-
-  FIX (code sample of usage)
-
-== REQUIREMENTS:
-
-* FIX (list of requirements)
-
-== INSTALL:
-
-* FIX (sudo gem install, anything else)
+Refer to the project website at http://rubyrep.github.com
 
 == LICENSE:
 
 (The MIT License)
 
-Copyright (c) 2008 FIX
+Copyright (c) 2009 Arndt Lehmann
 
 Permission is hereby granted, free of charge, to any person obtaining
 a copy of this software and associated documentation files (the

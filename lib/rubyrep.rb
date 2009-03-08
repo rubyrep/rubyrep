@@ -4,7 +4,7 @@ $LOAD_PATH.unshift File.dirname(__FILE__) + "/rubyrep"
 require 'rubygems'
 require 'yaml'
 
-gem 'activerecord', '>= 2.0.1'
+gem 'activerecord', '>= 2.2.2'
 require 'active_record'
 
 require 'version'
