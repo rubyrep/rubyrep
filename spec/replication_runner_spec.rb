@@ -90,20 +90,30 @@ describe ReplicationRunner do
 
     runner.pause_replication
   end
-  
-  it "init_waiter should setup correct TERM signal processing" do
-    runner = ReplicationRunner.new
-    runner.stub!(:session).and_return(Session.new(standard_config))
+
+  it "init_waiter should setup correct signal processing" do
+    org_stdout = $stdout
+    $stdout = StringIO.new
+    begin
+      runner = ReplicationRunner.new
+      runner.stub!(:session).and_return(Session.new(standard_config))
     
-    # simulate sending the TERM signal
-    Signal.should_receive(:trap).with('TERM').and_yield
+      # simulate sending the TERM signal
+      Signal.should_receive(:trap).with('TERM').and_yield
 
-    runner.init_waiter
+      # also verify that the INT signal is trapped
+      Signal.should_receive(:trap).with('INT')
 
-    # verify the that any pause would have been prematurely finished and
-    # termination signal been set
-    runner.termination_requested.should be_true
-    runner.instance_variable_get(:@waiter_thread).should_not be_alive
+      runner.init_waiter
+
+      # verify the that any pause would have been prematurely finished and
+      # termination signal been set
+      runner.termination_requested.should be_true
+      runner.instance_variable_get(:@waiter_thread).should_not be_alive
+      $stdout.string.should =~ /TERM.*shutdown/
+    ensure
+      $stdout = org_stdout
+    end
   end
 
   it "prepare_replication should call ReplicationInitializer#prepare_replication" do

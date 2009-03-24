@@ -89,7 +89,9 @@ EOS
       @termination_mutex = Mutex.new
       @termination_mutex.lock
       @waiter_thread ||= Thread.new {@termination_mutex.lock; self.termination_requested = true}
-      Signal.trap('TERM') {@termination_mutex.unlock}
+      %w(TERM INT).each do |signal|
+        Signal.trap(signal) {puts "\nCaught '#{signal}': Initiating graceful shutdown"; @termination_mutex.unlock}
+      end
     end
 
     # Prepares the replication
