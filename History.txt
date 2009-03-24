@@ -1,3 +1,10 @@
+== 1.0.1 2009-03-25
+
+* 3 minor enhancements:
+  * Verified compatibility with active_record 2.3.2 and jruby 1.2.0
+  * Released jruby bunde with the updated activerecord and jruby
+  * Catch ctrl+c and execute graceful shutdown
+
 == 1.0.0 2009-03-07
 
 * 1 major enhancement:
