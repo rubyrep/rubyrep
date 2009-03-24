@@ -23,7 +23,8 @@ EOS
     pkg_name = "rubyrep-#{RR::VERSION::STRING}"
 
     system "rm -rf /tmp/#{pkg_name}"
-    system "hg archive /tmp/#{pkg_name}"
+    system "mkdir /tmp/#{pkg_name}"
+    system "git archive master |tar -x -C /tmp/#{pkg_name}"
     system "mkdir -p /tmp/#{pkg_name}/jruby"
     system "cp -r #{JRUBY_HOME}/* /tmp/#{pkg_name}/jruby/"
     system "cd /tmp/#{pkg_name}/jruby; rm -rf samples share/ri lib/ruby/gems/1.8/doc"
