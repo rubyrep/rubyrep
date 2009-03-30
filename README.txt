@@ -9,7 +9,7 @@ Development of an open-source solution for asynchronous, master-master replicati
 
 == MORE INFORMATION:
 
-Refer to the project website at http://rubyrep.github.com
+Refer to the project website at http://www.rubyrep.org
 
 == LICENSE:
 
