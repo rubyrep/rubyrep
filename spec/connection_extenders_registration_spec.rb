@@ -60,8 +60,8 @@ describe ConnectionExtenders, "Registration" do
   
   it "db_connect should include the connection extender into connection" do
     connection = ConnectionExtenders.db_connect Initializer.configuration.left
-    
-    connection.should respond_to(:select_cursor)
+
+    connection.should respond_to(:primary_key_names)
   end
   
   it "db_connect should raise an Exception if no fitting connection extender is available" do

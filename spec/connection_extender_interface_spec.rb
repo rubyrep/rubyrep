@@ -1,5 +1,6 @@
 require File.dirname(__FILE__) + '/spec_helper.rb'
 require 'yaml'
+require 'digest/md5'
 
 include RR
 
@@ -89,20 +90,27 @@ describe "ConnectionExtender", :shared => true do
     )
     result.next_row.should == {'first_id' => '3', 'second_id' => '1', 'name' => nil}
   end
-  
+
   it "should read and write binary data correctly" do
     session = Session.new
 
-    org_data = Marshal.dump(['bla',:dummy,1,2,3])
+    org_data = File.new(File.dirname(__FILE__) + '/dolphins.jpg').read
     result_data = nil
     begin
       session.left.begin_db_transaction
-      sql = "insert into extender_type_check(id, binary_test) values(2, '#{org_data}')"
-      session.left.execute sql
+      session.left.insert_record('extender_type_check', {'id' => 6, 'binary_test' => org_data})
+      
+      row = session.left.select_one(
+        'select md5(binary_test) as md5 from extender_type_check where id = 6'
+      )
+      row['md5'].should == Digest::MD5.hexdigest(org_data)
 
-      org_cursor = session.left.select_cursor(:query => "select id, binary_test from extender_type_check where id = 2")
-      cursor = TypeCastingCursor.new session.left, 'extender_type_check', org_cursor
+      cursor = session.left.select_cursor(
+        :query => "select id, binary_test from extender_type_check where id = 6"
+      )
+      cursor = TypeCastingCursor.new session.left, 'extender_type_check', cursor
       result_data = cursor.next_row['binary_test']
+      Digest::MD5.hexdigest(result_data).should == Digest::MD5.hexdigest(org_data)
     ensure
       session.left.rollback_db_transaction
     end

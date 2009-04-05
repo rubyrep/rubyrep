@@ -71,9 +71,8 @@ module RR
       else
         raise "No ConnectionExtender available for :#{config[:adapter]}"
       end
-      connection_module = ConnectionExtenders.extenders[extender]
-      connection.extend connection_module
-
+      connection.extend ConnectionExtenders.extenders[extender]
+      
       # Hack to get Postgres schema support under JRuby to par with the standard
       # ruby version
       if RUBY_PLATFORM =~ /java/ and config[:adapter].to_sym == :postgresql

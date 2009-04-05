@@ -120,28 +120,20 @@ describe ProxyConnection do
     @connection.primary_key_names('dummy_table').should == ['dummy_key']
   end
 
-  it "select_cursor should forwarded the handed over query" do
-    @connection.connection.should_receive(:select_cursor).with('bla', 123)
-    @connection.select_cursor(:query => 'bla', :row_buffer_size => 123)
-  end
+  # Note:
+  # Additional select_cursor tests are executed via
+  # 'db_specific_connection_extenders_spec.rb'
+  # (To verify the behaviour for all supported databases)
 
-  it "select_cursor should use the default row buffer size if no explicit value is specified" do
-    @connection.connection.should_receive(:select_cursor) \
-      .with('bla', ProxyConnection::DEFAULT_ROW_BUFFER_SIZE)
-    @connection.select_cursor(:query => 'bla')
-  end
-
-  it "select_cursor should construct the query and execute it" do
-    @connection.connection.should_receive(:select_cursor) \
-      .with(sql_to_regexp('select "id", "name" from "scanner_records" order by "id"'), ProxyConnection::DEFAULT_ROW_BUFFER_SIZE)
-    @connection.select_cursor(:table => 'scanner_records')
+  it "select_cursor should return the result fetcher" do
+    fetcher = @connection.select_cursor(:table => 'scanner_records')
+    fetcher.connection.should == @connection
+    fetcher.options.should == {:table => 'scanner_records'}
   end
 
   it "select_cursor should return a type casting cursor if :type_cast option is specified" do
-    @connection.select_cursor(:table => 'scanner_records').
-      should_not be_an_instance_of(TypeCastingCursor)
-    @connection.select_cursor(:table => 'scanner_records', :type_cast => true).
-      should be_an_instance_of(TypeCastingCursor)
+    fetcher = @connection.select_cursor(:table => 'scanner_records', :type_cast => true)
+    fetcher.should be_an_instance_of(TypeCastingCursor)
   end
 
   it "table_select_query should handle queries without any conditions" do
