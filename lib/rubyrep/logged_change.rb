@@ -84,6 +84,19 @@ module RR
       
       self.last_updated = Time.now
 
+      # First, let's use a LIMIT clause (via :row_buffer_size option) to verify
+      # if there are any pending changes.
+      # (If there are many pending changes, this is (at least with PostgreSQL)
+      # much faster.)
+      cursor = connection.select_cursor(
+        :table => change_log_table,
+        :from => {'id' => current_id},
+        :exclude_starting_row => true,
+        :row_buffer_size => 1
+      )
+      return unless cursor.next?
+
+      # Something is here. Let's actually load it.
       cursor = connection.select_cursor(
         :table => change_log_table,
         :from => {'id' => current_id},
