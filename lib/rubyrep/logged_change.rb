@@ -46,7 +46,7 @@ module RR
     # 2nd level tree:
     # * key: the change_key value of the according change log records.
     # * value:
-    #   The according change log record (column_name => value hash).
+    #   An array of according change log records (column_name => value hash).
     #   Additional entry of each change log hash:
     #   * key: 'array_index'
     #   * value: index to the change log record in +change_array+
