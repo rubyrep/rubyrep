@@ -64,6 +64,13 @@ describe ReplicationRun do
     end
   end
 
+  it "run should not create the replicator if there are no pending changes" do
+    session = Session.new
+    run = ReplicationRun.new session
+    run.should_not_receive(:replicator)
+    run.run
+  end
+
   it "run should only replicate real differences" do
     session = Session.new
     session.left.begin_db_transaction
@@ -121,8 +128,22 @@ describe ReplicationRun do
   it "run should not catch exceptions raised during replicator initialization" do
     config = deep_copy(standard_config)
     config.options[:logged_replication_events] = [:invalid_option]
-    run = ReplicationRun.new Session.new(config)
-    lambda {run.run}.should raise_error(ArgumentError)
+    session = Session.new config
+    session.left.begin_db_transaction
+    begin
+
+      session.left.insert_record 'rr_pending_changes', {
+        'change_table' => 'extender_no_record',
+        'change_key' => 'id|1',
+        'change_type' => 'D',
+        'change_time' => Time.now
+      }
+
+      run = ReplicationRun.new session
+      lambda {run.run}.should raise_error(ArgumentError)
+    ensure
+      session.left.rollback_db_transaction
+    end
   end
 
   it "run should process trigger created change log records" do

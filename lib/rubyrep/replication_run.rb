@@ -19,24 +19,31 @@ module RR
 
     # Executes the replication run.
     def run
-      success = false
-      replicator # ensure that replicator is created and has chance to validate settings
-
-      loop do
-        begin
-          session.reload_changes # ensure the cache of change log records is up-to-date
-          diff = ReplicationDifference.new session
-          diff.load
-          break unless diff.loaded?
-          replicator.replicate_difference diff if diff.type != :no_diff
-        rescue Exception => e
-          helper.log_replication_outcome diff, e.message, 
-            e.class.to_s + "\n" + e.backtrace.join("\n")
-        end
+      return unless [:left, :right].any? do |database|
+        session.send(database).select_one(
+          "select id from #{session.configuration.options[:rep_prefix]}_pending_changes"
+        ) != nil
       end
-      success = true # considered to be successful if we get till here
-    ensure
-      helper.finalize success
+      begin
+        success = false
+        replicator # ensure that replicator is created and has chance to validate settings
+
+        loop do
+          begin
+            session.reload_changes # ensure the cache of change log records is up-to-date
+            diff = ReplicationDifference.new session
+            diff.load
+            break unless diff.loaded?
+            replicator.replicate_difference diff if diff.type != :no_diff
+          rescue Exception => e
+            helper.log_replication_outcome diff, e.message,
+              e.class.to_s + "\n" + e.backtrace.join("\n")
+          end
+        end
+        success = true # considered to be successful if we get till here
+      ensure
+        helper.finalize success
+      end
     end
 
     # Creates a new ReplicationRun instance.
