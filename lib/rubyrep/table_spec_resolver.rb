@@ -55,7 +55,7 @@ module RR
     # 
     # Takes care that a table is only returned once.
     def resolve(included_table_specs, excluded_table_specs = [], verify = true)
-      table_pairs = expand_table_specs(included_table_specs)
+      table_pairs = expand_table_specs(included_table_specs, verify)
       table_pairs = table_pairs_without_duplicates(table_pairs)
       table_pairs = table_pairs_without_excluded(table_pairs, excluded_table_specs)
 
@@ -70,11 +70,15 @@ module RR
     end
 
     # Helper for #resolve
-    # Takes the specified table_specifications and expands it into an array of
-    # according table pairs.
-    # Returns the result
-    # Refer to #resolve for a full description of parameters and result.
-    def expand_table_specs(table_specs)
+    # Expands table specifications into table pairs.
+    # Parameters:
+    # * +table_specs+:
+    #   An array of table specifications as described under #resolve.
+    # * +verify+:
+    #   If +true+, table specs in regexp format only resolve if the table exists
+    #   in left and right database.
+    # Return value: refer to #resolve for a detailed description
+    def expand_table_specs(table_specs, verify)
       table_pairs = []
       table_specs.each do |table_spec|
 
@@ -86,7 +90,9 @@ module RR
           table_spec = table_spec.sub(/^\/(.*)\/$/,'\1') # remove leading and trailing slash
           matching_tables = tables(:left).grep(Regexp.new(table_spec, Regexp::IGNORECASE, 'U'))
           matching_tables.each do |table|
-            table_pairs << {:left => table, :right => table}
+            if !verify or tables(:right).include? table
+              table_pairs << {:left => table, :right => table}
+            end
           end
         when /.+,.+/ # matches e. g. 'users,users_backup'
           pair = table_spec.match(/(.*),(.*)/)[1..2].map { |str| str.strip }
@@ -107,7 +113,7 @@ module RR
     # * :+right+: name of the corresponding right table
     # +excluded_table_specs+ is the array of table specifications to be excluded.
     def table_pairs_without_excluded(table_pairs, excluded_table_specs)
-      excluded_tables = expand_table_specs(excluded_table_specs).map do |table_pair|
+      excluded_tables = expand_table_specs(excluded_table_specs, false).map do |table_pair|
         table_pair[:left]
       end
       table_pairs.select {|table_pair| not excluded_tables.include? table_pair[:left]}

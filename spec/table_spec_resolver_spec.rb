@@ -34,6 +34,15 @@ describe TableSpecResolver do
   it "resolve should complain about non-existing tables" do
     lambda {@resolver.resolve(['dummy, scanner_records'])}.
       should raise_error(/non-existing.*dummy/)
+    lambda {@resolver.resolve(['left_table, left_table'])}.
+      should raise_error(/non-existing.*left_table/)
+    lambda {@resolver.resolve(['left_table'])}.
+      should raise_error(/non-existing.*left_table/)
+  end
+
+  it "resolve should not complain about regexp specified tables not existing in right database" do
+    @resolver.resolve([/^scanner_records$/, /left_table/]).
+      should == [{:left => 'scanner_records', :right => 'scanner_records'}]
   end
 
   it "resolve should not check for non-existing tables if that is disabled" do
@@ -85,7 +94,7 @@ describe TableSpecResolver do
     @resolver.non_existing_tables(table_pairs).should == {}
   end
 
-  it "non_existing_tables should return an empty hash if all tables exist" do
+  it "non_existing_tables should return a hash of non-existing tables" do
     table_pairs = [{:left => 'scanner_records', :right => 'bla'}]
     @resolver.non_existing_tables(table_pairs).should == {:right => ['bla']}
 

@@ -102,11 +102,13 @@ def drop_postgres_schema(config)
 end
 
 # Creates the sample schema in the database specified by the given 
-# configuration hash.
-def create_sample_schema(config)
-  create_postgres_schema config
+# configuration.
+# * :+database+: either :+left+ or +:right+
+# * :+config+: the Configuration object
+def create_sample_schema(database, config)
+  create_postgres_schema config.send(database)
 
-  ActiveRecord::Base.establish_connection config
+  ActiveRecord::Base.establish_connection config.send(database)
   
   ActiveRecord::Schema.define do
     create_table :scanner_text_key, :id => false do |t|
@@ -252,11 +254,11 @@ def create_sample_schema(config)
 
     create_table :left_table do |t|
       t.column :name, :string
-    end
+    end if database == :left
 
     create_table :right_table do |t|
       t.column :name, :string
-    end
+    end if database == :right
   end
 end
 
@@ -410,8 +412,8 @@ namespace :db do
     
     desc "Create the sample schemas"
     task :create_schema do
-      create_sample_schema RR::Initializer.configuration.left rescue nil
-      create_sample_schema RR::Initializer.configuration.right rescue nil
+      create_sample_schema :left, RR::Initializer.configuration rescue nil
+      create_sample_schema :right, RR::Initializer.configuration rescue nil
     end
     
     desc "Writes the sample data"
