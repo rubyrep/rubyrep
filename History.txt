@@ -1,3 +1,13 @@
+== 1.0.2 2009-06-13
+
+* 3 minor enhancements:
+  * Simplified low-level functions to read records from the database
+    (easier integration of additional databases)
+  * Better replication efficiency with large replication backlogs
+  * Reduced costs of an empty replication run
+  * Ignore tables that only exist in one database
+    (tables created for testing / backup don't block scan / sync / replication)
+
 == 1.0.1 2009-03-25
 
 * 3 minor enhancements:
