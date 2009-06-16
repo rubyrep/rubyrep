@@ -177,9 +177,9 @@ module RR
       # * +increment+: increment of the sequence
       # * +offset+: offset
       # * +left_sequence_values+:
-      #    hash as returned by #outdated_sequence_values for the left database
+      #    hash as returned by #sequence_values for the left database
       # * +right_sequence_values+:
-      #    hash as returned by #outdated_sequence_values for the right database
+      #    hash as returned by #sequence_values for the right database
       # * +adjustment_buffer+:
       #    the "gap" that is created during sequence update to avoid concurrency problems
       # E. g. an increment of 2 and offset of 1 will lead to generation of odd
