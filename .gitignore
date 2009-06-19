@@ -4,3 +4,4 @@ profile/*
 doc/*
 website/.*\.html$
 pkg/*
+tmp/*
