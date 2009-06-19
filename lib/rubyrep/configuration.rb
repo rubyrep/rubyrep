@@ -37,6 +37,7 @@ module RR
       :right_sequence_offset => 1,
       :replication_interval => 1,
       :auto_key_limit => 0,
+      :database_connection_timeout => 5,
 
       :rep_prefix => 'rr',
       :key_sep => '|',
@@ -109,6 +110,8 @@ module RR
     #   E. g. with a +sequence_increment+ of 2, an offset of 0 will produce even,
     #   an offset of 1 will produce odd numbers.
     # * :+replication_interval+: time in seconds between replication runs
+    # * :+database_connection_timeout+:
+    #   Time in seconds after which database connections time out.
     attr_reader :options
     
     # Merges the specified +options+ hash into the existing options
