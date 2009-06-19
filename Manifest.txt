@@ -84,6 +84,7 @@ spec/database_rake_spec.rb
 spec/db_specific_connection_extenders_spec.rb
 spec/db_specific_replication_extenders_spec.rb
 spec/direct_table_scan_spec.rb
+spec/dolphins.jpg
 spec/generate_runner_spec.rb
 spec/initializer_spec.rb
 spec/logged_change_spec.rb
@@ -113,6 +114,7 @@ spec/scan_summary_reporter_spec.rb
 spec/session_spec.rb
 spec/spec.opts
 spec/spec_helper.rb
+spec/strange_name_support_spec.rb
 spec/sync_helper_spec.rb
 spec/sync_runner_spec.rb
 spec/syncers_spec.rb
@@ -135,3 +137,4 @@ tasks/rspec.rake
 tasks/rubyrep.tailor
 tasks/stats.rake
 tasks/task_helper.rb
+tasks/website.rake

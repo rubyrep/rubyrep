@@ -9,7 +9,7 @@ module RR
       # See #create_replication_trigger for a descriptions of the +params+ hash.
       def create_or_replace_replication_trigger_function(params)
         execute(<<-end_sql)
-          DROP PROCEDURE IF EXISTS #{params[:trigger_name]};
+          DROP PROCEDURE IF EXISTS `#{params[:trigger_name]}`;
         end_sql
         
         activity_check = ""
@@ -24,7 +24,7 @@ module RR
         end
 
         execute(<<-end_sql)
-          CREATE PROCEDURE #{params[:trigger_name]}(change_key varchar(2000), change_new_key varchar(2000), change_type varchar(1))
+          CREATE PROCEDURE `#{params[:trigger_name]}`(change_key varchar(2000), change_new_key varchar(2000), change_type varchar(1))
           p: BEGIN
             #{activity_check}
             INSERT INTO #{params[:log_table]}(change_table, change_key, change_new_key, change_type, change_time)
@@ -59,7 +59,7 @@ module RR
 
         %w(insert update delete).each do |action|
           execute(<<-end_sql)
-            DROP TRIGGER IF EXISTS #{params[:trigger_name]}_#{action};
+            DROP TRIGGER IF EXISTS `#{params[:trigger_name]}_#{action}`;
           end_sql
 
           # The created triggers can handle the case where the trigger procedure
@@ -73,13 +73,13 @@ module RR
 
           trigger_var = action == 'delete' ? 'OLD' : 'NEW'
           if action == 'update'
-            call_statement = "CALL #{params[:trigger_name]}(#{key_clause('OLD', params)}, #{key_clause('NEW', params)}, '#{action[0,1].upcase}');"
+            call_statement = "CALL `#{params[:trigger_name]}`(#{key_clause('OLD', params)}, #{key_clause('NEW', params)}, '#{action[0,1].upcase}');"
           else
-            call_statement = "CALL #{params[:trigger_name]}(#{key_clause(trigger_var, params)}, null, '#{action[0,1].upcase}');"
+            call_statement = "CALL `#{params[:trigger_name]}`(#{key_clause(trigger_var, params)}, null, '#{action[0,1].upcase}');"
           end
           execute(<<-end_sql)
-            CREATE TRIGGER #{params[:trigger_name]}_#{action}
-              AFTER #{action} ON #{params[:table]} FOR EACH ROW BEGIN
+            CREATE TRIGGER `#{params[:trigger_name]}_#{action}`
+              AFTER #{action} ON `#{params[:table]}` FOR EACH ROW BEGIN
                 DECLARE number_attempts INT DEFAULT 0;
                 DECLARE failed INT;
                 DECLARE CONTINUE HANDLER FOR 1305 BEGIN
@@ -102,9 +102,9 @@ module RR
       # * +table_name+: name of the table for which the trigger exists
       def drop_replication_trigger(trigger_name, table_name)
         %w(insert update delete).each do |action|
-          execute "DROP TRIGGER #{trigger_name}_#{action};"
+          execute "DROP TRIGGER `#{trigger_name}_#{action}`;"
         end
-        execute "DROP PROCEDURE #{trigger_name};"
+        execute "DROP PROCEDURE `#{trigger_name}`;"
       end
 
       # Returns +true+ if the named trigger exists for the named table.
@@ -129,7 +129,7 @@ module RR
       def sequence_values(rep_prefix, table_name)
         # check if the table has an auto_increment column, return if not
         sequence_row = select_one(<<-end_sql)
-          show columns from #{table_name} where extra = 'auto_increment'
+          show columns from `#{table_name}` where extra = 'auto_increment'
         end_sql
         return {} unless sequence_row
         column_name = sequence_row['Field']
@@ -154,7 +154,7 @@ module RR
         sequence_row = select_one("select current_value, increment, offset from #{sequence_table_name} where name = '#{table_name}'")
         if sequence_row == nil
           current_max = select_one(<<-end_sql)['current_max'].to_i
-            select max(#{column_name}) as current_max from #{table_name}
+            select max(`#{column_name}`) as current_max from `#{table_name}`
           end_sql
           return {column_name => {
               :increment => 1,
@@ -207,17 +207,17 @@ module RR
           end_sql
           trigger_name = "#{rep_prefix}_#{table_name}_sequence"
           execute(<<-end_sql)
-            DROP TRIGGER IF EXISTS #{trigger_name};
+            DROP TRIGGER IF EXISTS `#{trigger_name}`;
           end_sql
 
           execute(<<-end_sql)
-            CREATE TRIGGER #{trigger_name}
-              BEFORE INSERT ON #{table_name} FOR EACH ROW BEGIN
-                IF NEW.#{column_name} = 0 THEN
+            CREATE TRIGGER `#{trigger_name}`
+              BEFORE INSERT ON `#{table_name}` FOR EACH ROW BEGIN
+                IF NEW.`#{column_name}` = 0 THEN
                   UPDATE #{sequence_table_name}
                     SET current_value = LAST_INSERT_ID(current_value + increment)
                     WHERE name = '#{table_name}';
-                  SET NEW.#{column_name} = LAST_INSERT_ID();
+                  SET NEW.`#{column_name}` = LAST_INSERT_ID();
                 END IF;
               END;
           end_sql
@@ -256,7 +256,7 @@ module RR
             and trigger_name = '#{trigger_name}'
           end_sql
           if trigger_row
-          execute "DROP TRIGGER #{trigger_name}"
+          execute "DROP TRIGGER `#{trigger_name}`"
           execute "delete from #{sequence_table_name} where name = '#{table_name}'"
           unless select_one("select * from #{sequence_table_name}")
             # no more sequences left --> delete sequence table

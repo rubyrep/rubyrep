@@ -1,3 +1,8 @@
+== 1.0.3 ???
+
+* Minor enhancements:
+  * Added support (and according tests) for non-standard table / column names
+
 == 1.0.2 2009-06-13
 
 * 3 minor enhancements:

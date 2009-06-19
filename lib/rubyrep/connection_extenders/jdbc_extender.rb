@@ -17,7 +17,8 @@ module RR
 
       # Returns an ordered list of primary key column names of the given table
       def primary_key_names(table)
-        if not tables.include? table
+        if tables.grep(/^#{table}$/i).empty?
+          # Note: Cannot use tables.include? as returned tables are made lowercase under JRuby MySQL
           raise "table '#{table}' does not exist"
         end
         columns = []
@@ -81,12 +82,12 @@ module RR
       #  - ::regclass is a function that gives the id for a table name
       def column_definitions(table_name) #:nodoc:
         rows = select_all(<<-end_sql)
-            SELECT a.attname as name, format_type(a.atttypid, a.atttypmod) as type, d.adsrc as default, a.attnotnull as notnull
-              FROM pg_attribute a LEFT JOIN pg_attrdef d
-                ON a.attrelid = d.adrelid AND a.attnum = d.adnum
-             WHERE a.attrelid = '#{table_name}'::regclass
-               AND a.attnum > 0 AND NOT a.attisdropped
-             ORDER BY a.attnum
+          SELECT a.attname as name, format_type(a.atttypid, a.atttypmod) as type, d.adsrc as default, a.attnotnull as notnull
+            FROM pg_attribute a LEFT JOIN pg_attrdef d
+              ON a.attrelid = d.adrelid AND a.attnum = d.adnum
+           WHERE a.attrelid = (SELECT oid FROM pg_class WHERE relname = '#{table_name}')
+             AND a.attnum > 0 AND NOT a.attisdropped
+           ORDER BY a.attnum
         end_sql
           
         rows.map do |row|

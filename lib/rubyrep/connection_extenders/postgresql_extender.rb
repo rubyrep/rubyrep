@@ -153,6 +153,22 @@ module RR
     end
     result
   end
+
+  # *** Monkey patch***
+  # Returns the list of a table's column names, data types, and default values.
+  # This overwrites the according ActiveRecord::PostgreSQLAdapter method
+  # to work with tables containing a dot (".").
+  def column_definitions(table_name) #:nodoc:
+    query <<-end_sql
+      SELECT a.attname, format_type(a.atttypid, a.atttypmod), d.adsrc, a.attnotnull
+        FROM pg_attribute a LEFT JOIN pg_attrdef d
+          ON a.attrelid = d.adrelid AND a.attnum = d.adnum
+       WHERE a.attrelid = (SELECT oid FROM pg_class WHERE relname = '#{table_name}')
+         AND a.attnum > 0 AND NOT a.attisdropped
+       ORDER BY a.attnum
+    end_sql
+  end
+
 end
 end
 end

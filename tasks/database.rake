@@ -4,6 +4,7 @@ require 'rubyrep'
 
 require File.dirname(__FILE__) + '/task_helper.rb'
 require File.dirname(__FILE__) + '/../config/test_config'
+require File.dirname(__FILE__) + '/../spec/spec_helper'
 
 # Creates the databases for the given configuration hash
 def create_database(config)
@@ -97,7 +98,7 @@ def drop_postgres_schema(config)
   return unless config[:adapter] == 'postgresql'
   ActiveRecord::Base.establish_connection config
   ActiveRecord::Schema.define do
-    execute "drop schema rr cascade"
+    execute "drop schema rr cascade" rescue nil
   end
 end
 
@@ -252,6 +253,18 @@ def create_sample_schema(database, config)
       t.column :name, :string
     end
 
+    create_table STRANGE_TABLE do |t|
+      t.column :first_fk, :integer
+      t.column :second_fk, :integer
+      t.column STRANGE_COLUMN, :string
+    end
+
+    ActiveRecord::Base.connection.execute(<<-end_sql) 
+      ALTER TABLE #{ActiveRecord::Base.connection.quote_table_name(STRANGE_TABLE)} ADD CONSTRAINT strange_table_fkey
+        FOREIGN KEY (first_fk, second_fk)
+        REFERENCES referenced_table(first_id, second_id)
+    end_sql
+
     create_table :left_table do |t|
       t.column :name, :string
     end if database == :left
@@ -267,10 +280,10 @@ end
 def drop_sample_schema(config)
   drop_postgres_schema config
 
-  connection = RR::ConnectionExtenders.db_connect(config)
-  ActiveRecord::Base.connection = connection
+  ActiveRecord::Base.establish_connection config
   
   ActiveRecord::Schema.define do
+    drop_table STRANGE_TABLE rescue nil
     drop_table :extender_type_check rescue nil
     drop_table :extender_no_record rescue nil
     drop_table :extender_one_record rescue nil
@@ -285,6 +298,7 @@ def drop_sample_schema(config)
     drop_table :referenced_table2 rescue nil
     drop_table :table_with_manual_key
     drop_table :rr_pending_changes rescue nil
+    drop_table :rr_logged_events rescue nil
     drop_table :rr_running_flags rescue nil
     drop_table :trigger_test rescue nil
     drop_table :sequence_test rescue nil
@@ -412,7 +426,7 @@ namespace :db do
     
     desc "Create the sample schemas"
     task :create_schema do
-      create_sample_schema :left, RR::Initializer.configuration rescue nil
+      create_sample_schema :left, RR::Initializer.configuration
       create_sample_schema :right, RR::Initializer.configuration rescue nil
     end
     
@@ -432,8 +446,8 @@ namespace :db do
       if pid
         Process.wait pid
       else
-        drop_sample_schema RR::Initializer.configuration.left rescue nil
-        drop_sample_schema RR::Initializer.configuration.right rescue nil
+        drop_sample_schema RR::Initializer.configuration.left
+        drop_sample_schema RR::Initializer.configuration.right
         Kernel.exit!
       end
     end

@@ -15,6 +15,15 @@ $LOAD_PATH.unshift File.dirname(__FILE__)
 require 'rubyrep'
 require 'connection_extender_interface_spec'
 
+unless self.class.const_defined?('STRANGE_TABLE')
+  if ENV['RR_TEST_DB'] == 'postgres' || ENV['RR_TEST_DB'] == nil
+    STRANGE_TABLE = 'table_with.stränge Name山'
+  else
+    STRANGE_TABLE = 'table_with_stränge Name山'
+  end
+  STRANGE_COLUMN = 'stränge. Column山'
+end
+
 class Module
   # Used to verify that an instance of the class / module receives a call of the
   # specified method.

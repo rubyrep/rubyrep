@@ -35,7 +35,7 @@ module RR
 
         # now create the trigger
         execute(<<-end_sql)
-          CREATE OR REPLACE FUNCTION #{params[:trigger_name]}() RETURNS TRIGGER AS $change_trigger$
+          CREATE OR REPLACE FUNCTION "#{params[:trigger_name]}"() RETURNS TRIGGER AS $change_trigger$
             BEGIN
               #{activity_check}
               IF (TG_OP = 'DELETE') THEN
@@ -69,9 +69,9 @@ module RR
         create_or_replace_replication_trigger_function params
 
         execute(<<-end_sql)
-          CREATE TRIGGER #{params[:trigger_name]}
-          AFTER INSERT OR UPDATE OR DELETE ON #{params[:table]}
-              FOR EACH ROW EXECUTE PROCEDURE #{params[:trigger_name]}();
+          CREATE TRIGGER "#{params[:trigger_name]}"
+          AFTER INSERT OR UPDATE OR DELETE ON "#{params[:table]}"
+              FOR EACH ROW EXECUTE PROCEDURE "#{params[:trigger_name]}"();
         end_sql
       end
 
@@ -79,8 +79,8 @@ module RR
       # * +trigger_name+: name of the trigger
       # * +table_name+: name of the table for which the trigger exists
       def drop_replication_trigger(trigger_name, table_name)
-        execute "DROP TRIGGER #{trigger_name} ON #{table_name};"
-        execute "DROP FUNCTION #{trigger_name}();"
+        execute "DROP TRIGGER \"#{trigger_name}\" ON \"#{table_name}\";"
+        execute "DROP FUNCTION \"#{trigger_name}\"();"
       end
 
       # Returns +true+ if the named trigger exists for the named table.
@@ -117,7 +117,7 @@ module RR
           and t.relname = '#{table_name}'
         end_sql
         sequence_names.each do |sequence_name|
-          row = select_one("select last_value, increment_by from #{sequence_name}")
+          row = select_one("select last_value, increment_by from \"#{sequence_name}\"")
           result[sequence_name] = {
             :increment => row['increment_by'].to_i,
             :value => row['last_value'].to_i
@@ -144,7 +144,7 @@ module RR
           rep_prefix, table_name, increment, offset,
           left_sequence_values, right_sequence_values, adjustment_buffer)
         left_sequence_values.each do |sequence_name, left_current_value|
-          row = select_one("select last_value, increment_by from #{sequence_name}")
+          row = select_one("select last_value, increment_by from \"#{sequence_name}\"")
           current_increment = row['increment_by'].to_i
           current_value = row['last_value'].to_i
           unless current_increment == increment and current_value % increment == offset
