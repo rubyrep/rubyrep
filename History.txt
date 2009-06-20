@@ -1,9 +1,12 @@
-== 1.0.3 ???
+== 1.0.4 2009-06-20
+
+ * Bug fix: added missing file (log_helper.rb) to gem manifest
+
+== 1.0.3 2009-06-20
 
 * Minor enhancements:
   * Added support (and according tests) for non-standard table / column names
   * Verified compatibility with jruby 1.3.0
-
 * Bug fixes:
   * Also big exception messages should be accommodated in event log table.
 

@@ -26,6 +26,7 @@ lib/rubyrep/database_proxy.rb
 lib/rubyrep/direct_table_scan.rb
 lib/rubyrep/generate_runner.rb
 lib/rubyrep/initializer.rb
+lib/rubyrep/log_helper.rb
 lib/rubyrep/logged_change.rb
 lib/rubyrep/proxied_table_scan.rb
 lib/rubyrep/proxy_block_cursor.rb
@@ -87,6 +88,7 @@ spec/direct_table_scan_spec.rb
 spec/dolphins.jpg
 spec/generate_runner_spec.rb
 spec/initializer_spec.rb
+spec/log_helper_spec.rb
 spec/logged_change_spec.rb
 spec/postgresql_replication_spec.rb
 spec/postgresql_support_spec.rb
