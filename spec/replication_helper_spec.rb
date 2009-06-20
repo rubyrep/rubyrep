@@ -92,6 +92,11 @@ describe ReplicationHelper do
       left_change.table = right_change.table = 'extender_combined_key'
       left_change.key = right_change.key = {'first_id' => 1, 'second_id' => 2}
 
+      # Verify that the log information are made fitting
+      helper.should_receive(:fit_description_columns).
+        with('ignore', 'ignored').
+        and_return(['ignoreX', 'ignoredY'])
+
       helper.log_replication_outcome diff, 'ignore', 'ignored'
 
       row = session.left.select_one("select * from rr_logged_events order by id desc")
@@ -101,8 +106,8 @@ describe ReplicationHelper do
       row['change_key'].should == '"first_id"=>"1", "second_id"=>"2"'
       row['left_change_type'].should == 'update'
       row['right_change_type'].should == 'delete'
-      row['description'].should == 'ignore'
-      row['long_description'].should == 'ignored'
+      row['description'].should == 'ignoreX'
+      row['long_description'].should == 'ignoredY'
       Time.parse(row['event_time']).should >= 10.seconds.ago
       row['diff_dump'].should == diff.to_yaml
     ensure

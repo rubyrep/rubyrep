@@ -5,6 +5,8 @@ module RR
   # for third party syncers.
   class SyncHelper
 
+    include LogHelper
+
     # The current +TableSync+ instance
     attr_accessor :table_sync
 
@@ -81,7 +83,7 @@ module RR
         end
         key = key_parts.join(', ')
       end
-      sync_details = details == nil ? nil : details[0...ReplicationInitializer::LONG_DESCRIPTION_SIZE]
+      sync_outcome, sync_details = fit_description_columns(outcome, details)
 
       session.left.insert_record "#{sync_options[:rep_prefix]}_logged_events", {
         :activity => 'sync',
@@ -90,7 +92,7 @@ module RR
         :change_key => key,
         :left_change_type => nil,
         :right_change_type => nil,
-        :description => outcome.to_s,
+        :description => sync_outcome,
         :long_description => sync_details,
         :event_time => Time.now,
         :diff_dump => nil

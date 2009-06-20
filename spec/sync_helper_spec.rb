@@ -36,6 +36,11 @@ describe SyncHelper do
       sync = TableSync.new(Session.new, 'scanner_records')
       helper = SyncHelper.new(sync)
 
+      # Verify that the log information are made fitting
+      helper.should_receive(:fit_description_columns).
+        with('my_outcome', 'my_long_description').
+        and_return(['my_outcomeX', 'my_long_descriptionY'])
+
       helper.log_sync_outcome(
         {'bla' => 'blub', 'id' => 1},
         'my_sync_type',
@@ -50,8 +55,8 @@ describe SyncHelper do
       row['change_key'].should == '1'
       row['left_change_type'].should be_nil
       row['right_change_type'].should be_nil
-      row['description'].should == 'my_outcome'
-      row['long_description'].should == 'my_long_description'
+      row['description'].should == 'my_outcomeX'
+      row['long_description'].should == 'my_long_descriptionY'
       Time.parse(row['event_time']).should >= 10.seconds.ago
       row['diff_dump'].should == nil
     ensure

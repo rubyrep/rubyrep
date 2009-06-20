@@ -124,7 +124,10 @@ module RR
     # Size of the replication log column diff_dump
     DIFF_DUMP_SIZE = 2000
 
-    # Size of the repliation log column long_description
+    # Size fo the event log column 'description'
+    DESCRIPTION_SIZE = 255
+
+    # Size of the event log column 'long_description'
     LONG_DESCRIPTION_SIZE = 1000
 
     # Ensures that create_table and related statements don't print notices to
@@ -153,7 +156,7 @@ module RR
           t.column :change_key, :string
           t.column :left_change_type, :string
           t.column :right_change_type, :string
-          t.column :description, :string
+          t.column :description, :string, :limit => DESCRIPTION_SIZE
           t.column :long_description, :string, :limit => LONG_DESCRIPTION_SIZE
           t.column :event_time, :timestamp
           t.column :diff_dump, :string, :limit => DIFF_DUMP_SIZE

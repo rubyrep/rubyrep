@@ -3,6 +3,9 @@
 * Minor enhancements:
   * Added support (and according tests) for non-standard table / column names
 
+* Bug fixes:
+  * Also big exception messages should be accommodated in event log table.
+
 == 1.0.2 2009-06-13
 
 * 3 minor enhancements:

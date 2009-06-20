@@ -5,6 +5,8 @@ module RR
   # for third party replicators.
   class ReplicationHelper
 
+    include LogHelper
+
     # The current +ReplicationRun+ instance
     attr_accessor :replication_run
 
@@ -74,7 +76,7 @@ module RR
         end
         key = key_parts.join(', ')
       end
-      rep_details = details == nil ? nil : details[0...ReplicationInitializer::LONG_DESCRIPTION_SIZE]
+      rep_outcome, rep_details = fit_description_columns(outcome, details)
       diff_dump = diff.to_yaml[0...ReplicationInitializer::DIFF_DUMP_SIZE]
       
       session.left.insert_record "#{options[:rep_prefix]}_logged_events", {
@@ -84,7 +86,7 @@ module RR
         :change_key => key,
         :left_change_type => (diff.changes[:left] ? diff.changes[:left].type.to_s : nil),
         :right_change_type => (diff.changes[:right] ? diff.changes[:right].type.to_s : nil),
-        :description => outcome.to_s,
+        :description => rep_outcome,
         :long_description => rep_details,
         :event_time => Time.now,
         :diff_dump => diff_dump
