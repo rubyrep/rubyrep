@@ -105,7 +105,8 @@ describe ReplicationRun do
     session.left.begin_db_transaction
     session.right.begin_db_transaction
     begin
-
+      session.left.execute "delete from rr_pending_changes"
+      session.left.execute "delete from rr_logged_events"
       session.left.insert_record 'rr_pending_changes', {
         'change_table' => 'extender_no_record',
         'change_key' => 'id|1',
@@ -153,6 +154,7 @@ describe ReplicationRun do
       config.options[:logged_replication_events] = [:all_changes]
 
       session = Session.new(config)
+      session.left.execute "delete from rr_logged_events"
       initializer = ReplicationInitializer.new(session)
       initializer.create_trigger :left, 'extender_no_record'
 

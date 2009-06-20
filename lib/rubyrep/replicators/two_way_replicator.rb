@@ -225,7 +225,7 @@ module RR
         values = rep_helper.load_record source_db, source_table, source_key
         if values == nil
           diff.amend
-          replicate_difference diff, remaining_attempts - 1
+          replicate_difference diff, remaining_attempts - 1, "source record for insert vanished"
         else
           begin
             # note: savepoints have to be used for postgresql (as a failed SQL
@@ -238,7 +238,8 @@ module RR
             row = rep_helper.load_record target_db, target_table, source_key
             raise unless row # problem is not the existence of the record in the target db
             diff.amend
-            replicate_difference diff, remaining_attempts - 1
+            replicate_difference diff, remaining_attempts - 1,
+              "insert failed with #{e.message}"
           end
         end
       end
@@ -260,14 +261,14 @@ module RR
         values = rep_helper.load_record source_db, source_table, source_key
         if values == nil
           diff.amend
-          replicate_difference diff, remaining_attempts - 1
+          replicate_difference diff, remaining_attempts - 1, "source record for update vanished"
         else
           log_replication_outcome source_db, diff
           rep_helper.update_record target_db, target_table, values, target_key
         end
       end
 
-      # Attempts delete the source record from the target database.
+      # Attempts to delete the source record from the target database.
       # E. g. if +source_db is :+left+, then the record is deleted in database
       # :+right+.
       # * +source_db+: either :+left+ or :+right+ - source database of replication
@@ -284,8 +285,9 @@ module RR
       # Called to replicate the specified difference.
       # * :+diff+: ReplicationDifference instance
       # * :+remaining_attempts+: how many more times a replication will be attempted
-      def replicate_difference(diff, remaining_attempts = MAX_REPLICATION_ATTEMPTS)
-        raise Exception, "max replication attempts exceeded" if remaining_attempts == 0
+      # * :+previous_failure_description+: why the previous replication attempt failed
+      def replicate_difference(diff, remaining_attempts = MAX_REPLICATION_ATTEMPTS, previous_failure_description = nil)
+        raise Exception, previous_failure_description || "max replication attempts exceeded" if remaining_attempts == 0
         options = options_for_table(diff.changes[:left].table)
         if diff.type == :left or diff.type == :right
           key = diff.type == :left ? :left_change_handling : :right_change_handling
