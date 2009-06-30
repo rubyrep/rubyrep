@@ -496,6 +496,92 @@ describe Replicators::TwoWayReplicator do
     lambda {replicator.replicate_difference :dummy_diff, 0}.
       should raise_error(Exception, "max replication attempts exceeded")
   end
+  
+  it "replicate_difference should handle updates rejected by the database" do
+    begin
+      config = deep_copy(standard_config)
+      config.options[:committer] = :never_commit
+      config.options[:replication_conflict_handling] = :left_wins
+
+      session = Session.new(config)
+
+      session.left.insert_record 'rr_pending_changes', {
+        'change_table' => 'scanner_records',
+        'change_key' => 'id|1',
+        'change_new_key' => 'id|2',
+        'change_type' => 'U',
+        'change_time' => Time.now
+      }
+
+      rep_run = ReplicationRun.new session
+      helper = ReplicationHelper.new(rep_run)
+      replicator = Replicators::TwoWayReplicator.new(helper)
+
+      diff = ReplicationDifference.new session
+      diff.load
+
+      lambda {replicator.replicate_difference diff, 1}.should raise_error(/duplicate/i)
+
+      # Verify that the transaction has not become invalid
+      helper.log_replication_outcome diff, "bla", "blub"
+
+      row = session.left.select_one("select * from rr_logged_events")
+      row['change_table'].should == 'scanner_records'
+      row['change_key'].should == '1'
+      row['description'].should == 'bla'
+      
+    ensure
+      Committers::NeverCommitter.rollback_current_session
+      if session
+        session.left.execute "delete from rr_pending_changes"
+        session.left.execute "delete from rr_logged_events"
+      end
+    end
+  end
+
+  it "replicate_difference should handle deletes rejected by the database" do
+    begin
+      config = deep_copy(standard_config)
+      config.options[:committer] = :never_commit
+      config.options[:replication_conflict_handling] = :left_wins
+
+      session = Session.new(config)
+
+      session.left.select_all("select * from rr_logged_events").should == []
+
+      session.left.insert_record 'rr_pending_changes', {
+        'change_table' => 'referenced_table',
+        'change_key' => 'first_id|1|second_id|2',
+        'change_new_key' => nil,
+        'change_type' => 'D',
+        'change_time' => Time.now
+      }
+
+      rep_run = ReplicationRun.new session
+      helper = ReplicationHelper.new(rep_run)
+      replicator = Replicators::TwoWayReplicator.new(helper)
+
+      diff = ReplicationDifference.new session
+      diff.load
+
+      lambda {replicator.replicate_difference diff, 1}.should raise_error(/referencing_table_fkey/)
+
+      # Verify that the transaction has not become invalid
+      helper.log_replication_outcome diff, "bla", "blub"
+
+      row = session.left.select_one("select * from rr_logged_events")
+      row['change_table'].should == 'referenced_table'
+      row['change_key'].should =~ /first_id.*1.*second_id.*2/
+      row['description'].should == 'bla'
+
+    ensure
+      Committers::NeverCommitter.rollback_current_session
+      if session
+        session.left.execute "delete from rr_pending_changes"
+        session.left.execute "delete from rr_logged_events"
+      end
+    end
+  end
 
   it "replicate_difference should handle updates failing due to the source record being deleted after the original diff was loaded" do
     begin

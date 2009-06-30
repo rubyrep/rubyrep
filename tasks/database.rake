@@ -380,6 +380,13 @@ def delete_all_and_create_shared_sample_data(config)
     {:first_id => 2, :second_id => 1, :name => 'ba'},
     {:first_id => 3, :second_id => 1}
   ].each { |row| create_row connection, 'extender_combined_key', row}
+
+  connection.execute("delete from referenced_table")
+  connection.execute("delete from referencing_table")
+  create_row connection, 'referenced_table', {
+    :first_id => 1, :second_id => 2, :name => 'bla'
+  }
+  create_row connection, 'referencing_table', {:first_fk => 1, :second_fk => 2}
 end
 
 # Reinitializes the sample schema with the sample data

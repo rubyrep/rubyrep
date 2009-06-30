@@ -169,7 +169,7 @@ module RR
         when :update
           attempt_update source_db, diff, remaining_attempts, source_key, target_key
         when :delete
-          attempt_delete source_db, diff, target_key
+          attempt_delete source_db, diff, remaining_attempts, target_key
         end
       end
 
@@ -263,8 +263,16 @@ module RR
           diff.amend
           replicate_difference diff, remaining_attempts - 1, "source record for update vanished"
         else
-          log_replication_outcome source_db, diff
-          rep_helper.update_record target_db, target_table, values, target_key
+          begin
+            rep_helper.session.send(target_db).execute "savepoint rr_update"
+            log_replication_outcome source_db, diff
+            rep_helper.update_record target_db, target_table, values, target_key
+          rescue Exception => e
+            rep_helper.session.send(target_db).execute "rollback to savepoint rr_update"
+            diff.amend
+            replicate_difference diff, remaining_attempts - 1,
+              "update failed with #{e.message}"
+          end
         end
       end
 
@@ -273,13 +281,22 @@ module RR
       # :+right+.
       # * +source_db+: either :+left+ or :+right+ - source database of replication
       # * +diff+: the current ReplicationDifference instance
+      # * +remaining_attempts+: the number of remaining replication attempts for this difference
       # * +target_key+: a column_name => value hash identifying the source record
-      def attempt_delete(source_db, diff, target_key)
+      def attempt_delete(source_db, diff, remaining_attempts, target_key)
         change = diff.changes[source_db]
         target_db = OTHER_SIDE[source_db]
         target_table = rep_helper.corresponding_table(source_db, change.table)
-        log_replication_outcome source_db, diff
-        rep_helper.delete_record target_db, target_table, target_key
+        begin
+          rep_helper.session.send(target_db).execute "savepoint rr_delete"
+          log_replication_outcome source_db, diff
+          rep_helper.delete_record target_db, target_table, target_key
+        rescue Exception => e
+          rep_helper.session.send(target_db).execute "rollback to savepoint rr_delete"
+          diff.amend
+          replicate_difference diff, remaining_attempts - 1,
+            "delete failed with #{e.message}"
+        end
       end
 
       # Called to replicate the specified difference.
@@ -306,7 +323,7 @@ module RR
             when :update
               attempt_update source_db, diff, remaining_attempts, change.new_key, change.key
             when :delete
-              attempt_delete source_db, diff, change.key
+              attempt_delete source_db, diff, remaining_attempts, change.key
             end
           else # option must be a Proc
             option.call rep_helper, diff
