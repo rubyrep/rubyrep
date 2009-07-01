@@ -4,7 +4,7 @@ include RR
 
 require File.dirname(__FILE__) + "/../config/test_config.rb"
 
-describe "PostgreSQL schema support" do
+describe "PostgreSQL support" do
   before(:each) do
     Initializer.configuration = standard_config
   end
