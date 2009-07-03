@@ -1,4 +1,4 @@
-== 1.0.4 2009-07-03
+== 1.0.5 2009-07-03
 
 * Bug fix: rubyrep replication runs should survive update or delete attempts rejected by the database.
 * Bug fix: support for multiple PostgreSQL schemas holding tables of the same name.
