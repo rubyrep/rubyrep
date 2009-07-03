@@ -87,8 +87,6 @@ module RR
       # * +trigger_name+: name of the trigger
       # * +table_name+: name of the table
       def replication_trigger_exists?(trigger_name, table_name)
-        search_path = select_one("show search_path")['search_path']
-        schemas = search_path.split(/,/).map { |p| quote(p) }.join(',')
         !select_all(<<-end_sql).empty?
           select 1 from information_schema.triggers
           where event_object_schema in (#{schemas})
@@ -114,7 +112,8 @@ module RR
           join pg_depend as r on t.oid = r.refobjid
           join pg_class as s on r.objid = s.oid
           and s.relkind = 'S'
-          and t.relname = '#{table_name}'
+          and t.relname = '#{table_name}' AND t.relnamespace IN
+            (SELECT oid FROM pg_namespace WHERE nspname in (#{schemas}))
         end_sql
         sequence_names.each do |sequence_name|
           row = select_one("select last_value, increment_by from \"#{sequence_name}\"")
@@ -171,7 +170,8 @@ module RR
           join pg_depend as r on t.oid = r.refobjid
           join pg_class as s on r.objid = s.oid
           and s.relkind = 'S'
-          and t.relname = '#{table_name}'
+          and t.relname = '#{table_name}' and t.relnamespace IN
+            (SELECT oid FROM pg_namespace WHERE nspname in (#{schemas}))
         end_sql
         sequence_names.each do |sequence_name|
           execute(<<-end_sql)

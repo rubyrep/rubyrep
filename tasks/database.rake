@@ -90,6 +90,10 @@ def create_postgres_schema(config)
     create_table :rr_sequence_test do |t|
       t.column :name, :string
     end
+    
+    create_table :rr_duplicate do |t|
+      t.column :name, :string
+    end
   end
 end
 
@@ -272,6 +276,33 @@ def create_sample_schema(database, config)
     create_table :right_table do |t|
       t.column :name, :string
     end if database == :right
+
+    if config.send(database)[:adapter] == 'postgresql'
+      create_table :rr_duplicate, :id => false do |t|
+        t.column :blub, :string
+      end rescue nil
+
+      ActiveRecord::Base.connection.execute(<<-end_sql) rescue nil
+        ALTER TABLE rr_duplicate ADD COLUMN key SERIAL
+      end_sql
+
+      ActiveRecord::Base.connection.execute(<<-end_sql) rescue nil
+      ALTER TABLE rr_duplicate ADD CONSTRAINT rr_duplicate_pkey
+        PRIMARY KEY (key)
+      end_sql
+
+      # duplicate that should *not* be found during PostgreSQL schema support tests
+      create_table :rr_referencing do |t|
+        t.column :first_fk, :integer
+        t.column :second_fk, :integer
+      end rescue nil
+
+      ActiveRecord::Base.connection.execute(<<-end_sql)
+      ALTER TABLE rr_referencing ADD CONSTRAINT rr_referencing_fkey
+        FOREIGN KEY (first_fk, second_fk)
+        REFERENCES referenced_table(first_id, second_id)
+      end_sql
+    end
   end
 end
 
@@ -283,6 +314,8 @@ def drop_sample_schema(config)
   ActiveRecord::Base.establish_connection config
   
   ActiveRecord::Schema.define do
+    drop_table :rr_referencing rescue nil
+    drop_table :rr_duplicate rescue nil
     drop_table STRANGE_TABLE rescue nil
     drop_table :extender_type_check rescue nil
     drop_table :extender_no_record rescue nil

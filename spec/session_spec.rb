@@ -186,14 +186,15 @@ describe Session do   # here database connection caching is _not_ disabled
         'referenced_table',
         'scanner_text_key',
       ])
-    sorted_table_pairs = convert_table_array_to_table_pair_array([
-        'scanner_records',
-        'referenced_table',
-        'referencing_table',
-        'scanner_text_key',
-      ])
+    sorted_table_pairs = Session.new.sort_table_pairs(table_pairs)
 
-    Session.new.sort_table_pairs(table_pairs).should == sorted_table_pairs
+    # ensure result holds the original table pairs
+    p = Proc.new {|l, r| l[:left] <=> r[:left]}
+    sorted_table_pairs.sort(&p).should == table_pairs.sort(&p)
+
+    # make sure the referenced table comes before the referencing table
+    sorted_table_pairs.map {|table_pair| table_pair[:left]}.grep(/referenc/).
+      should == ['referenced_table', 'referencing_table']
   end
 
   it "sort_table_pairs should not sort the tables if table_ordering is not enabled in the configuration" do

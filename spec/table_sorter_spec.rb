@@ -14,15 +14,14 @@ describe TableSorter do
       'scanner_text_key',
     ]
 
-    sorted_tables = [
-      'scanner_records',
-      'referenced_table',
-      'referencing_table',
-      'scanner_text_key',
-    ]
-
     sorter = TableSorter.new Session.new(standard_config), tables
-    sorter.sort.should == sorted_tables
+    sorted_tables = sorter.sort
+
+    # make sure it contains the original tables
+    sorted_tables.sort.should == tables.sort
+
+    # make sure the referenced table comes before the referencing table
+    sorted_tables.grep(/referenc/).should == ['referenced_table', 'referencing_table']
 
     # verify that we are using TSort#tsort to get that result
     sorter.should_not_receive(:tsort)
