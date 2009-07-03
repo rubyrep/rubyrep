@@ -1,6 +1,11 @@
+== 1.0.4 2009-07-03
+
+* Bug fix: rubyrep replication runs should survive update or delete attempts rejected by the database.
+* Bug fix: support for multiple PostgreSQL schemas holding tables of the same name.
+
 == 1.0.4 2009-06-20
 
- * Bug fix: added missing file (log_helper.rb) to gem manifest
+* Bug fix: added missing file (log_helper.rb) to gem manifest
 
 == 1.0.3 2009-06-20
 

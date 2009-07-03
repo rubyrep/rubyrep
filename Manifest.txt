@@ -91,6 +91,7 @@ spec/initializer_spec.rb
 spec/log_helper_spec.rb
 spec/logged_change_spec.rb
 spec/postgresql_replication_spec.rb
+spec/postgresql_schema_support_spec.rb
 spec/postgresql_support_spec.rb
 spec/progress_bar_spec.rb
 spec/proxied_table_scan_spec.rb
