@@ -146,7 +146,10 @@ module RR
 
     # Refreshes (reestablish if no more active) the database connections.
     def refresh
-      [:left, :right].each {|database| send(database).refresh}
+      [:left, :right].each do |database|
+        t = Thread.new {send(database).refresh}
+        t.join configuration.options[:database_connection_timeout]
+      end
     end
         
     # Creates a new rubyrep session with the provided Configuration

@@ -22,11 +22,14 @@ module RR
     # Executes the replication run.
     def run
       return unless [:left, :right].any? do |database|
-        Timeout::timeout(session.configuration.options[:database_connection_timeout]) do
-          session.send(database).select_one(
+        changes_pending = false
+        t = Thread.new do
+          changes_pending = session.send(database).select_one(
             "select id from #{session.configuration.options[:rep_prefix]}_pending_changes"
           ) != nil
         end
+        t.join session.configuration.options[:database_connection_timeout]
+        changes_pending
       end
       begin
         success = false
