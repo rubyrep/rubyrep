@@ -9,7 +9,8 @@ describe LoggedChange do
 
   it "initialize should store session and database" do
     session = Session.new
-    change = LoggedChange.new session, :left
+    loader = LoggedChangeLoader.new session, :left
+    change = LoggedChange.new loader
     change.session.should == session
     change.database.should == :left
   end
@@ -37,7 +38,8 @@ describe LoggedChange do
         'change_type' => 'I',
         'change_time' => Time.now
       }
-      change = LoggedChange.new session, :left
+      loader = LoggedChangeLoader.new session, :left
+      change = LoggedChange.new loader
       change.load_specified 'left_table', {'id' => '2'}
 
       change.table.should == 'left_table'
@@ -62,7 +64,8 @@ describe LoggedChange do
         'change_type' => 'I',
         'change_time' => Time.now
       }
-      change = LoggedChange.new session, :left
+      loader = LoggedChangeLoader.new session, :left
+      change = LoggedChange.new loader
       change.load_specified 'scanner_records', {'id1' => 1, 'id2' => 2}
 
       change.table.should == 'scanner_records'
@@ -83,7 +86,8 @@ describe LoggedChange do
         'change_type' => 'I',
         'change_time' => Time.now
       }
-      change = LoggedChange.new session, :left
+      loader = LoggedChangeLoader.new session, :left
+      change = LoggedChange.new loader
       change.load_specified 'left_table', {'id' => 1}
 
       session.left.
@@ -113,7 +117,8 @@ describe LoggedChange do
         'change_type' => 'U',
         'change_time' => t2
       }
-      change = LoggedChange.new session, :left
+      loader = LoggedChangeLoader.new session, :left
+      change = LoggedChange.new loader
       change.load_specified 'left_table', {'id' => 1}
 
       change.first_changed_at.to_s.should == t1.to_s
@@ -141,7 +146,8 @@ describe LoggedChange do
         'change_type' => 'U',
         'change_time' => Time.now
       }
-      change = LoggedChange.new session, :left
+      loader = LoggedChangeLoader.new session, :left
+      change = LoggedChange.new loader
       change.load_specified 'left_table', {'id' => 1}
 
       change.type.should == :update
@@ -175,7 +181,8 @@ describe LoggedChange do
         'change_type' => 'D',
         'change_time' => Time.now
       }
-      change = LoggedChange.new session, :left
+      loader = LoggedChangeLoader.new session, :left
+      change = LoggedChange.new loader
       change.load_specified 'left_table', {'id' => '1'}
 
       change.type.should == :no_change
@@ -215,7 +222,8 @@ describe LoggedChange do
         'change_type' => 'U',
         'change_time' => Time.now
       }
-      change = LoggedChange.new session, :left
+      loader = LoggedChangeLoader.new session, :left
+      change = LoggedChange.new loader
       change.load_specified 'left_table', {'id' => '1'}
       change.type.should == :insert
       change.key.should == {'id' => '2'}
@@ -233,8 +241,8 @@ describe LoggedChange do
         'change_type' => 'I',
         'change_time' => Time.now
       }
-      session.reload_changes
-      change = LoggedChange.new session, :left
+      loader.update :forced => true
+      change = LoggedChange.new loader
       change.load_specified 'left_table', {'id' => '5'}
       change.type.should == :update
       change.key.should == {'id' => '5'}
@@ -254,7 +262,8 @@ describe LoggedChange do
         'change_type' => 'I',
         'change_time' => Time.now
       }
-      change = LoggedChange.new session, :left
+      loader = LoggedChangeLoader.new session, :left
+      change = LoggedChange.new loader
       change.load_specified 'scanner_records', {'id' => '1'}
 
       change.table.should == 'scanner_records'
@@ -275,7 +284,8 @@ describe LoggedChange do
     session = Session.new
     session.left.begin_db_transaction
     begin
-      change = LoggedChange.new session, :left
+      loader = LoggedChangeLoader.new session, :left
+      change = LoggedChange.new loader
       change.load_specified 'scanner_records', {'id' => '1'}
 
       change.table.should == 'scanner_records'
@@ -307,7 +317,8 @@ describe LoggedChange do
         'change_type' => 'U',
         'change_time' => Time.now
       }
-      change = LoggedChange.new session, :left
+      loader = LoggedChangeLoader.new session, :left
+      change = LoggedChange.new loader
       change.load_specified 'left_table', {'id' => '1'}
       session.left.insert_record 'rr_pending_changes', {
         'change_table' => 'left_table',
@@ -315,7 +326,7 @@ describe LoggedChange do
         'change_type' => 'D',
         'change_time' => Time.now
       }
-      session.reload_changes
+      loader.update :forced => true
       change.load
 
       change.table.should == 'left_table'
@@ -341,7 +352,8 @@ describe LoggedChange do
         'change_type' => 'U',
         'change_time' => Time.now
       }
-      change = LoggedChange.new session, :left
+      loader = LoggedChangeLoader.new session, :left
+      change = LoggedChange.new loader
       change.load_specified 'left_table', {'id' => '1'}
       session.left.insert_record 'rr_pending_changes', {
         'change_table' => 'left_table',
@@ -350,7 +362,7 @@ describe LoggedChange do
         'change_type' => 'U',
         'change_time' => Time.now
       }
-      session.reload_changes
+      loader.update :forced => true
       change.load
 
       change.table.should == 'left_table'
@@ -362,39 +374,9 @@ describe LoggedChange do
     end
   end
 
-  it "oldest_change_time should return nil if there are no changes" do
-    session = Session.new
-    session.left.execute "delete from rr_pending_changes"
-    change = LoggedChange.new session, :left
-    change.oldest_change_time.should be_nil
-  end
-
-  it "oldest_change_time should return the time of the oldest change" do
-    session = Session.new
-    session.left.begin_db_transaction
-    begin
-      time = Time.now
-      session.left.insert_record 'rr_pending_changes', {
-        'change_table' => 'left_table',
-        'change_key' => 'id|1',
-        'change_type' => 'I',
-        'change_time' => time
-      }
-      session.left.insert_record 'rr_pending_changes', {
-        'change_table' => 'left_table',
-        'change_key' => 'id|2',
-        'change_type' => 'I',
-        'change_time' => 100.seconds.from_now
-      }
-      change = LoggedChange.new session, :left
-      change.oldest_change_time.should.to_s == time.to_s
-    ensure
-      session.left.rollback_db_transaction
-    end
-  end
-
   it "key_from_raw_key should return the correct column_name => value hash for the given key" do
-    change = LoggedChange.new Session.new, :left
+    loader = LoggedChangeLoader.new Session.new, :left
+    change = LoggedChange.new loader
     change.key_to_hash("a|1|b|2").should == {
       'a' => '1',
       'b' => '2'
@@ -402,7 +384,8 @@ describe LoggedChange do
   end
 
   it "key_from_raw_key should work with multi character key_sep strings" do
-    change = LoggedChange.new Session.new, :left
+    loader = LoggedChangeLoader.new Session.new, :left
+    change = LoggedChange.new loader
     change.stub!(:key_sep).and_return('BLA')
     change.key_to_hash("aBLA1BLAbBLA2").should == {
       'a' => '1',
@@ -411,7 +394,8 @@ describe LoggedChange do
   end
 
   it "load_oldest should not load a change if none available" do
-    change = LoggedChange.new Session.new, :left
+    loader = LoggedChangeLoader.new Session.new, :left
+    change = LoggedChange.new loader
     change.should_not_receive :load_specified
     change.load_oldest
   end
@@ -432,7 +416,8 @@ describe LoggedChange do
         'change_type' => 'I',
         'change_time' => Time.now
       }
-      change = LoggedChange.new session, :left
+      loader = LoggedChangeLoader.new session, :left
+      change = LoggedChange.new loader
       change.load_oldest
 
       change.key.should == {'id' => '1'}
@@ -463,7 +448,8 @@ describe LoggedChange do
         'change_type' => 'I',
         'change_time' => Time.now
       }
-      change = LoggedChange.new session, :left
+      loader = LoggedChangeLoader.new session, :left
+      change = LoggedChange.new loader
       change.load_oldest
 
       change.type.should == :insert
@@ -473,8 +459,12 @@ describe LoggedChange do
     end
   end
 
-  it "to_yaml should blank out session" do
-    change = LoggedChange.new :dummy_session, :left
-    change.to_yaml.should_not =~ /session/
+  it "to_yaml should blank out session and loader" do
+    session = Session.new
+    loader = LoggedChangeLoader.new session, :left
+    change = LoggedChange.new loader
+    yaml = change.to_yaml
+    yaml.should_not =~ /session/
+    yaml.should_not =~ /loader/
   end
 end

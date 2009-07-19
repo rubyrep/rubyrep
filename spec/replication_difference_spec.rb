@@ -7,21 +7,22 @@ describe ReplicationDifference do
     Initializer.configuration = standard_config
   end
 
-  it "initialize should store the session" do
+  it "initialize should store the loaders" do
     session = Session.new
-    diff = ReplicationDifference.new session
-    diff.session.should == session
+    loaders = LoggedChangeLoaders.new session
+    diff = ReplicationDifference.new loaders
+    diff.loaders.should == loaders
   end
 
   it "loaded? should return true if a difference was loaded" do
-    diff = ReplicationDifference.new Session.new
+    diff = ReplicationDifference.new LoggedChangeLoaders.new(Session.new)
     diff.should_not be_loaded
     diff.loaded = true
     diff.should be_loaded
   end
 
   it "load should leave the instance unloaded if no changes are available" do
-    diff = ReplicationDifference.new Session.new
+    diff = ReplicationDifference.new LoggedChangeLoaders.new(Session.new)
     diff.load
     diff.should_not be_loaded
   end
@@ -36,7 +37,7 @@ describe ReplicationDifference do
         'change_type' => 'I',
         'change_time' => Time.now
       }
-      diff = ReplicationDifference.new session
+      diff = ReplicationDifference.new LoggedChangeLoaders.new(session)
       diff.load
 
       diff.should be_loaded
@@ -57,7 +58,7 @@ describe ReplicationDifference do
         'change_type' => 'D',
         'change_time' => Time.now
       }
-      diff = ReplicationDifference.new session
+      diff = ReplicationDifference.new LoggedChangeLoaders.new(session)
       diff.load
 
       diff.should be_loaded
@@ -96,7 +97,7 @@ describe ReplicationDifference do
         'change_type' => 'D',
         'change_time' => 5.seconds.ago
       }
-      diff = ReplicationDifference.new session
+      diff = ReplicationDifference.new LoggedChangeLoaders.new(session)
       diff.load
 
       diff.should be_loaded
@@ -124,7 +125,7 @@ describe ReplicationDifference do
         'change_type' => 'I',
         'change_time' => Time.now
       }
-      diff = ReplicationDifference.new session
+      diff = ReplicationDifference.new LoggedChangeLoaders.new(session)
       diff.load
 
       diff.should be_loaded

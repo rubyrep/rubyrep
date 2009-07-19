@@ -82,9 +82,12 @@ describe ReplicationHelper do
     begin
       rep_run = ReplicationRun.new(session)
       helper = ReplicationHelper.new(rep_run)
-      left_change = LoggedChange.new session, :left
-      right_change = LoggedChange.new session, :right
-      diff = ReplicationDifference.new session
+
+      loaders = LoggedChangeLoaders.new(session)
+
+      left_change = LoggedChange.new loaders[:left]
+      right_change = LoggedChange.new loaders[:right]
+      diff = ReplicationDifference.new loaders
       diff.changes.replace :left => left_change, :right => right_change
       diff.type = :conflict
 

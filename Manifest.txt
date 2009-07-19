@@ -28,6 +28,7 @@ lib/rubyrep/generate_runner.rb
 lib/rubyrep/initializer.rb
 lib/rubyrep/log_helper.rb
 lib/rubyrep/logged_change.rb
+lib/rubyrep/logged_change_loader.rb
 lib/rubyrep/proxied_table_scan.rb
 lib/rubyrep/proxy_block_cursor.rb
 lib/rubyrep/proxy_connection.rb
@@ -89,6 +90,7 @@ spec/dolphins.jpg
 spec/generate_runner_spec.rb
 spec/initializer_spec.rb
 spec/log_helper_spec.rb
+spec/logged_change_loader_spec.rb
 spec/logged_change_spec.rb
 spec/postgresql_replication_spec.rb
 spec/postgresql_schema_support_spec.rb

@@ -31,8 +31,8 @@ module RR
         t.join session.configuration.options[:database_connection_timeout]
         changes_pending
       end
-      
-      session.reset_change_loaders
+
+      loaders = LoggedChangeLoaders.new(session)
 
       begin
         success = false
@@ -40,8 +40,8 @@ module RR
 
         loop do
           begin
-            session.reload_changes # ensure the cache of change log records is up-to-date
-            diff = ReplicationDifference.new session
+            loaders.update # ensure the cache of change log records is up-to-date
+            diff = ReplicationDifference.new loaders
             diff.load
             break unless diff.loaded?
             replicator.replicate_difference diff if diff.type != :no_diff

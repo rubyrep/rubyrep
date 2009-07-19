@@ -5,7 +5,12 @@ module RR
   class ReplicationDifference
 
     # The current Session.
-    attr_accessor :session
+    def session
+      @session ||= loaders.session
+    end
+
+    # The current LoggedChangeLoaders instance
+    attr_accessor :loaders
     
     # The type of the difference. Either
     # * :+left+: change in left database
@@ -21,9 +26,9 @@ module RR
     end
 
     # Creates a new ReplicationDifference instance.
-    # +session+ is the current Session.
-    def initialize(session)
-      self.session = session
+    # +loaders+ is teh current LoggedChangeLoaders instance
+    def initialize(loaders)
+      self.loaders = loaders
     end
 
     # Should be set to +true+ if this ReplicationDifference instance was
@@ -52,7 +57,7 @@ module RR
 
     # Amends a difference according to new entries in the change log table
     def amend
-      session.reload_changes
+      loaders.update
       changes[:left].load
       changes[:right].load
       self.type = DIFF_TYPES[changes[:left].type][changes[:right].type]
@@ -62,8 +67,8 @@ module RR
     def load
       change_times = {}
       [:left, :right].each do |database|
-        changes[database] = LoggedChange.new session, database
-        change_times[database] = changes[database].oldest_change_time
+        changes[database] = LoggedChange.new loaders[database]
+        change_times[database] = loaders[database].oldest_change_time
       end
       return if change_times[:left] == nil and change_times[:right] == nil
 
@@ -82,9 +87,9 @@ module RR
       self.loaded = true
     end
 
-    # Prevents session from going into YAML output
+    # Prevents session and change loaders from going into YAML output
     def to_yaml_properties
-      instance_variables.sort.reject {|var_name| var_name == '@session'}
+      instance_variables.sort.reject {|var_name| ['@session', '@loaders'].include? var_name}
     end
 
   end

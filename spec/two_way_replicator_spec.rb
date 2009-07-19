@@ -98,14 +98,16 @@ describe Replicators::TwoWayReplicator do
       helper = ReplicationHelper.new(rep_run)
       replicator = Replicators::TwoWayReplicator.new(helper)
 
-      left_change = LoggedChange.new session, :left
+      loaders = LoggedChangeLoaders.new(session)
+
+      left_change = LoggedChange.new loaders[:left]
       left_change.table = 'left_table'
       left_change.key = {'id' => '1'}
-      right_change = LoggedChange.new session, :right
+      right_change = LoggedChange.new loaders[:right]
       right_change.table = 'right_table'
       right_change.key = {'id' => '1'}
 
-      diff = ReplicationDifference.new(session)
+      diff = ReplicationDifference.new(loaders)
       diff.changes[:left] = left_change
       diff.changes[:right] = right_change
 
@@ -152,9 +154,11 @@ describe Replicators::TwoWayReplicator do
     session = Session.new
     rep_run = ReplicationRun.new(session)
 
-    diff = ReplicationDifference.new session
+    loaders = LoggedChangeLoaders.new(session)
+
+    diff = ReplicationDifference.new loaders
     diff.type = :conflict
-    diff.changes[:left] = LoggedChange.new session, :left
+    diff.changes[:left] = LoggedChange.new loaders[:left]
     diff.changes[:left].table = 'scanner_records'
 
     # should only log events if so configured
@@ -185,9 +189,11 @@ describe Replicators::TwoWayReplicator do
     session = Session.new
     rep_run = ReplicationRun.new(session)
 
-    diff = ReplicationDifference.new session
+    loaders = LoggedChangeLoaders.new(session)
+
+    diff = ReplicationDifference.new loaders
     diff.type = :left
-    diff.changes[:left] = LoggedChange.new session, :left
+    diff.changes[:left] = LoggedChange.new loaders[:left]
     diff.changes[:left].table = 'scanner_records'
 
     # should only log events if so configured
@@ -228,8 +234,10 @@ describe Replicators::TwoWayReplicator do
       }
     )
 
-    diff = ReplicationDifference.new(session)
-    diff.changes[:left] = LoggedChange.new session, :left
+    loaders = LoggedChangeLoaders.new(session)
+
+    diff = ReplicationDifference.new(loaders)
+    diff.changes[:left] = LoggedChange.new loaders[:left]
     diff.changes[:left].table = 'scanner_records'
 
     # but logging should still happen
@@ -267,20 +275,22 @@ describe Replicators::TwoWayReplicator do
       }
     )
 
-    change = LoggedChange.new session, :left
+    loaders = LoggedChangeLoaders.new(session)
+
+    change = LoggedChange.new loaders[:left]
     change.table = 'scanner_records'
 
-    d1 = ReplicationDifference.new(session)
+    d1 = ReplicationDifference.new(loaders)
     d1.type = :conflict
     d1.changes[:left] = change
     replicator.replicate_difference d1
 
-    d2 = ReplicationDifference.new(session)
+    d2 = ReplicationDifference.new(loaders)
     d2.type = :left
     d2.changes[:left] = change
     replicator.replicate_difference d2
 
-    d3 = ReplicationDifference.new(session)
+    d3 = ReplicationDifference.new(loaders)
     d3.type = :right
     d3.changes[:left] = change
     replicator.replicate_difference d3
@@ -297,9 +307,9 @@ describe Replicators::TwoWayReplicator do
     rep_run = ReplicationRun.new(session)
     helper = ReplicationHelper.new(rep_run)
 
-    left_change = LoggedChange.new session, :left
+    left_change = LoggedChange.new LoggedChangeLoader.new(session, :left)
     left_change.table = 'scanner_records'
-    right_change = LoggedChange.new session, :right
+    right_change = LoggedChange.new LoggedChangeLoader.new(session, :right)
     right_change.table = 'scanner_records'
     diff = ReplicationDifference.new(session)
     diff.type = :conflict
@@ -349,10 +359,10 @@ describe Replicators::TwoWayReplicator do
     begin
       rep_run = ReplicationRun.new(session)
 
-      left_change = LoggedChange.new session, :left
+      left_change = LoggedChange.new LoggedChangeLoader.new(session, :left)
       left_change.table = 'left_table'
       left_change.key = {'id' => '1'}
-      right_change = LoggedChange.new session, :right
+      right_change = LoggedChange.new LoggedChangeLoader.new(session, :right)
       right_change.table = 'right_table'
       right_change.key = {'id' => '1'}
 
@@ -424,7 +434,7 @@ describe Replicators::TwoWayReplicator do
       helper = ReplicationHelper.new(rep_run)
       replicator = Replicators::TwoWayReplicator.new(helper)
 
-      diff = ReplicationDifference.new session
+      diff = ReplicationDifference.new LoggedChangeLoaders.new(session)
       diff.load
 
       session.right.insert_record 'extender_no_record', {
@@ -471,7 +481,7 @@ describe Replicators::TwoWayReplicator do
       helper = ReplicationHelper.new(rep_run)
       replicator = Replicators::TwoWayReplicator.new(helper)
 
-      diff = ReplicationDifference.new session
+      diff = ReplicationDifference.new LoggedChangeLoaders.new(session)
       diff.load
 
       session.left.insert_record 'rr_pending_changes', {
@@ -517,7 +527,7 @@ describe Replicators::TwoWayReplicator do
       helper = ReplicationHelper.new(rep_run)
       replicator = Replicators::TwoWayReplicator.new(helper)
 
-      diff = ReplicationDifference.new session
+      diff = ReplicationDifference.new LoggedChangeLoaders.new(session)
       diff.load
 
       lambda {replicator.replicate_difference diff, 1}.should raise_error(/duplicate/i)
@@ -561,7 +571,7 @@ describe Replicators::TwoWayReplicator do
       helper = ReplicationHelper.new(rep_run)
       replicator = Replicators::TwoWayReplicator.new(helper)
 
-      diff = ReplicationDifference.new session
+      diff = ReplicationDifference.new LoggedChangeLoaders.new(session)
       diff.load
 
       lambda {replicator.replicate_difference diff, 1}.should raise_error(/referencing_table_fkey/)
@@ -611,7 +621,7 @@ describe Replicators::TwoWayReplicator do
       helper = ReplicationHelper.new(rep_run)
       replicator = Replicators::TwoWayReplicator.new(helper)
 
-      diff = ReplicationDifference.new session
+      diff = ReplicationDifference.new LoggedChangeLoaders.new(session)
       diff.load
 
       session.left.delete_record 'extender_no_record', {'id' => '2'}
