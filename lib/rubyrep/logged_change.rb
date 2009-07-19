@@ -18,6 +18,11 @@ module RR
       change_loader(:right).update :forced => true
     end
 
+    # Clears change log cache
+    def reset_change_loaders
+      @change_loader = nil
+    end
+
   end
 
   # Caches the entries in the change log table

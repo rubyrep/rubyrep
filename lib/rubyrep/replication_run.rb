@@ -31,6 +31,9 @@ module RR
         t.join session.configuration.options[:database_connection_timeout]
         changes_pending
       end
+      
+      session.reset_change_loaders
+
       begin
         success = false
         replicator # ensure that replicator is created and has chance to validate settings
