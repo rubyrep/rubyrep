@@ -22,17 +22,6 @@ describe ProxyConnection do
     @connection.connection.active?.should == false
   end
 
-  it "refresh should not do anything if the connection is still active" do
-    ConnectionExtenders.should_not_receive(:db_connect)
-    @connection.refresh
-  end
-
-  it "refresh should reestablish the connection if it is no more active" do
-    @connection.destroy
-    @connection.refresh
-    @connection.connection.should be_active
-  end
-  
   it "cursors should return the current cursor hash or an empty hash if nil" do
     @connection.cursors.should == {}
     @connection.cursors[:dummy_cursor] = :dummy_cursor

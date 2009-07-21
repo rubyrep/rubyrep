@@ -198,21 +198,14 @@ module RR
       self.manual_primary_keys = {}
     end
 
-    # Checks if the connection is still active and if not, reestablished it.
-    def refresh
-      unless self.connection.active?
-        self.connection = ConnectionExtenders.db_connect config
-      end
-    end
-    
     # Destroys the session
     def destroy
-      self.connection.disconnect!
-      
       cursors.each_key do |cursor|
         cursor.destroy
       end
       cursors.clear
+
+      self.connection.disconnect!
     end
     
     # Quotes the given value. It is assumed that the value belongs to the specified column name and table name.

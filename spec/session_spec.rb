@@ -88,12 +88,25 @@ describe Session do   # here database connection caching is _not_ disabled
     session.right.manual_primary_keys.should == {'extender_without_key'=>['id']}
   end
 
-  it "refresh should reestablsih the database connections if no more active" do
+  it "refresh should reestablish the database connections if not active anymore" do
     session = Session.new
     session.right.destroy
     session.right.connection.should_not be_active
+    lambda {session.right.select_one("select 1+1 as x")}.should raise_error
     session.refresh
     session.right.connection.should be_active
+    session.right.select_one("select 1+1 as x")['x'].to_i.should == 2
+  end
+
+  it "refresh should work with proxied database connections" do
+    ensure_proxy
+    session = Session.new(proxied_config)
+    session.right.destroy
+    session.right.connection.should_not be_active
+    lambda {session.right.select_one("select 1+1 as x")}.should raise_error
+    session.refresh
+    session.right.connection.should be_active
+    session.right.select_one("select 1+1 as x")['x'].to_i.should == 2
   end
 
   it "refresh should not do anyting if the connection is still active" do

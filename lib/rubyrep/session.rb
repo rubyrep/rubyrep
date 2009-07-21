@@ -86,7 +86,7 @@ module RR
     # Does the actual work of establishing a database connection
     # db_arm:: should be either :left or :right
     # config:: the rubyrep Configuration
-    def db_connect(db_arm, config)
+    def direct_connect(db_arm, config)
       arm_config = config.send db_arm
       @proxies[db_arm] = DatabaseProxy.new
       @connections[db_arm] = @proxies[db_arm].create_session arm_config
@@ -144,11 +144,58 @@ module RR
       end
     end
 
-    # Refreshes (reestablish if no more active) the database connections.
+    # Refreshes the database connections (i. e. reestablish if not active anymore).
     def refresh
-      [:left, :right].each do |database|
-        t = Thread.new {send(database).refresh}
-        t.join configuration.options[:database_connection_timeout]
+      alive = false
+      begin
+        # step 1: check if both database connections still work properly
+        Thread.new do
+          alive = [:left, :right].all? do |database|
+            send(database).select_one("select 1+1 as x")['x'].to_i == 2
+          end
+        end.join configuration.options[:database_connection_timeout]
+      end rescue nil
+
+      unless alive
+        # step 2: disconnect both database connections (if still possible)
+        begin
+          Thread.new do
+            alive = [:left, :right].all? do |database|
+              if proxied?
+                @proxies[database].destroy_session @connections[database]
+                @proxies[database] = nil
+                @connections[database] = nil
+              else
+                send(database).destroy
+                @connections[database] = nil
+              end
+            end
+          end.join configuration.options[:database_connection_timeout]
+        end rescue nil
+
+        # step 3: try to reconnect the databases
+        Thread.new do
+          connect_databases
+        end.join configuration.options[:database_connection_timeout]
+      end
+    end
+
+    # Set up the (proxied or direct) database connections
+    def connect_databases
+      # Determine method of connection (either 'proxy_connect' or 'db_connect'
+      connection_method = proxied? ? :proxy_connect : :direct_connect
+
+      # Connect the left database / proxy
+      self.send connection_method, :left, configuration
+      left.manual_primary_keys = manual_primary_keys(:left)
+
+      # If both database configurations point to the same database
+      # then don't create the database connection twice
+      if configuration.left == configuration.right
+        self.right = self.left
+      else
+        self.send connection_method, :right, configuration
+        right.manual_primary_keys = manual_primary_keys(:right)
       end
     end
         
@@ -160,21 +207,7 @@ module RR
       # Keep the database configuration for future reference
       self.configuration = config
 
-      # Determine method of connection (either 'proxy_connect' or 'db_connect'
-      connection_method = proxied? ? :proxy_connect : :db_connect
-      
-      # Connect the left database / proxy
-      self.send connection_method, :left, configuration
-      left.manual_primary_keys = manual_primary_keys(:left)
-      
-      # If both database configurations point to the same database
-      # then don't create the database connection twice
-      if configuration.left == configuration.right
-        self.right = self.left
-      else
-        self.send connection_method, :right, configuration
-        right.manual_primary_keys = manual_primary_keys(:right)
-      end  
+      connect_databases
     end
   end
 end
