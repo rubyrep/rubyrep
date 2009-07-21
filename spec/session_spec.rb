@@ -98,6 +98,14 @@ describe Session do   # here database connection caching is _not_ disabled
     session.right.select_one("select 1+1 as x")['x'].to_i.should == 2
   end
 
+  it "refresh should raise error even if database connect fails silently" do
+    session = Session.new
+    session.right.destroy
+    session.right.connection.should_not be_active
+    session.should_receive(:connect_databases)
+    lambda {session.refresh}.should raise_error /connection.*left.*database failed/
+  end
+
   it "refresh should work with proxied database connections" do
     ensure_proxy
     session = Session.new(proxied_config)

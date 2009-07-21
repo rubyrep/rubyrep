@@ -144,39 +144,62 @@ module RR
       end
     end
 
-    # Refreshes the database connections (i. e. reestablish if not active anymore).
-    def refresh
-      alive = false
+    # Returns +nil+ if both database connections are alive.
+    # Otherwise returns the first unreachable database (either :+left+ or :+right+)
+    def find_unreachable_database
+      unreachable_database = nil
       begin
-        # step 1: check if both database connections still work properly
         Thread.new do
-          alive = [:left, :right].all? do |database|
-            send(database).select_one("select 1+1 as x")['x'].to_i == 2
+          [:left, :right].any? do |database|
+            unreachable_database = database # default assumption: database unreachable
+            begin
+              if send(database) && send(database).select_one("select 1+1 as x")['x'].to_i == 2
+                unreachable_database = nil # database is actually reachable
+              end
+            end rescue nil
+            unreachable_database # don't continue if already identified unreachable database
           end
         end.join configuration.options[:database_connection_timeout]
       end rescue nil
+      unreachable_database
+    end
+    private :find_unreachable_database
 
-      unless alive
-        # step 2: disconnect both database connections (if still possible)
+    # Refreshes the database connections (i. e. reestablish if not active anymore).
+    def refresh
+      if find_unreachable_database
+        # step 1: disconnect both database connections (if still possible)
         begin
           Thread.new do
-            alive = [:left, :right].all? do |database|
+            [:left, :right].each do |database|
               if proxied?
-                @proxies[database].destroy_session @connections[database]
+                @proxies[database].destroy_session @connections[database] if @proxies[database]
                 @proxies[database] = nil
                 @connections[database] = nil
               else
-                send(database).destroy
+                @connections[database].destroy if @connections[database]
                 @connections[database] = nil
               end
             end
           end.join configuration.options[:database_connection_timeout]
         end rescue nil
 
-        # step 3: try to reconnect the databases
+        connect_exception = nil
+        # step 2: try to reconnect the databases
         Thread.new do
-          connect_databases
+          begin
+            connect_databases
+          rescue Exception => e
+            # save exception so it can be rethrown outside of the thread
+            connect_exception = e
+          end
         end.join configuration.options[:database_connection_timeout]
+        raise connect_exception if connect_exception
+
+        # step 3: verify if database connections actually work (to detect silent connection failures)
+        if (database = find_unreachable_database) != nil
+          raise "connection to '#{database}' database failed"
+        end
       end
     end
 
