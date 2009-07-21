@@ -165,23 +165,22 @@ module RR
     end
     private :find_unreachable_database
 
+    def disconnect_databases
+      [:left, :right].each do |database|
+        if @proxies[database]
+          @proxies[database].destroy_session(@connections[database]) rescue nil
+        end
+        @proxies[database] = nil
+        @connections[database] = nil
+      end
+    end
+
     # Refreshes the database connections (i. e. reestablish if not active anymore).
     def refresh
       if find_unreachable_database
         # step 1: disconnect both database connections (if still possible)
         begin
-          Thread.new do
-            [:left, :right].each do |database|
-              if proxied?
-                @proxies[database].destroy_session @connections[database] if @proxies[database]
-                @proxies[database] = nil
-                @connections[database] = nil
-              else
-                @connections[database].destroy if @connections[database]
-                @connections[database] = nil
-              end
-            end
-          end.join configuration.options[:database_connection_timeout]
+          Thread.new {disconnect_databases}.join configuration.options[:database_connection_timeout]
         end rescue nil
 
         connect_exception = nil
