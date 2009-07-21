@@ -198,7 +198,7 @@ module RR
 
         # step 3: verify if database connections actually work (to detect silent connection failures)
         if (database = find_unreachable_database) != nil
-          raise "connection to '#{database}' database failed"
+          raise "no connection to '#{database}' database"
         end
       end
     end

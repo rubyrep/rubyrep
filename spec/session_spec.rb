@@ -103,7 +103,7 @@ describe Session do   # here database connection caching is _not_ disabled
     session.right.destroy
     session.right.connection.should_not be_active
     session.should_receive(:connect_databases)
-    lambda {session.refresh}.should raise_error /connection.*left.*database failed/
+    lambda {session.refresh}.should raise_error(/no connection to.*left.*database/)
   end
 
   it "refresh should work with proxied database connections" do
