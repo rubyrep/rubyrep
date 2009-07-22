@@ -83,32 +83,7 @@ module RR
       @table_map[db_arm][table] || table
     end
     
-    # Does the actual work of establishing a database connection
-    # db_arm:: should be either :left or :right
-    # config:: the rubyrep Configuration
-    def direct_connect(db_arm, config)
-      arm_config = config.send db_arm
-      @proxies[db_arm] = DatabaseProxy.new
-      @connections[db_arm] = @proxies[db_arm].create_session arm_config
-    end
-    
-    # Does the actual work of establishing a proxy connection
-    # db_arm:: should be either :left or :right
-    # config:: the rubyrep Configuration
-    def proxy_connect(db_arm, config)
-      arm_config = config.send db_arm
-      if arm_config.include? :proxy_host 
-        drb_url = "druby://#{arm_config[:proxy_host]}:#{arm_config[:proxy_port]}"
-        @proxies[db_arm] = DRbObject.new nil, drb_url
-      else
-        # If one connection goes through a proxy, so has the other one.
-        # So if necessary, create a "fake" proxy
-        @proxies[db_arm] = DatabaseProxy.new
-      end
-      @connections[db_arm] = @proxies[db_arm].create_session arm_config
-    end
-    
-    # True if proxy connections are used
+    # Returns +true+ if proxy connections are used
     def proxied?
       [configuration.left, configuration.right].any? \
         {|arm_config| arm_config.include? :proxy_host}
@@ -144,50 +119,53 @@ module RR
       end
     end
 
-    # Returns +nil+ if both database connections are alive.
-    # Otherwise returns the first unreachable database (either :+left+ or :+right+)
-    def find_unreachable_database
-      unreachable_database = nil
-      begin
-        Thread.new do
-          [:left, :right].any? do |database|
-            unreachable_database = database # default assumption: database unreachable
-            begin
-              if send(database) && send(database).select_one("select 1+1 as x")['x'].to_i == 2
-                unreachable_database = nil # database is actually reachable
-              end
-            end rescue nil
-            unreachable_database # don't continue if already identified unreachable database
+    # Returns +true+ if the specified database connection is not alive.
+    # * +database+: target database (either +:left+ or :+right+)
+    def database_unreachable?(database)
+      unreachable = true
+      Thread.new do
+        begin
+          if send(database) && send(database).select_one("select 1+1 as x")['x'].to_i == 2
+            unreachable = false # database is actually reachable
           end
-        end.join configuration.options[:database_connection_timeout]
-      end rescue nil
-      unreachable_database
+        end rescue nil
+      end.join configuration.options[:database_connection_timeout]
+      unreachable
     end
-    private :find_unreachable_database
 
-    def disconnect_databases
-      [:left, :right].each do |database|
-        if @proxies[database]
-          @proxies[database].destroy_session(@connections[database]) rescue nil
-        end
-        @proxies[database] = nil
-        @connections[database] = nil
+    # Disconnnects the specified database
+    # * +database+: the target database (either :+left+ or :+right+)
+    def disconnect_database(database)
+      proxy, connection = @proxies[database], @connection[database]
+      @proxies[database] = nil
+      @connections[database] = nil
+      if proxy
+        proxy.destroy_session(connection)
       end
     end
 
-    # Refreshes the database connections (i. e. reestablish if not active anymore).
+    # Refreshes both database connections
     def refresh
-      if find_unreachable_database
-        # step 1: disconnect both database connections (if still possible)
+      [:left, :right].each {|database| refresh_database_connection database}
+    end
+
+    # Refreshes the specified database connection.
+    # (I. e. reestablish if not active anymore.)
+    # * +database+: target database (either :+left+ or :+right+)
+    def refresh_database_connection(database)
+      if database_unreachable?(database)
+        # step 1: disconnect both database connection (if still possible)
         begin
-          Thread.new {disconnect_databases}.join configuration.options[:database_connection_timeout]
-        end rescue nil
+          Thread.new do
+            disconnect_database database rescue nil
+          end.join configuration.options[:database_connection_timeout]
+        end
 
         connect_exception = nil
-        # step 2: try to reconnect the databases
+        # step 2: try to reconnect the database
         Thread.new do
           begin
-            connect_databases
+            connect_database database
           rescue Exception => e
             # save exception so it can be rethrown outside of the thread
             connect_exception = e
@@ -196,28 +174,34 @@ module RR
         raise connect_exception if connect_exception
 
         # step 3: verify if database connections actually work (to detect silent connection failures)
-        if (database = find_unreachable_database) != nil
+        if database_unreachable?(database)
           raise "no connection to '#{database}' database"
         end
       end
     end
 
-    # Set up the (proxied or direct) database connections
-    def connect_databases
-      # Determine method of connection (either 'proxy_connect' or 'db_connect'
-      connection_method = proxied? ? :proxy_connect : :direct_connect
-
-      # Connect the left database / proxy
-      self.send connection_method, :left, configuration
-      left.manual_primary_keys = manual_primary_keys(:left)
-
-      # If both database configurations point to the same database
-      # then don't create the database connection twice
-      if configuration.left == configuration.right
+    # Set up the (proxied or direct) database connections to the specified
+    # database.
+    # * +database+: the target database (either :+left+ or :+right+)
+    def connect_database(database)
+      if configuration.left == configuration.right and database == :right
+        # If both database configurations point to the same database
+        # then don't create the database connection twice.
+        # Assumes that the left database is always connected before the right one.
         self.right = self.left
       else
-        self.send connection_method, :right, configuration
-        right.manual_primary_keys = manual_primary_keys(:right)
+        # Connect the database / proxy
+        arm_config = configuration.send database
+        if arm_config.include? :proxy_host
+          drb_url = "druby://#{arm_config[:proxy_host]}:#{arm_config[:proxy_port]}"
+          @proxies[database] = DRbObject.new nil, drb_url
+        else
+          # Create fake proxy
+          @proxies[database] = DatabaseProxy.new
+        end
+        @connections[database] = @proxies[database].create_session arm_config
+
+        send(database).manual_primary_keys = manual_primary_keys(database)
       end
     end
         
@@ -229,7 +213,7 @@ module RR
       # Keep the database configuration for future reference
       self.configuration = config
 
-      connect_databases
+      refresh
     end
   end
 end

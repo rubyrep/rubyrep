@@ -94,6 +94,7 @@ def mock_active_record(number_of_calls)
   dummy_connection.stub!(:extend)
   dummy_connection.stub!(:tables).and_return([])
   dummy_connection.stub!(:initialize_search_path)
+  dummy_connection.stub!(:select_one).and_return({'x' => '2'})
     
   ConnectionExtenders::DummyActiveRecord.should_receive(:connection).send(number_of_calls) \
     .and_return {dummy_connection}

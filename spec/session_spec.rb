@@ -67,6 +67,7 @@ describe Session do   # here database connection caching is _not_ disabled
     dummy_connection = mock("dummy connection")
     dummy_connection.stub!(:tables).and_return([])
     dummy_connection.stub!(:manual_primary_keys=)
+    dummy_connection.stub!(:select_one).and_return({'x' => '2'})
     dummy_proxy.should_receive(:create_session).and_return(dummy_connection)
     DRbObject.should_receive(:new).with(nil,"druby://localhost:9876").and_return(dummy_proxy)
 
@@ -102,8 +103,8 @@ describe Session do   # here database connection caching is _not_ disabled
     session = Session.new
     session.right.destroy
     session.right.connection.should_not be_active
-    session.should_receive(:connect_databases)
-    lambda {session.refresh}.should raise_error(/no connection to.*left.*database/)
+    session.should_receive(:connect_database)
+    lambda {session.refresh}.should raise_error(/no connection to.*right.*database/)
   end
 
   it "refresh should work with proxied database connections" do
