@@ -9,7 +9,7 @@ describe ReplicationHelper do
 
   it "initialize should initialize the correct committer" do
     session = Session.new
-    rep_run = ReplicationRun.new(session)
+    rep_run = ReplicationRun.new(session, TaskSweeper.new(1))
     helper = ReplicationHelper.new(rep_run)
     c = helper.instance_eval {@committer}
     c.should be_an_instance_of(Committers::DefaultCommitter)
@@ -17,26 +17,26 @@ describe ReplicationHelper do
   end
 
   it "session should return the session" do
-    rep_run = ReplicationRun.new(Session.new)
+    rep_run = ReplicationRun.new(Session.new, TaskSweeper.new(1))
     helper = ReplicationHelper.new(rep_run)
     helper.session.should == rep_run.session
   end
 
   it "replication_run should return the current ReplicationRun instance" do
-    rep_run = ReplicationRun.new(Session.new)
+    rep_run = ReplicationRun.new(Session.new, TaskSweeper.new(1))
     helper = ReplicationHelper.new(rep_run)
     helper.replication_run.should == rep_run
   end
 
   it "options should return the correct options" do
     session = Session.new
-    rep_run = ReplicationRun.new(session)
+    rep_run = ReplicationRun.new(session, TaskSweeper.new(1))
     helper = ReplicationHelper.new(rep_run)
     helper.options.should == session.configuration.options
   end
 
   it "insert_record should insert the given record" do
-    rep_run = ReplicationRun.new(Session.new)
+    rep_run = ReplicationRun.new(Session.new, TaskSweeper.new(1))
     helper = ReplicationHelper.new(rep_run)
     c = helper.instance_eval {committer}
     c.should_receive(:insert_record).with(:right, 'scanner_records', :dummy_record)
@@ -44,7 +44,7 @@ describe ReplicationHelper do
   end
 
   it "update_record should update the given record" do
-    rep_run = ReplicationRun.new(Session.new)
+    rep_run = ReplicationRun.new(Session.new, TaskSweeper.new(1))
     helper = ReplicationHelper.new(rep_run)
     c = helper.instance_eval {committer}
     c.should_receive(:update_record).with(:right, 'scanner_records', :dummy_record, nil)
@@ -52,7 +52,7 @@ describe ReplicationHelper do
   end
 
   it "update_record should update the given record with the provided old key" do
-    rep_run = ReplicationRun.new(Session.new)
+    rep_run = ReplicationRun.new(Session.new, TaskSweeper.new(1))
     helper = ReplicationHelper.new(rep_run)
     c = helper.instance_eval {committer}
     c.should_receive(:update_record).with(:right, 'scanner_records', :dummy_record, :old_key)
@@ -60,7 +60,7 @@ describe ReplicationHelper do
   end
 
   it "delete_record should delete the given record" do
-    rep_run = ReplicationRun.new(Session.new)
+    rep_run = ReplicationRun.new(Session.new, TaskSweeper.new(1))
     helper = ReplicationHelper.new(rep_run)
     c = helper.instance_eval {committer}
     c.should_receive(:delete_record).with(:right, 'scanner_records', :dummy_record)
@@ -68,7 +68,7 @@ describe ReplicationHelper do
   end
 
   it "load_record should load the specified record (values converted to original data types)" do
-    rep_run = ReplicationRun.new(Session.new)
+    rep_run = ReplicationRun.new(Session.new, TaskSweeper.new(1))
     helper = ReplicationHelper.new(rep_run)
     helper.load_record(:right, 'scanner_records', 'id' => '2').should == {
       'id' => 2, # Note: it's a number, not a string...
@@ -80,7 +80,7 @@ describe ReplicationHelper do
     session = Session.new
     session.left.begin_db_transaction
     begin
-      rep_run = ReplicationRun.new(session)
+      rep_run = ReplicationRun.new(session, TaskSweeper.new(1))
       helper = ReplicationHelper.new(rep_run)
 
       loaders = LoggedChangeLoaders.new(session)
@@ -119,7 +119,7 @@ describe ReplicationHelper do
   end
 
   it "finalize should be delegated to the committer" do
-    rep_run = ReplicationRun.new(Session.new)
+    rep_run = ReplicationRun.new(Session.new, TaskSweeper.new(1))
     helper = ReplicationHelper.new(rep_run)
 
     c = helper.instance_eval {@committer}

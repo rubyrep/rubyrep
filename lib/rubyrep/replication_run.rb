@@ -8,6 +8,9 @@ module RR
     # The current Session object
     attr_accessor :session
 
+    # The current TaskSweeper
+    attr_accessor :sweeper
+
     # Returns the current ReplicationHelper; creates it if necessary
     def helper
       @helper ||= ReplicationHelper.new(self)
@@ -44,6 +47,7 @@ module RR
             diff = ReplicationDifference.new loaders
             diff.load
             break unless diff.loaded?
+            raise "Replication run timed out" if sweeper.terminated?
             replicator.replicate_difference diff if diff.type != :no_diff
           rescue Exception => e
             helper.log_replication_outcome diff, e.message,
@@ -56,10 +60,23 @@ module RR
       end
     end
 
+    # Installs the current sweeper into the database connections
+    def install_sweeper
+      [:left, :right].each do |database|
+        unless session.send(database).respond_to?(:sweeper)
+          session.send(database).send(:extend, NoisyConnection)
+        end
+        session.send(database).sweeper = sweeper
+      end
+    end
+
     # Creates a new ReplicationRun instance.
     # * +session+: the current Session
-    def initialize(session)
+    # * +sweeper+: the current TaskSweeper
+    def initialize(session, sweeper)
       self.session = session
+      self.sweeper = sweeper
+      install_sweeper
     end
   end
 end

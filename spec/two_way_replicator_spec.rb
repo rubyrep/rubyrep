@@ -13,14 +13,14 @@ describe Replicators::TwoWayReplicator do
   end
 
   it "initialize should store the replication helper" do
-    rep_run = ReplicationRun.new(Session.new)
+    rep_run = ReplicationRun.new(Session.new, TaskSweeper.new(1))
     helper = ReplicationHelper.new(rep_run)
     replicator = Replicators::TwoWayReplicator.new(helper)
     replicator.rep_helper.should == helper
   end
 
   it "verify_option should raise descriptive errors" do
-    rep_run = ReplicationRun.new(Session.new)
+    rep_run = ReplicationRun.new(Session.new, TaskSweeper.new(1))
     helper = ReplicationHelper.new(rep_run)
     replicator = Replicators::TwoWayReplicator.new(helper)
     lambda {replicator.verify_option(nil, [:valid_value], :my_key, :my_value)}.
@@ -30,7 +30,7 @@ describe Replicators::TwoWayReplicator do
   end
 
   it "initialize should throw an error if options are invalid" do
-    rep_run = ReplicationRun.new(Session.new)
+    rep_run = ReplicationRun.new(Session.new, TaskSweeper.new(1))
     helper = ReplicationHelper.new(rep_run)
     base_options = {
       :replicator => :two_way,
@@ -71,7 +71,7 @@ describe Replicators::TwoWayReplicator do
   it "options_for_table should return the correct options for the table" do
     Initializer.configuration.options = {:a => 1, :b => 2}
     Initializer.configuration.add_table_options 'scanner_records', {:b => 3}
-    rep_run = ReplicationRun.new(Session.new)
+    rep_run = ReplicationRun.new(Session.new, TaskSweeper.new(1))
     helper = ReplicationHelper.new(rep_run)
     replicator = Replicators::TwoWayReplicator.new(helper)
     options = replicator.options_for_table('scanner_records')
@@ -80,7 +80,7 @@ describe Replicators::TwoWayReplicator do
   end
 
   it "options_for_table should merge the configured options into the default two way replicator options" do
-    rep_run = ReplicationRun.new(Session.new)
+    rep_run = ReplicationRun.new(Session.new, TaskSweeper.new(1))
     helper = ReplicationHelper.new(rep_run)
     replicator = Replicators::TwoWayReplicator.new(helper)
     replicator.options_for_table('scanner_records').include?(:left_change_handling).should be_true
@@ -94,7 +94,7 @@ describe Replicators::TwoWayReplicator do
     session.left.begin_db_transaction
     session.right.begin_db_transaction
     begin
-      rep_run = ReplicationRun.new(session)
+      rep_run = ReplicationRun.new(session, TaskSweeper.new(1))
       helper = ReplicationHelper.new(rep_run)
       replicator = Replicators::TwoWayReplicator.new(helper)
 
@@ -152,7 +152,7 @@ describe Replicators::TwoWayReplicator do
 
   it "log_replication_outcome should log conflicts correctly" do
     session = Session.new
-    rep_run = ReplicationRun.new(session)
+    rep_run = ReplicationRun.new(session, TaskSweeper.new(1))
 
     loaders = LoggedChangeLoaders.new(session)
 
@@ -187,7 +187,7 @@ describe Replicators::TwoWayReplicator do
 
   it "log_replication_outcome should log changes correctly" do
     session = Session.new
-    rep_run = ReplicationRun.new(session)
+    rep_run = ReplicationRun.new(session, TaskSweeper.new(1))
 
     loaders = LoggedChangeLoaders.new(session)
 
@@ -222,7 +222,7 @@ describe Replicators::TwoWayReplicator do
 
   it "replicate_difference should not do anything if ignore option is given" do
     session = Session.new
-    rep_run = ReplicationRun.new(session)
+    rep_run = ReplicationRun.new(session, TaskSweeper.new(1))
     helper = ReplicationHelper.new(rep_run)
     replicator = Replicators::TwoWayReplicator.new(helper)
     replicator.stub!(:options_for_table).and_return(
@@ -259,7 +259,7 @@ describe Replicators::TwoWayReplicator do
 
   it "replicate_difference should call the provided Proc objects" do
     session = Session.new
-    rep_run = ReplicationRun.new(session)
+    rep_run = ReplicationRun.new(session, TaskSweeper.new(1))
     helper = ReplicationHelper.new(rep_run)
 
     lambda_parameters = []
@@ -304,7 +304,7 @@ describe Replicators::TwoWayReplicator do
 
   it "replicate_difference should clear conflicts as per provided options" do
     session = Session.new
-    rep_run = ReplicationRun.new(session)
+    rep_run = ReplicationRun.new(session, TaskSweeper.new(1))
     helper = ReplicationHelper.new(rep_run)
 
     left_change = LoggedChange.new LoggedChangeLoader.new(session, :left)
@@ -357,7 +357,7 @@ describe Replicators::TwoWayReplicator do
     session.left.begin_db_transaction
     session.right.begin_db_transaction
     begin
-      rep_run = ReplicationRun.new(session)
+      rep_run = ReplicationRun.new(session, TaskSweeper.new(1))
 
       left_change = LoggedChange.new LoggedChangeLoader.new(session, :left)
       left_change.table = 'left_table'
@@ -430,7 +430,7 @@ describe Replicators::TwoWayReplicator do
       }
 
 
-      rep_run = ReplicationRun.new session
+      rep_run = ReplicationRun.new session, TaskSweeper.new(1)
       helper = ReplicationHelper.new(rep_run)
       replicator = Replicators::TwoWayReplicator.new(helper)
 
@@ -477,7 +477,7 @@ describe Replicators::TwoWayReplicator do
         'change_time' => Time.now
       }
 
-      rep_run = ReplicationRun.new session
+      rep_run = ReplicationRun.new session, TaskSweeper.new(1)
       helper = ReplicationHelper.new(rep_run)
       replicator = Replicators::TwoWayReplicator.new(helper)
 
@@ -500,7 +500,7 @@ describe Replicators::TwoWayReplicator do
   end
 
   it "replicate_difference should raise Exception if all replication attempts have been exceeded" do
-    rep_run = ReplicationRun.new Session.new
+    rep_run = ReplicationRun.new Session.new, TaskSweeper.new(1)
     helper = ReplicationHelper.new(rep_run)
     replicator = Replicators::TwoWayReplicator.new(helper)
     lambda {replicator.replicate_difference :dummy_diff, 0}.
@@ -523,7 +523,7 @@ describe Replicators::TwoWayReplicator do
         'change_time' => Time.now
       }
 
-      rep_run = ReplicationRun.new session
+      rep_run = ReplicationRun.new session, TaskSweeper.new(1)
       helper = ReplicationHelper.new(rep_run)
       replicator = Replicators::TwoWayReplicator.new(helper)
 
@@ -567,7 +567,7 @@ describe Replicators::TwoWayReplicator do
         'change_time' => Time.now
       }
 
-      rep_run = ReplicationRun.new session
+      rep_run = ReplicationRun.new session, TaskSweeper.new(1)
       helper = ReplicationHelper.new(rep_run)
       replicator = Replicators::TwoWayReplicator.new(helper)
 
@@ -617,7 +617,7 @@ describe Replicators::TwoWayReplicator do
         'change_time' => Time.now
       }
 
-      rep_run = ReplicationRun.new session
+      rep_run = ReplicationRun.new session, TaskSweeper.new(1)
       helper = ReplicationHelper.new(rep_run)
       replicator = Replicators::TwoWayReplicator.new(helper)
 

@@ -29,6 +29,7 @@ lib/rubyrep/initializer.rb
 lib/rubyrep/log_helper.rb
 lib/rubyrep/logged_change.rb
 lib/rubyrep/logged_change_loader.rb
+lib/rubyrep/noisy_connection.rb
 lib/rubyrep/proxied_table_scan.rb
 lib/rubyrep/proxy_block_cursor.rb
 lib/rubyrep/proxy_connection.rb
@@ -61,6 +62,7 @@ lib/rubyrep/table_scan_helper.rb
 lib/rubyrep/table_sorter.rb
 lib/rubyrep/table_spec_resolver.rb
 lib/rubyrep/table_sync.rb
+lib/rubyrep/task_sweeper.rb
 lib/rubyrep/trigger_mode_switcher.rb
 lib/rubyrep/type_casting_cursor.rb
 lib/rubyrep/uninstall_runner.rb
@@ -92,6 +94,7 @@ spec/initializer_spec.rb
 spec/log_helper_spec.rb
 spec/logged_change_loader_spec.rb
 spec/logged_change_spec.rb
+spec/noisy_connection_spec.rb
 spec/postgresql_replication_spec.rb
 spec/postgresql_schema_support_spec.rb
 spec/postgresql_support_spec.rb
@@ -128,6 +131,7 @@ spec/table_scan_spec.rb
 spec/table_sorter_spec.rb
 spec/table_spec_resolver_spec.rb
 spec/table_sync_spec.rb
+spec/task_sweeper_spec.rb
 spec/trigger_mode_switcher_spec.rb
 spec/two_way_replicator_spec.rb
 spec/two_way_syncer_spec.rb

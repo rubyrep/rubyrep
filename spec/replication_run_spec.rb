@@ -9,12 +9,23 @@ describe ReplicationRun do
 
   it "initialize should store the provided session" do
     session = Session.new
-    run = ReplicationRun.new session
+    sweeper = TaskSweeper.new 1
+    run = ReplicationRun.new session, sweeper
     run.session.should == session
   end
 
+  it "install_sweeper should install a task sweeper into the database connections" do
+    session = Session.new
+    sweeper = TaskSweeper.new 1
+    run = ReplicationRun.new session, sweeper
+    run.install_sweeper
+
+    session.left.sweeper.should == sweeper
+    session.right.sweeper.should == sweeper
+  end
+
   it "helper should return the correctly initialized replication helper" do
-    run = ReplicationRun.new Session.new
+    run = ReplicationRun.new Session.new, TaskSweeper.new(1)
     run.helper.should be_an_instance_of(ReplicationHelper)
     run.helper.replication_run.should == run
     run.helper.should == run.helper # ensure the helper is created only once
@@ -22,7 +33,7 @@ describe ReplicationRun do
 
   it "replicator should return the configured replicator" do
     session = Session.new
-    run = ReplicationRun.new session
+    run = ReplicationRun.new session, TaskSweeper.new(1)
     run.replicator.
       should be_an_instance_of(Replicators.replicators[session.configuration.options[:replicator]])
     run.replicator.should == run.replicator # should only create the replicator once
@@ -47,7 +58,7 @@ describe ReplicationRun do
         'change_time' => Time.now
       }
 
-      run = ReplicationRun.new session
+      run = ReplicationRun.new session, TaskSweeper.new(1)
       run.run
 
       session.right.select_one("select * from extender_no_record").should == {
@@ -66,7 +77,7 @@ describe ReplicationRun do
 
   it "run should not create the replicator if there are no pending changes" do
     session = Session.new
-    run = ReplicationRun.new session
+    run = ReplicationRun.new session, TaskSweeper.new(1)
     run.should_not_receive(:replicator)
     run.run
   end
@@ -90,7 +101,7 @@ describe ReplicationRun do
         'change_time' => Time.now
       }
 
-      run = ReplicationRun.new session
+      run = ReplicationRun.new session, TaskSweeper.new(1)
       run.replicator.should_not_receive(:replicate)
       run.run
 
@@ -113,7 +124,7 @@ describe ReplicationRun do
         'change_type' => 'D',
         'change_time' => Time.now
       }
-      run = ReplicationRun.new session
+      run = ReplicationRun.new session, TaskSweeper.new(1)
       run.replicator.stub!(:replicate_difference).and_return {raise Exception, 'dummy message'}
       run.run
 
@@ -140,7 +151,7 @@ describe ReplicationRun do
         'change_time' => Time.now
       }
 
-      run = ReplicationRun.new session
+      run = ReplicationRun.new session, TaskSweeper.new(1)
       lambda {run.run}.should raise_error(ArgumentError)
     ensure
       session.left.rollback_db_transaction
@@ -163,7 +174,7 @@ describe ReplicationRun do
         'name' => 'bla'
       }
 
-      run = ReplicationRun.new session
+      run = ReplicationRun.new session, TaskSweeper.new(1)
       run.run
 
       session.right.select_one("select * from extender_no_record").should == {

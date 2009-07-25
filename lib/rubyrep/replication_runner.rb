@@ -108,8 +108,12 @@ EOS
       until termination_requested do
         begin
           session.refresh
-          run = ReplicationRun.new session
-          run.run
+          timeout = session.configuration.options[:database_connection_timeout]
+          terminated = TaskSweeper.timeout(timeout) do |sweeper|
+            run = ReplicationRun.new session, sweeper
+            run.run
+          end.terminated?
+          raise "replication run timed out" if terminated
         rescue Exception => e
           now = Time.now.iso8601
           $stderr.puts "#{now} Exception caught: #{e}"

@@ -48,10 +48,12 @@ require 'replication_difference'
 require 'replication_helper'
 require 'replicators/replicators'
 require 'replicators/two_way_replicator'
+require 'task_sweeper'
 require 'replication_run'
 require 'replication_runner'
 require 'uninstall_runner'
 require 'generate_runner'
+require 'noisy_connection'
 
 Dir["#{File.dirname(__FILE__)}/rubyrep/connection_extenders/*.rb"].each do |extender|
   # jdbc_extender.rb is only loaded if we are running on jruby
