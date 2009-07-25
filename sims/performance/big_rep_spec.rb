@@ -64,7 +64,7 @@ describe "Big Rep" do
         end
       end
 
-      run = ReplicationRun.new session
+      run = ReplicationRun.new session, TaskSweeper.new(5)
       benchmark = Benchmark.measure { run.run }
       t.join 10
       puts "\n  time required: #{benchmark}"
