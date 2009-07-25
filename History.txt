@@ -1,3 +1,7 @@
+== 1.0.7 2009-07-26
+
+* Bug fix: buffered LoggedChangeLoader#update to avoid timeouts with large replication backlogs.
+
 == 1.0.6 2009-07-25
 
 * Bug fix: do not assume anymore that replication log events appear in sequential order
