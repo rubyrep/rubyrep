@@ -165,10 +165,6 @@ module RR
       cursors[cursor] = cursor
     end
 
-    # default number of records that are read into memory at a time during
-    # select queries
-    DEFAULT_ROW_BUFFER_SIZE = 1000
-
     # Returns a cusor as produced by the #select_cursor method of the connection
     # extenders.
     #
