@@ -262,12 +262,21 @@ module RR
       end
     end
 
+    # Calls the potentially provided :+after_init+ handler after infrastructure
+    # tables are created.
+    def call_after_infrastructure_setup_handler
+      handler = session.configuration.options[:after_infrastructure_setup]
+      handler.call(session) if handler
+    end
+
     # Prepares the database / tables for replication.
     def prepare_replication
       exclude_rubyrep_tables
 
       puts "Verifying RubyRep tables"
       ensure_infrastructure
+
+      call_after_infrastructure_setup_handler
 
       puts "Checking for and removing rubyrep triggers from unconfigured tables"
       restore_unconfigured_tables

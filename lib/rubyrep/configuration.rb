@@ -112,6 +112,20 @@ module RR
     # * :+replication_interval+: time in seconds between replication runs
     # * :+database_connection_timeout+:
     #   Time in seconds after which database connections time out.
+    # * :+:after_infrastructure_setup+:
+    #   A Proc that is called after the replication infrastructure tables are
+    #   set up. Useful to e. g. tweak the access settings for the table.
+    #   The block is called with the current Session object.
+    #   The block is called every time replication is started, even if the
+    #   the infrastructure tables already existed.
+    #
+    # Example of an :+after_infrastructure_setup+ handler:
+    #   lambda do |session|
+    #     [:left, :right].each do |database|
+    #       session.send(left).execute \
+    #         "GRANT SELECT, UPDATE, INSERT ON rr_pending_changes TO scott"
+    #     end
+    #   end
     attr_reader :options
     
     # Merges the specified +options+ hash into the existing options

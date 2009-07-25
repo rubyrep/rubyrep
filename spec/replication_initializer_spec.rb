@@ -363,6 +363,19 @@ describe ReplicationInitializer do
     initializer.ensure_infrastructure
   end
 
+  it "call_after_init_handler should call the according handler" do
+    config = deep_copy(standard_config)
+    received_session = nil
+    config.options[:after_infrastructure_setup] = lambda do |session|
+      received_session = session
+    end
+    session = Session.new config
+    initializer = ReplicationInitializer.new session
+    initializer.call_after_infrastructure_setup_handler
+
+    received_session.should == session
+  end
+
   it "exclude_ruby_rep_tables should exclude the correct system tables" do
     config = deep_copy(standard_config)
     initializer = ReplicationInitializer.new(Session.new(config))
@@ -416,6 +429,12 @@ describe ReplicationInitializer do
     config = deep_copy(standard_config)
     config.options[:committer] = :buffered_commit
     config.options[:use_ansi] = false
+
+    received_session = nil
+    config.options[:after_infrastructure_setup] = lambda do |session|
+      received_session = session
+    end
+
     config.include_tables 'rr_pending_changes' # added to verify that it is ignored
 
     session = Session.new(config)
@@ -426,6 +445,9 @@ describe ReplicationInitializer do
       initializer.should_receive(:ensure_infrastructure).any_number_of_times
       initializer.should_receive(:restore_unconfigured_tables).any_number_of_times
       initializer.prepare_replication
+
+      received_session.should == session
+      
       # verify sequences have been setup
       session.left.sequence_values('rr','scanner_left_records_only').values[0][:increment].should == 2
       session.right.sequence_values('rr','scanner_left_records_only').values[0][:increment].should == 2
