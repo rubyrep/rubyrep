@@ -122,7 +122,7 @@ module RR
     # Example of an :+after_infrastructure_setup+ handler:
     #   lambda do |session|
     #     [:left, :right].each do |database|
-    #       session.send(left).execute "GRANT SELECT, UPDATE, INSERT ON rr_pending_changes TO scott"
+    #       session.send(database).execute "GRANT SELECT, UPDATE, INSERT ON rr_pending_changes TO scott"
     #     end
     #   end
     attr_reader :options
