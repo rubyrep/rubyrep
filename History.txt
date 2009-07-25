@@ -1,3 +1,9 @@
+== 1.0.6 2009-07-25
+
+* Bug fix: do not assume anymore that replication log events appear in sequential order
+* Feature: increased resilience of rubyrep to network timeouts
+* Feature: introduced :after_infrastructure_setup handler
+
 == 1.0.5 2009-07-03
 
 * Bug fix: rubyrep replication runs should survive update or delete attempts rejected by the database.
