@@ -116,7 +116,8 @@ module RR
         :table => change_log_table,
         :from => {'id' => current_id},
         :exclude_starting_row => true,
-        :type_cast => true
+        :type_cast => true,
+        :row_buffer_size => session.configuration.options[:row_buffer_size]
       )
       while cursor.next?
         change = cursor.next_row
