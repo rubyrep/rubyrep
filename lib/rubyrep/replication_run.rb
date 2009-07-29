@@ -47,14 +47,15 @@ module RR
             diff = ReplicationDifference.new loaders
             diff.load
             break unless diff.loaded?
-            raise "Replication run timed out" if sweeper.terminated?
+            break if sweeper.terminated?
             replicator.replicate_difference diff if diff.type != :no_diff
           rescue Exception => e
             helper.log_replication_outcome diff, e.message,
               e.class.to_s + "\n" + e.backtrace.join("\n")
           end
         end
-        success = true # considered to be successful if we get till here
+        # considered to be successful if we get till here without timing out
+        success = true unless sweeper.terminated?
       ensure
         helper.finalize success
       end

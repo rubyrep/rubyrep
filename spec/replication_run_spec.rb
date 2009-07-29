@@ -137,6 +137,30 @@ describe ReplicationRun do
     end
   end
 
+  it "run should rollback if timed out" do
+    session = Session.new
+    session.left.begin_db_transaction
+    session.right.begin_db_transaction
+    begin
+      session.left.execute "delete from rr_pending_changes"
+      session.left.execute "delete from rr_logged_events"
+      session.left.insert_record 'rr_pending_changes', {
+        'change_table' => 'extender_no_record',
+        'change_key' => 'id|1',
+        'change_type' => 'D',
+        'change_time' => Time.now
+      }
+      sweeper = TaskSweeper.new(1)
+      sweeper.send('terminated='.to_sym, true)
+      run = ReplicationRun.new session, sweeper
+      run.helper.should_receive(:finalize).with(false)
+      run.run
+    ensure
+      session.left.rollback_db_transaction
+      session.right.rollback_db_transaction
+    end
+  end
+
   it "run should not catch exceptions raised during replicator initialization" do
     config = deep_copy(standard_config)
     config.options[:logged_replication_events] = [:invalid_option]
