@@ -72,6 +72,7 @@ EOS
       initializer = ReplicationInitializer.new session
       initializer.restore_unconfigured_tables([])
       initializer.drop_infrastructure
+      puts "Uninstall completed: rubyrep tables and triggers removed!"
     end
 
     # Entry points for executing a processing run.

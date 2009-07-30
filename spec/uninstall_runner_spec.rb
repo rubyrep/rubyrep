@@ -65,22 +65,29 @@ describe UninstallRunner do
   end
 
   it "execute should uninstall all rubyrep elements" do
-    config = deep_copy(standard_config)
-    config.options[:rep_prefix] = 'rx'
-    session = Session.new(config)
-    initializer = ReplicationInitializer.new(session)
+    begin
+      org_stdout, $stdout = $stdout, StringIO.new
+      config = deep_copy(standard_config)
+      config.options[:rep_prefix] = 'rx'
+      session = Session.new(config)
+      initializer = ReplicationInitializer.new(session)
 
-    initializer.ensure_infrastructure
-    initializer.create_trigger :left, 'scanner_records'
+      initializer.ensure_infrastructure
+      initializer.create_trigger :left, 'scanner_records'
 
-    runner = UninstallRunner.new
-    runner.stub!(:session).and_return(session)
+      runner = UninstallRunner.new
+      runner.stub!(:session).and_return(session)
 
-    runner.execute
+      runner.execute
 
-    initializer.trigger_exists?(:left, 'scanner_records').should be_false
-    initializer.change_log_exists?(:left).should be_false
-    session.right.tables.include?('rx_running_flags').should be_false
-    initializer.event_log_exists?.should be_false
+      initializer.trigger_exists?(:left, 'scanner_records').should be_false
+      initializer.change_log_exists?(:left).should be_false
+      session.right.tables.include?('rx_running_flags').should be_false
+      initializer.event_log_exists?.should be_false
+
+      $stdout.string =~ /uninstall completed/i
+    ensure
+      $stdout = org_stdout
+    end
   end
 end
