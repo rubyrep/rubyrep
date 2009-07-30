@@ -137,6 +137,29 @@ describe ReplicationRun do
     end
   end
 
+  it "run should re-raise original exception if logging to database fails" do
+    session = Session.new
+    session.left.begin_db_transaction
+    session.right.begin_db_transaction
+    begin
+      session.left.execute "delete from rr_pending_changes"
+      session.left.execute "delete from rr_logged_events"
+      session.left.insert_record 'rr_pending_changes', {
+        'change_table' => 'extender_no_record',
+        'change_key' => 'id|1',
+        'change_type' => 'D',
+        'change_time' => Time.now
+      }
+      run = ReplicationRun.new session, TaskSweeper.new(1)
+      run.replicator.stub!(:replicate_difference).and_return {raise Exception, 'dummy message'}
+      run.helper.stub!(:log_replication_outcome).and_return {raise Exception, 'blub'}
+      lambda {run.run}.should raise_error(Exception, 'dummy message')
+    ensure
+      session.left.rollback_db_transaction
+      session.right.rollback_db_transaction
+    end
+  end
+
   it "run should rollback if timed out" do
     session = Session.new
     session.left.begin_db_transaction

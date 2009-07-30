@@ -50,8 +50,13 @@ module RR
             break if sweeper.terminated?
             replicator.replicate_difference diff if diff.type != :no_diff
           rescue Exception => e
-            helper.log_replication_outcome diff, e.message,
-              e.class.to_s + "\n" + e.backtrace.join("\n")
+            begin
+              helper.log_replication_outcome diff, e.message,
+                e.class.to_s + "\n" + e.backtrace.join("\n")
+            rescue Exception => _
+              # if logging to database itself fails, re-raise the original exception
+              raise e
+            end
           end
         end
         # considered to be successful if we get till here without timing out
