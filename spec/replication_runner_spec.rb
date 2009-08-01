@@ -168,6 +168,32 @@ describe ReplicationRunner do
     end
   end
 
+  it "execute_once should clean up timed out replication runs" do
+    session = Session.new
+    begin
+      [:left, :right].each {|database| session.send(database).begin_db_transaction}
+      session.right.insert_record 'extender_no_record', {'id' => 1, 'name' => 'bla'}
+      runner = ReplicationRunner.new
+      runner.stub!(:session).and_return(session)
+      terminated = mock("terminated")
+      terminated.stub!(:terminated?).and_return(true)
+      TaskSweeper.stub!(:timeout).and_return(terminated)
+
+      old_connection_id = session.right.object_id
+
+      # should raise error
+      lambda {runner.execute_once}.should raise_error(/timed out/)
+
+      # should have rolled back the transaction
+      session.right.select_one("select * from extender_no_record").should be_nil
+
+      # should have created new database connections
+      session.right.object_id.should_not == old_connection_id
+    ensure
+      session.right.execute "delete from extender_no_record" rescue nil
+    end
+  end
+
   it "execute should start the replication" do
     config = deep_copy(standard_config)
     config.options[:committer] = :buffered_commit

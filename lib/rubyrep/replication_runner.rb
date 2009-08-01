@@ -108,7 +108,15 @@ EOS
         run = ReplicationRun.new session, sweeper
         run.run
       end.terminated?
-      raise "replication run timed out" if terminated
+      if terminated
+        [:left, :right].each do |database|
+          Thread.new do
+            session.send(database).rollback_db_transaction
+          end.join(timeout)
+        end
+        session.refresh :forced => true
+        raise "replication run timed out"
+      end
     end
 
     # Executes an endless loop of replication runs
