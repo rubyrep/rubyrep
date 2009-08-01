@@ -125,6 +125,13 @@ describe Session do   # here database connection caching is _not_ disabled
     session.right.connection.object_id.should == old_connection_id
   end
 
+  it "refresh should replace working connections if forced is true" do
+    session = Session.new
+    old_connection_id = session.right.connection.object_id
+    session.refresh(true)
+    session.right.connection.object_id.should != old_connection_id
+  end
+
   it "manual_primary_keys should return the specified manual primary keys" do
     config = deep_copy(standard_config)
     config.included_table_specs.clear

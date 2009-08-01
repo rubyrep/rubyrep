@@ -145,15 +145,17 @@ module RR
     end
 
     # Refreshes both database connections
-    def refresh
-      [:left, :right].each {|database| refresh_database_connection database}
+    # * +forced+: if +true+, establish new connection in any case
+    def refresh(forced = false)
+      [:left, :right].each {|database| refresh_database_connection database, forced}
     end
 
     # Refreshes the specified database connection.
     # (I. e. reestablish if not active anymore.)
     # * +database+: target database (either :+left+ or :+right+)
-    def refresh_database_connection(database)
-      if database_unreachable?(database)
+    # * +forced+: if +true+, establish new connection in any case
+    def refresh_database_connection(database, forced)
+      if forced or database_unreachable?(database)
         # step 1: disconnect both database connection (if still possible)
         begin
           Thread.new do
