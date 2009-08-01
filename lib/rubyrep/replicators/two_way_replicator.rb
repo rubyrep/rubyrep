@@ -227,17 +227,8 @@ module RR
           diff.amend
           replicate_difference diff, remaining_attempts - 1, "source record for insert vanished"
         else
-          begin
-            # note: savepoints have to be used for postgresql (as a failed SQL
-            #       statement will otherwise invalidate the complete transaction.)
-            rep_helper.session.send(target_db).execute "savepoint rr_insert"
-            log_replication_outcome source_db, diff
+          attempt_change('insert', source_db, target_db, diff, remaining_attempts) do
             rep_helper.insert_record target_db, target_table, values
-          rescue Exception => e
-            rep_helper.session.send(target_db).execute "rollback to savepoint rr_insert"
-            diff.amend
-            replicate_difference diff, remaining_attempts - 1,
-              "insert failed with #{e.message}"
           end
         end
       end
@@ -261,16 +252,35 @@ module RR
           diff.amend
           replicate_difference diff, remaining_attempts - 1, "source record for update vanished"
         else
-          begin
-            rep_helper.session.send(target_db).execute "savepoint rr_update"
-            log_replication_outcome source_db, diff
+          attempt_change('update', source_db, target_db, diff, remaining_attempts) do
             rep_helper.update_record target_db, target_table, values, target_key
-          rescue Exception => e
-            rep_helper.session.send(target_db).execute "rollback to savepoint rr_update"
-            diff.amend
-            replicate_difference diff, remaining_attempts - 1,
-              "update failed with #{e.message}"
           end
+        end
+      end
+
+      # Helper for execution of insert / update / delete attempts.
+      # Wraps those attempts into savepoints and handles exceptions.
+      #
+      # Note:
+      # Savepoints have to be used for PostgreSQL (as a failed SQL statement
+      # will otherwise invalidate the complete transaction.)
+      #
+      # * +action+: short description of change (e. g.: "update" or "delete")
+      # * +source_db+: either :+left+ or :+right+ - source database of replication
+      # * +target_db+: either :+left+ or :+right+ - target database of replication
+      # * +diff+: the current ReplicationDifference instance
+      # * +remaining_attempts+: the number of remaining replication attempts for this difference
+      def attempt_change(action, source_db, target_db, diff, remaining_attempts)
+        begin
+          rep_helper.session.send(target_db).execute "savepoint rr_#{action}"
+          log_replication_outcome source_db, diff
+          yield
+          rep_helper.session.send(target_db).execute "release rr_#{action}"
+        rescue Exception => e
+          rep_helper.session.send(target_db).execute "rollback to savepoint rr_#{action}"
+          diff.amend
+          replicate_difference diff, remaining_attempts - 1,
+            "#{action} failed with #{e.message}"
         end
       end
 
@@ -285,15 +295,9 @@ module RR
         change = diff.changes[source_db]
         target_db = OTHER_SIDE[source_db]
         target_table = rep_helper.corresponding_table(source_db, change.table)
-        begin
-          rep_helper.session.send(target_db).execute "savepoint rr_delete"
-          log_replication_outcome source_db, diff
+
+        attempt_change('delete', source_db, target_db, diff, remaining_attempts) do
           rep_helper.delete_record target_db, target_table, target_key
-        rescue Exception => e
-          rep_helper.session.send(target_db).execute "rollback to savepoint rr_delete"
-          diff.amend
-          replicate_difference diff, remaining_attempts - 1,
-            "delete failed with #{e.message}"
         end
       end
 
