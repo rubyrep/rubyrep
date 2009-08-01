@@ -275,7 +275,7 @@ module RR
           rep_helper.session.send(target_db).execute "savepoint rr_#{action}"
           log_replication_outcome source_db, diff
           yield
-          rep_helper.session.send(target_db).execute "release rr_#{action}"
+          rep_helper.session.send(target_db).execute "release savepoint rr_#{action}"
         rescue Exception => e
           rep_helper.session.send(target_db).execute "rollback to savepoint rr_#{action}"
           diff.amend

@@ -514,6 +514,7 @@ describe Replicators::TwoWayReplicator do
       config.options[:replication_conflict_handling] = :left_wins
 
       session = Session.new(config)
+      session.left.execute "delete from rr_logged_events"
 
       session.left.insert_record 'rr_pending_changes', {
         'change_table' => 'scanner_records',
