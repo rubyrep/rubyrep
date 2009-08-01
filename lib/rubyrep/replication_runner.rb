@@ -100,6 +100,17 @@ EOS
       initializer.prepare_replication
     end
 
+    # Executes a single replication run
+    def execute_once
+      session.refresh
+      timeout = session.configuration.options[:database_connection_timeout]
+      terminated = TaskSweeper.timeout(timeout) do |sweeper|
+        run = ReplicationRun.new session, sweeper
+        run.run
+      end.terminated?
+      raise "replication run timed out" if terminated
+    end
+
     # Executes an endless loop of replication runs
     def execute
       init_waiter
@@ -107,13 +118,7 @@ EOS
 
       until termination_requested do
         begin
-          session.refresh
-          timeout = session.configuration.options[:database_connection_timeout]
-          terminated = TaskSweeper.timeout(timeout) do |sweeper|
-            run = ReplicationRun.new session, sweeper
-            run.run
-          end.terminated?
-          raise "replication run timed out" if terminated
+          execute_once
         rescue Exception => e
           now = Time.now.iso8601
           $stderr.puts "#{now} Exception caught: #{e}"
