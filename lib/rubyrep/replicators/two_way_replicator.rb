@@ -235,8 +235,6 @@ module RR
             rep_helper.insert_record target_db, target_table, values
           rescue Exception => e
             rep_helper.session.send(target_db).execute "rollback to savepoint rr_insert"
-            row = rep_helper.load_record target_db, target_table, source_key
-            raise unless row # problem is not the existence of the record in the target db
             diff.amend
             replicate_difference diff, remaining_attempts - 1,
               "insert failed with #{e.message}"
