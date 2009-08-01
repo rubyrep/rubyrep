@@ -125,10 +125,10 @@ describe Session do   # here database connection caching is _not_ disabled
     session.right.connection.object_id.should == old_connection_id
   end
 
-  it "refresh should replace working connections if forced is true" do
+  it "refresh should replace active connections if forced is true" do
     session = Session.new
     old_connection_id = session.right.connection.object_id
-    session.refresh(true)
+    session.refresh :forced => true
     session.right.connection.object_id.should != old_connection_id
   end
 
