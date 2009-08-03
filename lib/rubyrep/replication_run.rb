@@ -35,6 +35,11 @@ module RR
         changes_pending
       end
 
+      # Apparently sometimes above check for changes takes already so long, that
+      # the replication run times out.
+      # Check for this and if timed out, return (silently).
+      return if sweeper.terminated?
+
       loaders = LoggedChangeLoaders.new(session)
 
       begin
