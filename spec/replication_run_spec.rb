@@ -197,13 +197,13 @@ describe ReplicationRun do
         'change_time' => Time.now
       }
       sweeper = TaskSweeper.new(1)
-      sweeper.should_receive(:terminated?).twice.and_return(false, true, true)
+      sweeper.should_receive(:terminated?).any_number_of_times.and_return(false, true)
       run = ReplicationRun.new session, sweeper
       run.helper.should_receive(:finalize).with(false)
       run.run
     ensure
-      session.left.rollback_db_transaction
-      session.right.rollback_db_transaction
+      session.left.rollback_db_transaction if session.left
+      session.right.rollback_db_transaction if session.right
     end
   end
 

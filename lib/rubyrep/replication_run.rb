@@ -42,8 +42,8 @@ module RR
 
       loaders = LoggedChangeLoaders.new(session)
 
+      success = false
       begin
-        success = false
         replicator # ensure that replicator is created and has chance to validate settings
 
         loop do
@@ -64,10 +64,14 @@ module RR
             end
           end
         end
-        # considered to be successful if we get till here without timing out
-        success = true unless sweeper.terminated?
+        success = true
       ensure
-        helper.finalize success
+        if sweeper.terminated?
+          helper.finalize false
+          session.disconnect_databases
+        else
+          helper.finalize success
+        end
       end
     end
 

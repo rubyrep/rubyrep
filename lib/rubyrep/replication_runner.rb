@@ -65,10 +65,18 @@ EOS
     # Loads config file and creates session if necessary.
     def session
       unless @session
-        load options[:config_file]
-        @session = Session.new Initializer.configuration
+        unless @config
+          load options[:config_file]
+          @config = Initializer.configuration
+        end
+        @session = Session.new @config
       end
       @session
+    end
+
+    # Removes current +Session+.
+    def clear_session
+      @session = nil
     end
 
     # Wait for the next replication time
@@ -108,15 +116,10 @@ EOS
         run = ReplicationRun.new session, sweeper
         run.run
       end.terminated?
-      if terminated
-        [:left, :right].each do |database|
-          Thread.new do
-            session.send(database).rollback_db_transaction
-          end.join(timeout)
-        end
-        session.refresh :forced => true
-        raise "replication run timed out"
-      end
+      raise "replication run timed out" if terminated
+    rescue Exception => e
+      clear_session
+      raise e
     end
 
     # Executes an endless loop of replication runs

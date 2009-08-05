@@ -4,6 +4,7 @@ include RR
 
 describe ReplicationRunner do
   before(:each) do
+    Initializer.configuration = standard_config
   end
 
   it "should register itself with CommandRunner" do
@@ -168,30 +169,34 @@ describe ReplicationRunner do
     end
   end
 
-  it "execute_once should clean up timed out replication runs" do
+  it "execute_once should not clean up if successful" do
+    runner = ReplicationRunner.new
     session = Session.new
-    begin
-      [:left, :right].each {|database| session.send(database).begin_db_transaction}
-      session.right.insert_record 'extender_no_record', {'id' => 1, 'name' => 'bla'}
-      runner = ReplicationRunner.new
-      runner.stub!(:session).and_return(session)
-      terminated = mock("terminated")
-      terminated.stub!(:terminated?).and_return(true)
-      TaskSweeper.stub!(:timeout).and_return(terminated)
+    runner.instance_variable_set(:@session, session)
 
-      old_connection_id = session.right.object_id
+    runner.execute_once
+    runner.instance_variable_get(:@session).should == session
+  end
 
-      # should raise error
-      lambda {runner.execute_once}.should raise_error(/timed out/)
+  it "execute_once should clean up after failed replication runs" do
+    runner = ReplicationRunner.new
+    session = Session.new
+    runner.instance_variable_set(:@session, session)
 
-      # should have rolled back the transaction
-      session.right.select_one("select * from extender_no_record").should be_nil
+    session.should_receive(:refresh).and_raise('bla')
+    lambda {runner.execute_once}.should raise_error('bla')
+    runner.instance_variable_get(:@session).should be_nil
+  end
 
-      # should have created new database connections
-      session.right.object_id.should_not == old_connection_id
-    ensure
-      session.right.execute "delete from extender_no_record" rescue nil
-    end
+  it "execute_once should raise exception if replication run times out" do
+    session = Session.new
+    runner = ReplicationRunner.new
+    runner.stub!(:session).and_return(session)
+    terminated = mock("terminated")
+    terminated.stub!(:terminated?).and_return(true)
+    TaskSweeper.stub!(:timeout).and_return(terminated)
+
+    lambda {runner.execute_once}.should raise_error(/timed out/)
   end
 
   it "execute should start the replication" do

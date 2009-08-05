@@ -118,6 +118,17 @@ describe Session do   # here database connection caching is _not_ disabled
     session.right.select_one("select 1+1 as x")['x'].to_i.should == 2
   end
 
+  it "disconnect_databases should disconnect both databases" do
+    session = Session.new(standard_config)
+    session.left.connection.should be_active
+    old_right_connection = session.right.connection
+    old_right_connection.should be_active
+    session.disconnect_databases
+    session.left.should be_nil
+    session.right.should be_nil
+    old_right_connection.should_not be_active
+  end
+
   it "refresh should not do anyting if the connection is still active" do
     session = Session.new
     old_connection_id = session.right.connection.object_id
@@ -129,7 +140,7 @@ describe Session do   # here database connection caching is _not_ disabled
     session = Session.new
     old_connection_id = session.right.connection.object_id
     session.refresh :forced => true
-    session.right.connection.object_id.should != old_connection_id
+    session.right.connection.object_id.should_not == old_connection_id
   end
 
   it "manual_primary_keys should return the specified manual primary keys" do

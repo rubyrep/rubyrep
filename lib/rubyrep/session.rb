@@ -133,10 +133,17 @@ module RR
       unreachable
     end
 
+    # Disconnects both database connections
+    def disconnect_databases
+      [:left, :right].each do |database|
+        disconnect_database(database)
+      end
+    end
+
     # Disconnnects the specified database
     # * +database+: the target database (either :+left+ or :+right+)
     def disconnect_database(database)
-      proxy, connection = @proxies[database], @connection[database]
+      proxy, connection = @proxies[database], @connections[database]
       @proxies[database] = nil
       @connections[database] = nil
       if proxy
