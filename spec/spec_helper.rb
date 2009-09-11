@@ -240,9 +240,9 @@ $start_proxy_as_external_process ||= false
 # Starts a proxy under the given host and post
 def start_proxy(host, port)
   if $start_proxy_as_external_process
-    rrproxy_path = File.join(File.dirname(__FILE__), "..", "bin", "rrproxy.rb")
+    bin_path = File.join(File.dirname(__FILE__), "..", "bin", "rubyrep")
     ruby = RUBY_PLATFORM =~ /java/ ? 'jruby' : 'ruby'
-    cmd = "#{ruby} #{rrproxy_path} -h #{host} -p #{port}"
+    cmd = "#{ruby} #{bin_path} proxy -h #{host} -p #{port}"
     Thread.new {system cmd}    
   else
     url = "druby://#{host}:#{port}"
