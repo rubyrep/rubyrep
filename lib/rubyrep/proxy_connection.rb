@@ -93,6 +93,10 @@ module RR
   # This class represents a remote activerecord database connection.
   # Normally created by DatabaseProxy
   class ProxyConnection
+    # Ensure that the proxy object always stays on server side and only remote
+    # references are returned to the client.
+    include DRbUndumped
+
     extend Forwardable
     
     # The database connection
