@@ -202,9 +202,12 @@ describe Committers::BufferedCommitter do
     stub_execute session
     committer = Committers::BufferedCommitter.new(session)
 
-    committer.should_not_receive(:commit_db_transactions).twice
-    committer.should_not_receive(:begin_db_transactions).twice
-    4.times {committer.commit}
+    committer.should_receive(:commit_db_transactions).twice
+    committer.should_receive(:begin_db_transactions).twice
+    committer.commit
+    committer.new_transaction?.should be_false
+    3.times {committer.commit}
+    committer.new_transaction?.should be_true
   end
 
   it "insert_record should commit" do

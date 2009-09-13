@@ -19,6 +19,12 @@ module RR
     # Delegates to Session#corresponding_table
     def corresponding_table(db_arm, table); session.corresponding_table(db_arm, table); end
 
+    # Returns +true+ if a new transaction was started since the last
+    # insert / update / delete.
+    def new_transaction?
+      committer.new_transaction?
+    end
+
     # Delegates to Committer#insert_record
     def insert_record(database, table, values)
       committer.insert_record(database, table, values)

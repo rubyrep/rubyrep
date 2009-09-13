@@ -22,6 +22,15 @@ describe ReplicationHelper do
     helper.session.should == rep_run.session
   end
 
+  it "new_transaction? should delegate to the committer" do
+    session = Session.new
+    rep_run = ReplicationRun.new(session, TaskSweeper.new(1))
+    helper = ReplicationHelper.new(rep_run)
+    c = helper.instance_eval {@committer}
+    c.should_receive(:new_transaction?).and_return(true)
+    helper.new_transaction?.should be_true
+  end
+
   it "replication_run should return the current ReplicationRun instance" do
     rep_run = ReplicationRun.new(Session.new, TaskSweeper.new(1))
     helper = ReplicationHelper.new(rep_run)

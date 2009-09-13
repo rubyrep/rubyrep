@@ -82,6 +82,10 @@ describe Committers::DefaultCommitter do
     @committer.connections \
       .should == {:left => @session.left, :right => @session.right}
   end
+
+  it "new_transaction? should return false" do
+    @committer.new_transaction?.should be_false
+  end
   
   it_should_behave_like "Committer"
 end

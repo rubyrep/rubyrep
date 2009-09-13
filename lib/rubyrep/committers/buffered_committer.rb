@@ -89,6 +89,12 @@ module RR
         end
       end
 
+      # Returns +true+ if a new transaction was started since the last
+      # insert / update / delete.
+      def new_transaction?
+        @change_counter == 0
+      end
+
       # A new committer is created for each table sync.
       #   * session: a Session object representing the current database session
       def initialize(session)

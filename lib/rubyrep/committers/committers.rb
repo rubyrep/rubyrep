@@ -68,6 +68,12 @@ module RR
         self.session = session
         self.connections = {:left => session.left, :right => session.right}
       end
+
+      # Returns +true+ if a new transaction was started since the last
+      # insert / update / delete.
+      def new_transaction?
+        false
+      end
       
       # Inserts the specified record in the specified +database+ (either :left or :right).
       # +table+ is the name of the target table.
