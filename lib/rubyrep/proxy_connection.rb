@@ -115,8 +115,8 @@ module RR
       :create_or_replace_replication_trigger_function,
       :create_replication_trigger, :drop_replication_trigger, :replication_trigger_exists?,
       :sequence_values, :update_sequences, :clear_sequence_setup,
-      :create_table, :drop_table, :add_big_primary_key
-    
+      :drop_table, :add_big_primary_key, :add_column, :remove_column
+
     # Caching the primary keys. This is a hash with
     #   * key: table name
     #   * value: array of primary key names
@@ -159,6 +159,13 @@ module RR
       result
     end
     
+    # Creates a table
+    # Call forwarded to ActiveRecord::ConnectionAdapters::SchemaStatements#create_table
+    # Provides an empty block (to prevent DRB from calling back the client)
+    def create_table(*params)
+      connection.create_table(*params) {}
+    end
+
     # Returns a Hash of currently registerred cursors
     def cursors
       @cursors ||= {}

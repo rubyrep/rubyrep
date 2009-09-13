@@ -8,16 +8,16 @@ def prepare_schema
   session = RR::Session.new
 
   [:left, :right].each do |database|
+    c = session.send(database)
     [:big_scan, :big_rep, :big_rep_backup].each do |table|
-      session.send(database).drop_table table rescue nil
-      session.send(database).create_table table do |t|
-        t.column :diff_type, :string
-        t.string :text1, :text2, :text3, :text4
-        t.text :text5
-        t.binary :text6
-        t.integer :number1, :number2, :number3
-        t.float :number4
-      end rescue nil
+      c.drop_table table rescue nil
+      c.create_table table
+      c.add_column table, :diff_type, :string
+      (1..4).each {|i| c.add_column table, "text#{i}", :string}
+      c.add_column table, :text5, :text
+      c.add_column table, :text6, :binary
+      (1..3).each {|i| c.add_column table, "number#{i}", :integer}
+      c.add_column table, :number4, :float
     end
   end
 end  

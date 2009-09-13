@@ -149,19 +149,20 @@ module RR
     # Creates the replication log table.
     def create_event_log
       silence_ddl_notices(:left) do
-        session.left.create_table "#{options[:rep_prefix]}_logged_events", :id => false do |t|
-          t.column :activity, :string
-          t.column :change_table, :string
-          t.column :diff_type, :string
-          t.column :change_key, :string
-          t.column :left_change_type, :string
-          t.column :right_change_type, :string
-          t.column :description, :string, :limit => DESCRIPTION_SIZE
-          t.column :long_description, :string, :limit => LONG_DESCRIPTION_SIZE
-          t.column :event_time, :timestamp
-          t.column :diff_dump, :string, :limit => DIFF_DUMP_SIZE
-        end
-        session.left.add_big_primary_key "#{options[:rep_prefix]}_logged_events", 'id'
+        table_name = "#{options[:rep_prefix]}_logged_events"
+        session.left.create_table "#{options[:rep_prefix]}_logged_events"
+        session.left.add_column table_name, :activity, :string
+        session.left.add_column table_name, :change_table, :string
+        session.left.add_column table_name, :diff_type, :string
+        session.left.add_column table_name, :change_key, :string
+        session.left.add_column table_name, :left_change_type, :string
+        session.left.add_column table_name, :right_change_type, :string
+        session.left.add_column table_name, :description, :string, :limit => DESCRIPTION_SIZE
+        session.left.add_column table_name, :long_description, :string, :limit => LONG_DESCRIPTION_SIZE
+        session.left.add_column table_name, :event_time, :timestamp
+        session.left.add_column table_name, :diff_dump, :string, :limit => DIFF_DUMP_SIZE
+        session.left.remove_column table_name, 'id'
+        session.left.add_big_primary_key table_name, 'id'
       end
     end
 
@@ -169,14 +170,16 @@ module RR
     # * database: either :+left+ or :+right+
     def create_change_log(database)
       silence_ddl_notices(database) do
-        session.send(database).create_table "#{options[:rep_prefix]}_pending_changes", :id => false do |t|
-          t.column :change_table, :string
-          t.column :change_key, :string
-          t.column :change_new_key, :string
-          t.column :change_type, :string
-          t.column :change_time, :timestamp
-        end
-        session.send(database).add_big_primary_key "#{options[:rep_prefix]}_pending_changes", 'id'
+        connection = session.send(database)
+        table_name = "#{options[:rep_prefix]}_pending_changes"
+        connection.create_table table_name
+        connection.add_column table_name, :change_table, :string
+        connection.add_column table_name, :change_key, :string
+        connection.add_column table_name, :change_new_key, :string
+        connection.add_column table_name, :change_type, :string
+        connection.add_column table_name, :change_time, :timestamp
+        connection.remove_column table_name, 'id'
+        connection.add_big_primary_key table_name, 'id'
       end
     end
 
@@ -190,9 +193,12 @@ module RR
     def ensure_activity_markers
       table_name = "#{options[:rep_prefix]}_running_flags"
       [:left, :right].each do |database|
-        unless session.send(database).tables.include? table_name
-          session.send(database).create_table table_name, :id => false do |t|
-            t.column :active, :integer
+        connection = session.send(database)
+        unless connection.tables.include? table_name
+          silence_ddl_notices(database) do
+            connection.create_table table_name
+            connection.add_column table_name, :active, :integer
+            connection.remove_column table_name, 'id'
           end
         end
       end

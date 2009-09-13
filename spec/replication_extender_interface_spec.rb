@@ -345,12 +345,14 @@ describe "ReplicationExtender", :shared => true do
     session = nil
     begin
       session = Session.new
-      session.left.drop_table 'big_key_test' if session.left.tables.include? 'big_key_test'
-      session.left.create_table 'big_key_test'.to_sym, :id => false do |t|
-        t.column :name, :string
+      initializer = ReplicationInitializer.new(session)
+      initializer.silence_ddl_notices(:left) do
+        session.left.drop_table 'big_key_test' if session.left.tables.include? 'big_key_test'
+        session.left.create_table 'big_key_test'.to_sym
+        session.left.add_column 'big_key_test', :name, :string
+        session.left.remove_column 'big_key_test', 'id'
+        session.left.add_big_primary_key 'big_key_test', 'id'
       end
-      session.left.add_big_primary_key 'big_key_test', 'id'
-
       # should auto generate the primary key if not manually specified
       session.left.insert_record 'big_key_test', {'name' => 'bla'}
       session.left.select_one("select id from big_key_test where name = 'bla'")['id'].
