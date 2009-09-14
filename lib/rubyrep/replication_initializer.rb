@@ -304,7 +304,9 @@ module RR
             unsynced = true
           end
         end
-        unsynced_table_pairs << table_pair if unsynced
+        if unsynced and table_options[:initial_sync]
+          unsynced_table_pairs << table_pair
+        end
       end
       unsynced_table_specs = unsynced_table_pairs.map do |table_pair|
         "#{table_pair[:left]}, #{table_pair[:right]}"

@@ -437,7 +437,13 @@ describe ReplicationInitializer do
 
     config.include_tables 'rr_pending_changes' # added to verify that it is ignored
 
+    # added to verify that a disabled :initial_sync is honored
+    config.add_table_options 'table_with_manual_key', :initial_sync => false
+
     session = Session.new(config)
+
+    # dummy data to verify that 'table_with_manual_key' is indeed not synced
+    session.left.insert_record 'table_with_manual_key', :id => 1, :name => 'bla'
 
     $stdout = StringIO.new
     begin
@@ -470,6 +476,9 @@ describe ReplicationInitializer do
       # verify that the 'rr_pending_changes' table was not touched
       initializer.trigger_exists?(:left, 'rr_pending_changes').should be_false
 
+      # verify that :initial_sync => false is honored
+      session.right.select_all("select * from table_with_manual_key").should be_empty
+
       # verify that syncing is done only for unsynced tables
       SyncRunner.should_not_receive(:new)
       initializer.prepare_replication
@@ -477,6 +486,7 @@ describe ReplicationInitializer do
     ensure
       $stdout = org_stdout
       if session
+        session.left.execute "delete from table_with_manual_key"
         session.left.execute "delete from scanner_left_records_only where id = 10"
         session.right.execute "delete from scanner_left_records_only"
         [:left, :right].each do |database|

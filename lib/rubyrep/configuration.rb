@@ -30,6 +30,7 @@ module RR
       :table_ordering => true,
       :scan_progress_printer => :progress_bar,
       :use_ansi => true_if_running_in_a_terminal_and_not_under_windows,
+      :initial_sync => true,
       :adjust_sequences => true,
       :sequence_adjustment_buffer => 0,
       :sequence_increment => 2,
@@ -98,8 +99,13 @@ module RR
     #   used for the initial sync of a table.)
     #   If no +:syncer+ option is specified, than a syncer as named by this
     #   option is used.
+    # * :+initial_sync+:
+    #   If +true+, syncs a table when initializing replication.
+    #   Disable with care!
+    #   (I. e. ensure that the table(s) have indeed same data in both databases
+    #   before starting replication.)
     # * :+adjust_sequences+:
-    #   If true, adjust sequences to avoid number conflicts between left and
+    #   If +true+, adjust sequences to avoid number conflicts between left and
     #   right database during replication.
     # * :+sequence_adjustement_buffer+:
     #   When updating a sequence, this is the additional gap to avoid sequence
