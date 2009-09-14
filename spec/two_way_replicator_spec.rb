@@ -645,4 +645,53 @@ describe Replicators::TwoWayReplicator do
       end
     end
   end
+
+  it "replicate_difference should handle updates failing due to the target record being deleted after the original diff was loaded" do
+    begin
+      config = deep_copy(standard_config)
+      config.options[:committer] = :never_commit
+      config.options[:replication_conflict_handling] = :left_wins
+
+      session = Session.new(config)
+
+      session.left.insert_record 'extender_no_record', {
+        'id' => '2',
+        'name' => 'bla'
+      }
+      session.left.insert_record 'rr_pending_changes', {
+        'change_table' => 'extender_no_record',
+        'change_key' => 'id|1',
+        'change_new_key' => 'id|2',
+        'change_type' => 'U',
+        'change_time' => Time.now
+      }
+
+      rep_run = ReplicationRun.new session, TaskSweeper.new(1)
+      helper = ReplicationHelper.new(rep_run)
+      replicator = Replicators::TwoWayReplicator.new(helper)
+
+      diff = ReplicationDifference.new LoggedChangeLoaders.new(session)
+      diff.load
+
+      session.right.insert_record 'rr_pending_changes', {
+        'change_table' => 'extender_no_record',
+        'change_key' => 'id|1',
+        'change_type' => 'D',
+        'change_time' => Time.now
+      }
+      replicator.replicate_difference diff, 2
+
+      session.right.select_one("select * from extender_no_record").should == {
+        'id' => '2',
+        'name' => 'bla'
+      }
+    ensure
+      Committers::NeverCommitter.rollback_current_session
+      if session
+        session.left.execute "delete from extender_no_record"
+        session.right.execute "delete from extender_no_record"
+        session.left.execute "delete from rr_pending_changes"
+      end
+    end
+  end
 end

@@ -253,7 +253,11 @@ module RR
           replicate_difference diff, remaining_attempts - 1, "source record for update vanished"
         else
           attempt_change('update', source_db, target_db, diff, remaining_attempts) do
-            rep_helper.update_record target_db, target_table, values, target_key
+            number_updated = rep_helper.update_record target_db, target_table, values, target_key
+            if number_updated == 0
+              diff.amend
+              replicate_difference diff, remaining_attempts - 1, "target record for update vanished"
+            end
           end
         end
       end
