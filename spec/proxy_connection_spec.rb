@@ -296,6 +296,20 @@ describe ProxyConnection do
     end
   end
 
+  it "update_record should return the number of updated records" do
+    @connection.begin_db_transaction
+    begin
+      @connection.
+        update_record('scanner_records', 'id' => 1, 'name' => 'update_test').
+        should == 1
+      @connection.
+        update_record('scanner_records', 'id' => 0, 'name' => 'update_test').
+        should == 0
+    ensure
+      @connection.rollback_db_transaction
+    end
+  end
+
   it "update_record should handle combined primary keys" do
     @connection.begin_db_transaction
     begin
@@ -377,4 +391,17 @@ describe ProxyConnection do
     end
   end
 
+  it "delete_record should return the number of deleted records" do
+    @connection.begin_db_transaction
+    begin
+      @connection.
+        delete_record('extender_combined_key', 'first_id' => 1, 'second_id' => '1').
+        should == 1
+      @connection.
+        delete_record('extender_combined_key', 'first_id' => 1, 'second_id' => '0').
+        should == 0
+    ensure
+      @connection.rollback_db_transaction
+    end
+  end
 end

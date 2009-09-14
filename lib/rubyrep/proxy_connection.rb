@@ -109,7 +109,7 @@ module RR
     def_delegators :connection,
       :columns, :quote_column_name,
       :quote_table_name, :execute,
-      :select_one, :select_all, :tables,
+      :select_one, :select_all, :tables, :update, :delete,
       :begin_db_transaction, :rollback_db_transaction, :commit_db_transaction,
       :referenced_tables,
       :create_or_replace_replication_trigger_function,
@@ -372,8 +372,9 @@ module RR
     # * +org_key+:
     #   A hash of column_name => value pairs. If +nil+, use the key specified by
     #   +values+ instead.
+    # Returns the number of modified records.
     def update_record(table, values, org_key = nil)
-      execute table_update_query(table, values, org_key)
+      update table_update_query(table, values, org_key)
     end
 
     # Returns an SQL delete query for the given +table+ and +values+
@@ -390,8 +391,9 @@ module RR
     # Deletes the specified record from the named +table+.
     # +values+ is a hash of column_name => value pairs. (Only the primary key
     # values will be used and must be included in the hash.)
+    # Returns the number of deleted records.
     def delete_record(table, values)
-      execute table_delete_query(table, values)
+      delete table_delete_query(table, values)
     end
   end
 end
