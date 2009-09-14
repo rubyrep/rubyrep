@@ -1,0 +1,8 @@
+#!/bin/bash
+
+script_dir="`dirname \"$0\"`"
+
+jruby_path="$script_dir"/jruby/bin/jruby
+rubyrep_path="$script_dir"/bin/rubyrep
+
+$jruby_path --server $rubyrep_path $*

@@ -67,6 +67,8 @@ lib/rubyrep/trigger_mode_switcher.rb
 lib/rubyrep/type_casting_cursor.rb
 lib/rubyrep/uninstall_runner.rb
 lib/rubyrep/version.rb
+rubyrep
+rubyrep.bat
 script/destroy
 script/generate
 script/txt2html
