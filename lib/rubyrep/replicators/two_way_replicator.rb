@@ -229,6 +229,7 @@ module RR
         else
           attempt_change('insert', source_db, target_db, diff, remaining_attempts) do
             rep_helper.insert_record target_db, target_table, values
+            log_replication_outcome source_db, diff
           end
         end
       end
@@ -257,6 +258,8 @@ module RR
             if number_updated == 0
               diff.amend
               replicate_difference diff, remaining_attempts - 1, "target record for update vanished"
+            else
+              log_replication_outcome source_db, diff
             end
           end
         end
@@ -277,7 +280,6 @@ module RR
       def attempt_change(action, source_db, target_db, diff, remaining_attempts)
         begin
           rep_helper.session.send(target_db).execute "savepoint rr_#{action}_#{remaining_attempts}"
-          log_replication_outcome source_db, diff
           yield
           unless rep_helper.new_transaction?
             rep_helper.session.send(target_db).execute "release savepoint rr_#{action}_#{remaining_attempts}"
@@ -307,6 +309,8 @@ module RR
           if number_updated == 0
             diff.amend
             replicate_difference diff, remaining_attempts - 1, "target record for delete vanished"
+          else
+            log_replication_outcome source_db, diff
           end
         end
       end
