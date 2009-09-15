@@ -594,6 +594,50 @@ describe Replicators::TwoWayReplicator do
     end
   end
 
+  it "replicate_difference should handle deletes failing due to the target record vanishing" do
+    begin
+      config = deep_copy(standard_config)
+      config.options[:committer] = :never_commit
+      config.options[:replication_conflict_handling] = :left_wins
+
+      session = Session.new(config)
+
+      session.left.insert_record 'rr_pending_changes', {
+        'change_table' => 'scanner_records',
+        'change_key' => 'id|3',
+        'change_new_key' => nil,
+        'change_type' => 'D',
+        'change_time' => Time.now
+      }
+
+      rep_run = ReplicationRun.new session, TaskSweeper.new(1)
+      helper = ReplicationHelper.new(rep_run)
+      replicator = Replicators::TwoWayReplicator.new(helper)
+
+      diff = ReplicationDifference.new LoggedChangeLoaders.new(session)
+      diff.load
+
+      session.right.insert_record 'rr_pending_changes', {
+        'change_table' => 'scanner_records',
+        'change_key' => 'id|3',
+        'change_new_key' => 'id|4',
+        'change_type' => 'U',
+        'change_time' => Time.now
+      }
+
+      replicator.replicate_difference diff, 2
+      
+      session.right.select_one("select * from scanner_records where id = 4").
+        should be_nil
+    ensure
+      Committers::NeverCommitter.rollback_current_session
+      if session
+        session.left.execute "delete from rr_pending_changes"
+        session.left.execute "delete from rr_logged_events"
+      end
+    end
+  end
+
   it "replicate_difference should handle updates failing due to the source record being deleted after the original diff was loaded" do
     begin
       config = deep_copy(standard_config)

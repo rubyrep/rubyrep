@@ -276,14 +276,14 @@ module RR
       # * +remaining_attempts+: the number of remaining replication attempts for this difference
       def attempt_change(action, source_db, target_db, diff, remaining_attempts)
         begin
-          rep_helper.session.send(target_db).execute "savepoint rr_#{action}"
+          rep_helper.session.send(target_db).execute "savepoint rr_#{action}_#{remaining_attempts}"
           log_replication_outcome source_db, diff
           yield
           unless rep_helper.new_transaction?
-            rep_helper.session.send(target_db).execute "release savepoint rr_#{action}"
+            rep_helper.session.send(target_db).execute "release savepoint rr_#{action}_#{remaining_attempts}"
           end
         rescue Exception => e
-          rep_helper.session.send(target_db).execute "rollback to savepoint rr_#{action}"
+          rep_helper.session.send(target_db).execute "rollback to savepoint rr_#{action}_#{remaining_attempts}"
           diff.amend
           replicate_difference diff, remaining_attempts - 1,
             "#{action} failed with #{e.message}"
@@ -303,7 +303,11 @@ module RR
         target_table = rep_helper.corresponding_table(source_db, change.table)
 
         attempt_change('delete', source_db, target_db, diff, remaining_attempts) do
-          rep_helper.delete_record target_db, target_table, target_key
+          number_updated = rep_helper.delete_record target_db, target_table, target_key
+          if number_updated == 0
+            diff.amend
+            replicate_difference diff, remaining_attempts - 1, "target record for delete vanished"
+          end
         end
       end
 
