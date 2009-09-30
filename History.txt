@@ -1,3 +1,11 @@
+== 1.0.8 2009-10-01
+
+* Feature: replication more robust against connection failures
+* Feature: initial syncs before replication can be disabled with :initial_sync option
+* Bug fix: better detection of failed update and delete replications
+* Bug fix: fix scenario where replication could be logged as successful even when failed
+* Bug fix: make proxied replication work under JRuby
+
 == 1.0.7 2009-07-26
 
 * Bug fix: buffered LoggedChangeLoader#update to avoid timeouts with large replication backlogs.
