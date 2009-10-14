@@ -28,7 +28,7 @@ module RR
         changes_pending = false
         t = Thread.new do
           changes_pending = session.send(database).select_one(
-            "select id from #{session.configuration.options[:rep_prefix]}_pending_changes"
+            "select id from #{session.configuration.options[:rep_prefix]}_pending_changes limit 1"
           ) != nil
         end
         t.join session.configuration.options[:database_connection_timeout]
