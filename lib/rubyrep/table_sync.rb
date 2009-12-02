@@ -34,6 +34,20 @@ module RR
       end
     end
 
+    # Calls the event filter for the give table difference.
+    # * +type+: type of difference
+    # * +row+: the differing row
+    # Refer to DirectTableScan#run for full description of +type+ and +row+.
+    # Returns +true+ if syncing of the difference should *not* proceed.
+    def event_filtered?(type, row)
+      event_filter = sync_options[:event_filter]
+      if event_filter && event_filter.respond_to?(:before_sync)
+        not event_filter.before_sync(helper, type, row)
+      else
+        false
+      end
+    end
+
     # Executes the table sync. If a block is given, yields each difference with
     # the following 2 parameters
     # * +type+
@@ -54,7 +68,9 @@ module RR
 
       scan.run do |type, row|
         yield type, row if block_given? # To enable progress reporting
-        syncer.sync_difference type, row
+        unless event_filtered?(type, row)
+          syncer.sync_difference type, row
+        end
       end
       
       execute_sync_hook :after_table_sync

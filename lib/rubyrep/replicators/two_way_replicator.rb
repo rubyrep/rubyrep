@@ -60,13 +60,16 @@ module RR
       # The current ReplicationHelper object
       attr_accessor :rep_helper
 
-      # Default TwoWayReplicator options.
-      DEFAULT_OPTIONS =  {
-        :left_change_handling => :replicate,
-        :right_change_handling => :replicate,
-        :replication_conflict_handling => :ignore,
-        :logged_replication_events => [:ignored_conflicts],
-      }
+      # Provides default option for the replicator. Optional.
+      # Returns a hash with key => value pairs.
+      def self.default_options
+        {
+          :left_change_handling => :replicate,
+          :right_change_handling => :replicate,
+          :replication_conflict_handling => :ignore,
+          :logged_replication_events => [:ignored_conflicts],
+        }
+      end
 
       # Checks if an option is configured correctly. Raises an ArgumentError if not.
       # * +table_spec+: the table specification to which the option belongs. May be +nil+.
@@ -173,23 +176,12 @@ module RR
         end
       end
 
-      # Returns the options for the specified table name.
-      # * +table+: name of the table (left database version)
-      def options_for_table(table)
-        @options_for_table ||= {}
-        unless @options_for_table.include? table
-          @options_for_table[table] = DEFAULT_OPTIONS.merge(
-            rep_helper.session.configuration.options_for_table(table))
-        end
-        @options_for_table[table]
-      end
-
       # Logs replication of the specified difference as per configured
       # :+replication_conflict_logging+ / :+left_change_logging+ / :+right_change_logging+ options.
       # * +winner+: Either the winner database (:+left+ or :+right+) or :+ignore+
       # * +diff+: the ReplicationDifference instance
       def log_replication_outcome(winner, diff)
-        options = options_for_table(diff.changes[:left].table)
+        options = rep_helper.options_for_table(diff.changes[:left].table)
         option_values = [options[:logged_replication_events]].flatten # make sure I have an array
         if diff.type == :conflict
           return unless option_values.include?(:all_conflicts) or option_values.include?(:ignored_conflicts)
@@ -321,7 +313,7 @@ module RR
       # * :+previous_failure_description+: why the previous replication attempt failed
       def replicate_difference(diff, remaining_attempts = MAX_REPLICATION_ATTEMPTS, previous_failure_description = nil)
         raise Exception, previous_failure_description || "max replication attempts exceeded" if remaining_attempts == 0
-        options = options_for_table(diff.changes[:left].table)
+        options = rep_helper.options_for_table(diff.changes[:left].table)
         if diff.type == :left or diff.type == :right
           key = diff.type == :left ? :left_change_handling : :right_change_handling
           option = options[key]

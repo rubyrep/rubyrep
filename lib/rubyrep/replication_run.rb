@@ -22,6 +22,18 @@ module RR
         Replicators.replicators[session.configuration.options[:replicator]].new(helper)
     end
 
+    # Calls the event filter for the give  difference.
+    # * +diff+: instance of ReplicationDifference
+    # Returns +true+ if replication of the difference should *not* proceed.
+    def event_filtered?(diff)
+      event_filter = helper.options_for_table(diff.changes[:left].table)[:event_filter]
+      if event_filter && event_filter.respond_to?(:before_replicate)
+        not event_filter.before_replicate(helper, diff)
+      else
+        false
+      end
+    end
+
     # Executes the replication run.
     def run
       return unless [:left, :right].any? do |database|
@@ -53,7 +65,9 @@ module RR
             diff.load
             break unless diff.loaded?
             break if sweeper.terminated?
-            replicator.replicate_difference diff if diff.type != :no_diff
+            if diff.type != :no_diff and not event_filtered?(diff)
+              replicator.replicate_difference diff
+            end
           rescue Exception => e
             begin
               helper.log_replication_outcome diff, e.message,

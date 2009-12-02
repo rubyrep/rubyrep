@@ -23,7 +23,12 @@ module RR
       @replicators ||= {}
       @replicators
     end
-  
+
+    # Returns the correct replicator class as per provided options hash
+    def self.configured_replicator(options)
+      replicators[options[:replicator]]
+    end
+
     # Registers one or multiple replicators.
     # syncer_hash is a Hash with
     #   key::   The adapter symbol as used to reference the replicator

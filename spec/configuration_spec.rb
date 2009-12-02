@@ -60,6 +60,7 @@ describe Configuration do
     config = Configuration.new
     config.options_for_table('b').should == \
       Syncers::TwoWaySyncer.default_options.clone.
+      merge(Replicators::TwoWayReplicator.default_options.clone).
       merge(config.options)
   end
 
@@ -124,6 +125,7 @@ describe Configuration do
     config.include_tables(/a/, {:bla => :blub})
     config.options_for_table('b').should == \
       Syncers::TwoWaySyncer.default_options.clone.
+      merge(Replicators::TwoWayReplicator.default_options.clone).
       merge(config.options)
   end
 
@@ -132,6 +134,7 @@ describe Configuration do
     config.include_tables(/a/, {:bla => :blub})
     config.options_for_table('a').should == \
       Syncers::TwoWaySyncer.default_options.clone.
+      merge(Replicators::TwoWayReplicator.default_options.clone).
       merge(config.options).
       merge(:bla => :blub)
   end
@@ -144,6 +147,7 @@ describe Configuration do
     config.include_tables('y', {:bla => :foo})
     config.options_for_table('a').should == \
       Syncers::TwoWaySyncer.default_options.clone.
+      merge(Replicators::TwoWayReplicator.default_options.clone).
       merge(config.options).
       merge(:bla => :blok)
   end
@@ -172,6 +176,7 @@ describe Configuration do
     config.add_table_options(/a/, {:foo => :bar})
     config.options_for_table('a').should == \
       Syncers::TwoWaySyncer.default_options.clone.
+      merge(Replicators::TwoWayReplicator.default_options.clone).
       merge(config.options).
       merge(:bla => :blub, :foo => :bar)
   end

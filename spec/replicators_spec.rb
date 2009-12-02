@@ -21,6 +21,11 @@ describe Replicators do
     Replicators.replicators.should == :dummy_data
   end
 
+  it "configured_replicator should return the correct replicator" do
+    options = {:replicator => :two_way}
+    Replicators.configured_replicator(options).should == Replicators::TwoWayReplicator
+  end
+  
   it "register should register the provided replicator" do
     Replicators.instance_variable_set :@replicators, nil
     Replicators.register :a_key => :a

@@ -239,14 +239,18 @@ module RR
         resulting_options.merge! table_options[1] if match
       end
 
-      # Merge the default syncer options in (if syncer has some)
-      syncer_class = Syncers.configured_syncer(resulting_options)
-      if syncer_class.respond_to? :default_options
-        default_syncer_options = syncer_class.default_options.clone
-      else
-        default_syncer_options = {}
+      # Merge the default syncer& replicator options in
+      [
+        Syncers.configured_syncer(resulting_options),
+        Replicators.configured_replicator(resulting_options)
+      ].each do |processor_class|
+        if processor_class.respond_to? :default_options
+          default_processor_options = processor_class.default_options.clone
+        else
+          default_processor_options = {}
+        end
+        resulting_options = default_processor_options.merge!(resulting_options)
       end
-      resulting_options = default_syncer_options.merge! resulting_options
 
       resulting_options
     end

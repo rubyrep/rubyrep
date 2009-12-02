@@ -16,6 +16,16 @@ module RR
     # Current options
     def options; @options ||= session.configuration.options; end
 
+    # Returns the options for the specified table name.
+    # * +table+: name of the table (left database version)
+    def options_for_table(table)
+      @options_for_table ||= {}
+      unless @options_for_table.include? table
+        @options_for_table[table] = session.configuration.options_for_table(table)
+      end
+      @options_for_table[table]
+    end
+
     # Delegates to Session#corresponding_table
     def corresponding_table(db_arm, table); session.corresponding_table(db_arm, table); end
 

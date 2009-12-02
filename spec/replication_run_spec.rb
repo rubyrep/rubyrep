@@ -40,6 +40,66 @@ describe ReplicationRun do
     run.replicator.rep_helper.should == run.helper
   end
 
+  it "event_filtered? should behave correctly" do
+    begin
+      config = deep_copy(standard_config)
+      config.options[:committer] = :never_commit
+      session = Session.new(config)
+
+      session.left.insert_record 'extender_no_record', {
+        'id' => '1',
+        'name' => 'bla'
+      }
+      session.left.insert_record 'rr_pending_changes', {
+        'change_table' => 'extender_no_record',
+        'change_key' => 'id|1',
+        'change_type' => 'I',
+        'change_time' => Time.now
+      }
+
+      loaders = LoggedChangeLoaders.new(session)
+      loaders.update
+      diff = ReplicationDifference.new loaders
+      diff.load
+
+      # No event filter at all
+      run = ReplicationRun.new session, TaskSweeper.new(1)
+      run.event_filtered?(diff).should be_false
+
+      # Event filter that does not handle replication events
+      session.configuration.options[:event_filter] = Object.new
+      run = ReplicationRun.new session, TaskSweeper.new(1)
+      run.event_filtered?(diff).should be_false
+
+      # event_filtered? should signal filtering (i. e. return true) if filter returns false.
+      filter = Object.new
+      def filter.before_replicate(helper, diff)
+        false
+      end
+      session.configuration.options[:event_filter] = filter
+      run = ReplicationRun.new session, TaskSweeper.new(1)
+      run.event_filtered?(diff).should be_true
+
+      # event_filtered? should return false if filter returns true.
+      filter = {}
+      def filter.before_replicate(helper, diff)
+        self[:args] = [helper, diff]
+        true
+      end
+      session.configuration.options[:event_filter] = filter
+      run = ReplicationRun.new session, TaskSweeper.new(1)
+      run.event_filtered?(diff).should be_false
+      filter[:args].should == [run.helper, diff]
+    ensure
+      Committers::NeverCommitter.rollback_current_session
+      if session
+        session.left.execute "delete from extender_no_record"
+        session.right.execute "delete from extender_no_record"
+        session.left.execute "delete from rr_pending_changes"
+      end
+    end
+  end
+
   it "run should replicate all logged changes" do
     begin
       config = deep_copy(standard_config)
@@ -65,6 +125,57 @@ describe ReplicationRun do
         'id' => '1',
         'name' => 'bla'
       }
+    ensure
+      Committers::NeverCommitter.rollback_current_session
+      if session
+        session.left.execute "delete from extender_no_record"
+        session.right.execute "delete from extender_no_record"
+        session.left.execute "delete from rr_pending_changes"
+      end
+    end
+  end
+
+  it "run should not replicate filtered changes" do
+    begin
+      config = deep_copy(standard_config)
+      config.options[:committer] = :never_commit
+
+      filter = Object.new
+      def filter.before_replicate(helper, diff)
+        diff.changes[:left].key['id'] != '1'
+      end
+      config.options[:event_filter] = filter
+
+      session = Session.new(config)
+
+      session.left.insert_record 'extender_no_record', {
+        'id' => '1',
+        'name' => 'bla'
+      }
+      session.left.insert_record 'extender_no_record', {
+        'id' => '2',
+        'name' => 'blub'
+      }
+      session.left.insert_record 'rr_pending_changes', {
+        'change_table' => 'extender_no_record',
+        'change_key' => 'id|1',
+        'change_type' => 'I',
+        'change_time' => Time.now
+      }
+      session.left.insert_record 'rr_pending_changes', {
+        'change_table' => 'extender_no_record',
+        'change_key' => 'id|2',
+        'change_type' => 'I',
+        'change_time' => Time.now
+      }
+
+      run = ReplicationRun.new session, TaskSweeper.new(1)
+      run.run
+
+      session.right.select_all("select * from extender_no_record").should == [{
+        'id' => '2',
+        'name' => 'blub'
+      }]
     ensure
       Committers::NeverCommitter.rollback_current_session
       if session

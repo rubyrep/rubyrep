@@ -85,6 +85,24 @@ describe ReplicationHelper do
     }
   end
 
+  it "options_for_table should return the correct options for the table" do
+    Initializer.configuration.options = {:a => 1, :b => 2}
+    Initializer.configuration.add_table_options 'scanner_records', {:b => 3}
+    rep_run = ReplicationRun.new(Session.new, TaskSweeper.new(1))
+    helper = ReplicationHelper.new(rep_run)
+    options = helper.options_for_table('scanner_records')
+    options[:a].should == 1
+    options[:b].should == 3
+  end
+
+  it "options_for_table should merge the configured options into the default two way replicator options" do
+    rep_run = ReplicationRun.new(Session.new, TaskSweeper.new(1))
+    helper = ReplicationHelper.new(rep_run)
+    helper.options_for_table('scanner_records').include?(:left_change_handling).should be_true
+    helper.options_for_table('scanner_records').include?(:right_change_handling).should be_true
+    helper.options_for_table('scanner_records').include?(:replication_conflict_handling).should be_true
+  end
+
   it "log_replication_outcome should log the replication outcome correctly" do
     session = Session.new
     session.left.begin_db_transaction

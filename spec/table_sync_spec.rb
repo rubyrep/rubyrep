@@ -22,7 +22,7 @@ describe TableSync do
     sync.execute_sync_hook(:before_table_sync)
   end
 
-  it "execute_sync_look should execute the given SQL command" do
+  it "execute_sync_hook should execute the given SQL command" do
     config = deep_copy(standard_config)
     config.add_table_options 'scanner_records', :before_table_sync => 'dummy_command'
     session = Session.new config
@@ -34,7 +34,7 @@ describe TableSync do
     sync.execute_sync_hook(:before_table_sync)
   end
 
-  it "execute_sync_look should execute the given Proc" do
+  it "execute_sync_hook should execute the given Proc" do
     config = deep_copy(standard_config)
     received_handler = nil
     config.add_table_options 'scanner_records',
@@ -48,6 +48,51 @@ describe TableSync do
     received_handler.should == :dummy_helper
   end
 
+  it "event_filtered? should return false if there is no event filter" do
+    session = Session.new standard_config
+    sync = TableSync.new(session, 'scanner_records')
+
+    sync.event_filtered?(:left, :dummy_row).should be_false
+  end
+
+  it "event_filtered? should return false if event filter does not filter sync events" do
+    config = deep_copy(standard_config)
+    config.add_table_options 'scanner_records', :event_filter => Object.new
+    session = Session.new config
+    sync = TableSync.new(session, 'scanner_records')
+
+    sync.event_filtered?(:left, :dummy_row).should be_false
+  end
+
+  it "event_filtered? should signal filtering (i. e. return true) if the event filter result is false" do
+    filter = Object.new
+    def filter.before_sync(helper, type, row)
+      false
+    end
+    config = deep_copy(standard_config)
+    config.add_table_options 'scanner_records', :event_filter => filter
+    session = Session.new config
+    sync = TableSync.new(session, 'scanner_records')
+    sync.event_filtered?(:left, :dummy_row).should be_true
+  end
+
+  it "event_filtered? should return false if the event filter result is true" do
+    filter = {}
+    def filter.before_sync(helper, type, row)
+      self[:args] = [helper, type, row]
+      true
+    end
+    config = deep_copy(standard_config)
+    config.add_table_options 'scanner_records', :event_filter => filter
+    session = Session.new config
+    sync = TableSync.new(session, 'scanner_records')
+    sync.helper = :dummy_helper
+    sync.event_filtered?(:left, :dummy_row).should be_false
+
+    # verify correct parameter assignment
+    filter[:args].should == [:dummy_helper, :left, :dummy_row]
+  end
+
   it "run should synchronize the databases" do
     config = deep_copy(standard_config)
     config.options[:committer] = :never_commit
@@ -56,6 +101,12 @@ describe TableSync do
     after_hook_called = false
     config.options[:before_table_sync] = lambda {|helper| before_hook_called = true}
     config.options[:after_table_sync] = lambda { |helper| after_hook_called = true}
+
+    filter = Object.new
+    def filter.before_sync(helper, type, row)
+      [row].flatten.first['id'] != 6
+    end
+    config.options[:event_filter] = filter
     session = Session.new(config)
     begin
       sync = TableSync.new(session, 'scanner_records')
@@ -68,9 +119,13 @@ describe TableSync do
       row['description'].should == 'left_wins'
 
       # verify that the table was synchronized
-      left_records = session.left.select_all("select * from scanner_records order by id")
-      right_records = session.right.select_all("select * from scanner_records order by id")
+      left_records = session.left.select_all("select * from scanner_records where id <> 6 order by id")
+      right_records = session.right.select_all("select * from scanner_records where id <> 6 order by id")
       left_records.should == right_records
+
+      # verify that the filtered out record was not synced
+      session.left.select_one("select * from scanner_records where id = 6").
+        should be_nil
 
       # verify that hooks where called
       before_hook_called.should be_true
