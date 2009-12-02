@@ -30,17 +30,17 @@ module RR
     def sync_options; @sync_options ||= table_sync.sync_options; end
 
     # Delegates to Committer#insert_record
-    def insert_record(database, values)
+    def insert_record(database, table, values)
       committer.insert_record(database, tables[database], values)
     end
 
     # Delegates to Committer#insert_record
-    def update_record(database, values, old_key = nil)
+    def update_record(database, table, values, old_key = nil)
       committer.update_record(database, tables[database], values, old_key)
     end
 
     # Delegates to Committer#insert_record
-    def delete_record(database, values)
+    def delete_record(database, table, values)
       committer.delete_record(database, tables[database], values)
     end
 

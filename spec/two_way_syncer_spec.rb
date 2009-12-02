@@ -198,8 +198,8 @@ describe Syncers::TwoWaySyncer do
       })
 
     syncer = Syncers::TwoWaySyncer.new(helper)
-    helper.should_receive(:delete_record).with(:left, :dummy_left)
-    helper.should_receive(:delete_record).with(:right, :dummy_right)
+    helper.should_receive(:delete_record).with(:left, 'scanner_records', :dummy_left)
+    helper.should_receive(:delete_record).with(:right, 'scanner_records', :dummy_right)
     syncer.sync_difference(:left, :dummy_left)
     syncer.sync_difference(:right, :dummy_right)
   end
@@ -216,8 +216,8 @@ describe Syncers::TwoWaySyncer do
       })
 
     syncer = Syncers::TwoWaySyncer.new(helper)
-    helper.should_receive(:insert_record).with(:right, :dummy_left)
-    helper.should_receive(:insert_record).with(:left, :dummy_right)
+    helper.should_receive(:insert_record).with(:right, 'scanner_records', :dummy_left)
+    helper.should_receive(:insert_record).with(:left, 'scanner_records', :dummy_right)
     syncer.sync_difference(:left, :dummy_left)
     syncer.sync_difference(:right, :dummy_right)
   end
@@ -234,7 +234,7 @@ describe Syncers::TwoWaySyncer do
       })
 
     syncer = Syncers::TwoWaySyncer.new(helper)
-    helper.should_receive(:update_record).with(:left, :dummy_right)
+    helper.should_receive(:update_record).with(:left, 'scanner_records', :dummy_right)
     syncer.sync_difference(:conflict, [:dummy_left, :dummy_right])
   end
 
@@ -250,7 +250,7 @@ describe Syncers::TwoWaySyncer do
       })
 
     syncer = Syncers::TwoWaySyncer.new(helper)
-    helper.should_receive(:update_record).with(:right, :dummy_left)
+    helper.should_receive(:update_record).with(:right, 'scanner_records', :dummy_left)
     syncer.sync_difference(:conflict, [:dummy_left, :dummy_right])
   end
 end

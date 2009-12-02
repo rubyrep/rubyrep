@@ -120,7 +120,7 @@ describe SyncHelper do
     helper = SyncHelper.new(sync)
     c = helper.instance_eval {committer}
     c.should_receive(:insert_record).with(:right, 'scanner_records', :dummy_record)
-    helper.insert_record :right, :dummy_record
+    helper.insert_record :right, 'scanner_records', :dummy_record
   end
 
   it "update_record should update the given record" do
@@ -128,7 +128,7 @@ describe SyncHelper do
     helper = SyncHelper.new(sync)
     c = helper.instance_eval {committer}
     c.should_receive(:update_record).with(:right, 'scanner_records', :dummy_record, nil)
-    helper.update_record :right, :dummy_record
+    helper.update_record :right, 'scaner_records', :dummy_record
   end
 
   it "update_record should update the given record with the provided old key" do
@@ -136,7 +136,7 @@ describe SyncHelper do
     helper = SyncHelper.new(sync)
     c = helper.instance_eval {committer}
     c.should_receive(:update_record).with(:right, 'scanner_records', :dummy_record, :old_key)
-    helper.update_record :right, :dummy_record, :old_key
+    helper.update_record :right, 'scanner_records', :dummy_record, :old_key
   end
 
   it "delete_record should delete the given record" do
@@ -144,7 +144,7 @@ describe SyncHelper do
     helper = SyncHelper.new(sync)
     c = helper.instance_eval {committer}
     c.should_receive(:delete_record).with(:right, 'scanner_records', :dummy_record)
-    helper.delete_record :right, :dummy_record
+    helper.delete_record :right, 'scanner_records', :dummy_record
   end
 
   it "finalize should be delegated to the committer" do

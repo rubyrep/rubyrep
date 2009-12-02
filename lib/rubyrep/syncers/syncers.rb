@@ -94,15 +94,15 @@ module RR
         case type
         when source
           if sync_helper.sync_options[:insert]
-            sync_helper.insert_record target, row
+            sync_helper.insert_record target, sync_helper.tables[target], row
           end
         when target
           if sync_helper.sync_options[:delete]
-            sync_helper.delete_record target, row
+            sync_helper.delete_record target, sync_helper.tables[target], row
           end
         when :conflict
           if sync_helper.sync_options[:update]
-            sync_helper.update_record target, row[source_record_index]
+            sync_helper.update_record target, sync_helper.tables[target], row[source_record_index]
           end
         end
       end
