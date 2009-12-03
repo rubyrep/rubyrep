@@ -42,7 +42,13 @@ module RR
     def event_filtered?(type, row)
       event_filter = sync_options[:event_filter]
       if event_filter && event_filter.respond_to?(:before_sync)
-        not event_filter.before_sync(helper, type, row)
+        not event_filter.before_sync(
+          helper.left_table,
+          helper.extract_key([row].flatten.first),
+          helper,
+          type,
+          row
+        )
       else
         false
       end

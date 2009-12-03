@@ -28,7 +28,12 @@ module RR
     def event_filtered?(diff)
       event_filter = helper.options_for_table(diff.changes[:left].table)[:event_filter]
       if event_filter && event_filter.respond_to?(:before_replicate)
-        not event_filter.before_replicate(helper, diff)
+        not event_filter.before_replicate(
+          diff.changes[:left].table,
+          helper.type_cast(diff.changes[:left].table, diff.changes[:left].key),
+          helper, 
+          diff
+        )
       else
         false
       end

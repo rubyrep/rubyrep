@@ -52,7 +52,7 @@ describe TableSync do
     session = Session.new standard_config
     sync = TableSync.new(session, 'scanner_records')
 
-    sync.event_filtered?(:left, :dummy_row).should be_false
+    sync.event_filtered?(:left, 'id' => 1).should be_false
   end
 
   it "event_filtered? should return false if event filter does not filter sync events" do
@@ -61,36 +61,37 @@ describe TableSync do
     session = Session.new config
     sync = TableSync.new(session, 'scanner_records')
 
-    sync.event_filtered?(:left, :dummy_row).should be_false
+    sync.event_filtered?(:left, 'id' => 1).should be_false
   end
 
   it "event_filtered? should signal filtering (i. e. return true) if the event filter result is false" do
     filter = Object.new
-    def filter.before_sync(helper, type, row)
+    def filter.before_sync(table, key, helper, type, row)
       false
     end
     config = deep_copy(standard_config)
     config.add_table_options 'scanner_records', :event_filter => filter
     session = Session.new config
     sync = TableSync.new(session, 'scanner_records')
-    sync.event_filtered?(:left, :dummy_row).should be_true
+    sync.helper = SyncHelper.new(sync)
+    sync.event_filtered?(:left, 'id' => 1).should be_true
   end
 
   it "event_filtered? should return false if the event filter result is true" do
     filter = {}
-    def filter.before_sync(helper, type, row)
-      self[:args] = [helper, type, row]
+    def filter.before_sync(table, key, helper, type, row)
+      self[:args] = [table, key, helper, type, row]
       true
     end
     config = deep_copy(standard_config)
     config.add_table_options 'scanner_records', :event_filter => filter
     session = Session.new config
     sync = TableSync.new(session, 'scanner_records')
-    sync.helper = :dummy_helper
-    sync.event_filtered?(:left, :dummy_row).should be_false
+    sync.helper = SyncHelper.new(sync)
+    sync.event_filtered?(:left, 'id' => 1, 'name' => 'bla').should be_false
 
     # verify correct parameter assignment
-    filter[:args].should == [:dummy_helper, :left, :dummy_row]
+    filter[:args].should == ['scanner_records', {'id' => 1}, sync.helper, :left, {'id' => 1, 'name' => 'bla'}]
   end
 
   it "run should synchronize the databases" do
@@ -103,8 +104,8 @@ describe TableSync do
     config.options[:after_table_sync] = lambda { |helper| after_hook_called = true}
 
     filter = Object.new
-    def filter.before_sync(helper, type, row)
-      [row].flatten.first['id'] != 6
+    def filter.before_sync(table, key, helper, type, row)
+      key['id'] != 6
     end
     config.options[:event_filter] = filter
     session = Session.new(config)

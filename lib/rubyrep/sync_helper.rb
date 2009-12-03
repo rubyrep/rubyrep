@@ -26,6 +26,14 @@ module RR
       @tables ||= {:left => left_table, :right => right_table}
     end
 
+    # Given a column_name => value hash of a full row, returns a
+    # column_name => value hash of the primary key columns.
+    # * +row+: the full row
+    # Returns
+    def extract_key(row)
+      row.reject {|column, value| not primary_key_names.include? column }
+    end
+
     # Sync options for the current table sync
     def sync_options; @sync_options ||= table_sync.sync_options; end
 

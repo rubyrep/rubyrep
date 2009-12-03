@@ -21,6 +21,13 @@ describe SyncHelper do
     helper.session.should == sync.session
   end
 
+  it "extract_key should extract the primary key column_name => value pairs" do
+    sync = TableSync.new(Session.new, 'extender_combined_key')
+    helper = SyncHelper.new(sync)
+    helper.extract_key('first_id' => 1, 'second_id' => 2, 'name' => 'bla').
+      should == {'first_id' => 1, 'second_id' => 2}
+  end
+
   it "ensure_event_log should ask the replication_initializer to ensure the event log" do
     sync = TableSync.new(Session.new, 'scanner_records')
     helper = SyncHelper.new(sync)

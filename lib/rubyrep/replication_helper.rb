@@ -77,6 +77,26 @@ module RR
       committer.finalize(success)
     end
 
+    # Converts the row values into their proper types as per table definition.
+    # * +table+: name of the table after whose columns is type-casted.
+    # * +row+: A column_name => value hash of the row
+    # Returns a copy of the column_name => value hash (with type-casted values).
+    def type_cast(table, row)
+      @table_columns ||= {}
+      unless @table_columns.include?(table)
+        column_array = session.left.columns(table)
+        column_hash = {}
+        column_array.each {|column| column_hash[column.name] = column}
+        @table_columns[table] = column_hash
+      end
+      columns = @table_columns[table]
+      type_casted_row = {}
+      row.each_pair do |column_name, value|
+        type_casted_row[column_name] = columns[column_name].type_cast(value)
+      end
+      type_casted_row
+    end
+
     # Logs the outcome of a replication into the replication log table.
     # * +diff+: the replicated ReplicationDifference
     # * +outcome+: string summarizing the outcome of the replication

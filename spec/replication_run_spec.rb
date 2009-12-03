@@ -73,7 +73,7 @@ describe ReplicationRun do
 
       # event_filtered? should signal filtering (i. e. return true) if filter returns false.
       filter = Object.new
-      def filter.before_replicate(helper, diff)
+      def filter.before_replicate(table, key, helper, diff)
         false
       end
       session.configuration.options[:event_filter] = filter
@@ -82,14 +82,14 @@ describe ReplicationRun do
 
       # event_filtered? should return false if filter returns true.
       filter = {}
-      def filter.before_replicate(helper, diff)
-        self[:args] = [helper, diff]
+      def filter.before_replicate(table, key, helper, diff)
+        self[:args] = [table, key, helper, diff]
         true
       end
       session.configuration.options[:event_filter] = filter
       run = ReplicationRun.new session, TaskSweeper.new(1)
       run.event_filtered?(diff).should be_false
-      filter[:args].should == [run.helper, diff]
+      filter[:args].should == ['extender_no_record', {'id' => 1}, run.helper, diff]
     ensure
       Committers::NeverCommitter.rollback_current_session
       if session
@@ -141,8 +141,8 @@ describe ReplicationRun do
       config.options[:committer] = :never_commit
 
       filter = Object.new
-      def filter.before_replicate(helper, diff)
-        diff.changes[:left].key['id'] != '1'
+      def filter.before_replicate(table, key, helper, diff)
+        key['id'] != 1
       end
       config.options[:event_filter] = filter
 

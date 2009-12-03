@@ -22,6 +22,28 @@ describe ReplicationHelper do
     helper.session.should == rep_run.session
   end
 
+  it "type_cast should convert the row values correctly" do
+    rep_run = ReplicationRun.new(Session.new, TaskSweeper.new(1))
+
+    helper = ReplicationHelper.new(rep_run)
+    helper.type_cast('scanner_records', 'id' => '1', 'name' => 'bla').
+      should == {'id' => 1, 'name' => 'bla'}
+
+    string_row = {
+      'id' => '1',
+      'decimal_test' => '1.234',
+      'timestamp' => 'Sat Nov 10 20:15:01 +0900 2007',
+      'binary_test' => "\004\b[\n\"\bbla:\ndummyi\006i\ai\b"
+    }
+    row = helper.type_cast('extender_type_check', string_row)
+    row.should == {
+      'id' => 1,
+      'decimal_test' => BigDecimal.new("1.234"),
+      'timestamp' => Time.local(2007,"nov",10,20,15,1),
+      'binary_test' => Marshal.dump(['bla',:dummy,1,2,3])
+    }
+  end
+
   it "new_transaction? should delegate to the committer" do
     session = Session.new
     rep_run = ReplicationRun.new(session, TaskSweeper.new(1))
