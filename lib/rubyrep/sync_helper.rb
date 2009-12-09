@@ -42,7 +42,7 @@ module RR
       committer.insert_record(database, tables[database], values)
     end
 
-    # Delegates to Committer#insert_record
+    # Delegates to Committer#update_record
     def update_record(database, table, values, old_key = nil)
       committer.update_record(database, tables[database], values, old_key)
     end
