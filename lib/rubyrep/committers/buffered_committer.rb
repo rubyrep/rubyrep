@@ -16,11 +16,13 @@ module RR
 
       # Switches the trigger mode of the specified +table+ in the specified
       # +database+ to ignore rubyrep activity.
+      # * +database+: identifying the database (either :+left+ or :+right+)
+      # * +table+: name of the table
       def exclude_rr_activity(database, table)
         trigger_mode_switcher.exclude_rr_activity database, table
       end
 
-      # Returns the trigger mode switcher (creates it if necessary)
+      # Returns the TriggerModeSwitcher (creates it if necessary)
       def trigger_mode_switcher
         @trigger_mode_switcher ||= TriggerModeSwitcher.new session
       end
@@ -96,36 +98,39 @@ module RR
       end
 
       # A new committer is created for each table sync.
-      #   * session: a Session object representing the current database session
+      # * session: a Session object representing the current database session
       def initialize(session)
         super
         begin_db_transactions
       end
 
-      # Inserts the specified record in the specified +database+ (either :left or :right).
-      # +table+ is the name of the target table.
-      # +values+ is a hash of column_name => value pairs.
+      # Inserts the specified record in the specified database.
+      # * +database+: identifying the database (either :+left+ or :+right+)
+      # * +table+: name of the table
+      # * +values+: a hash of column_name => value pairs.
       def insert_record(database, table, values)
         exclude_rr_activity database, table
         super
         commit
       end
 
-      # Updates the specified record in the specified +database+ (either :left or :right).
-      # +table+ is the name of the target table.
-      # +values+ is a hash of column_name => value pairs.
-      # +old_key+ is a column_name => value hash with the original primary key.
-      # If +old_key+ is +nil+, then the primary key must be contained in +values+.
+      # Updates the specified record in the specified database.
+      # * +database+: identifying the database (either :+left+ or :+right+)
+      # * +table+: name of the table
+      # * +values+: a hash of column_name => value pairs.
+      # * +old_key+:
+      #   A column_name => value hash identifying original primary key.
+      #   If +nil+, then the primary key must be contained in +values+.
       def update_record(database, table, values, old_key = nil)
         exclude_rr_activity database, table
         super
         commit
       end
 
-      # Deletes the specified record in the specified +database+ (either :left or :right).
-      # +table+ is the name of the target table.
-      # +values+ is a hash of column_name => value pairs. (Only the primary key
-      # values will be used and must be included in the hash.)
+      # Deletes the specified record in the specified database.
+      # * +database+: identifying the database (either :+left+ or :+right+)
+      # * +table+: name of the table
+      # * +values+: a hash of column_name => value pairs (must only contain primary key columns).
       def delete_record(database, table, values)
         exclude_rr_activity database, table
         super
@@ -133,7 +138,7 @@ module RR
       end
 
       # Is called after the last insert / update / delete query.
-      # +success+ should be true if there were no problems, false otherwise.
+      # * +success+: should be true if there were no problems, false otherwise.
       def finalize(success = true)
         if success
           commit_db_transactions

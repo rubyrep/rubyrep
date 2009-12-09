@@ -37,17 +37,17 @@ module RR
     # Sync options for the current table sync
     def sync_options; @sync_options ||= table_sync.sync_options; end
 
-    # Delegates to Committer#insert_record
+    # Delegates to Committers::BufferedCommitter#insert_record
     def insert_record(database, table, values)
       committer.insert_record(database, tables[database], values)
     end
 
-    # Delegates to Committer#update_record
+    # Delegates to Committers::BufferedCommitter#update_record
     def update_record(database, table, values, old_key = nil)
       committer.update_record(database, tables[database], values, old_key)
     end
 
-    # Delegates to Committer#insert_record
+    # Delegates to Committers::BufferedCommitter#delete_record
     def delete_record(database, table, values)
       committer.delete_record(database, tables[database], values)
     end
