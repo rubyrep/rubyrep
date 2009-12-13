@@ -257,6 +257,12 @@ def create_sample_schema(database, config)
       t.column :name, :string
     end
 
+    connection = ActiveRecord::Base.connection
+    # Neccessary to create tables with dots in ActiveRecord 2.3.5
+    def connection.extract_pg_identifier_from_name(name)
+      return name, nil
+    end
+
     create_table STRANGE_TABLE do |t|
       t.column :first_fk, :integer
       t.column :second_fk, :integer

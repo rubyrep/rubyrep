@@ -99,7 +99,7 @@ describe "ConnectionExtender", :shared => true do
     begin
       session.left.begin_db_transaction
       session.left.insert_record('extender_type_check', {'id' => 6, 'binary_test' => org_data})
-      
+
       row = session.left.select_one(
         'select md5(binary_test) as md5 from extender_type_check where id = 6'
       )

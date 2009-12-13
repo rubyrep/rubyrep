@@ -4,7 +4,7 @@ include FileUtils
 require 'rubygems'
 
 # Load essential gems. Exit if not available.
-%w[rake activerecord].each do |req_gem|
+%w[rake active_record].each do |req_gem|
   begin
     require req_gem
   rescue LoadError

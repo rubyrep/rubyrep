@@ -11,10 +11,21 @@ describe "Unusual table and column name support" do
     session = Session.new
     session.left.begin_db_transaction
     begin
-      session.left.insert_record STRANGE_TABLE, {
-        'id' => 1,
-        STRANGE_COLUMN => 'bla'
+      select_row = Proc.new {
+        session.left.
+          select_one(
+          "select #{session.left.quote_column_name(STRANGE_COLUMN)}
+           from #{session.left.quote_table_name(STRANGE_TABLE)}")
       }
+
+      session.left.insert_record STRANGE_TABLE, 'id' => 1, STRANGE_COLUMN => 'bla'
+      select_row.call[STRANGE_COLUMN].should == 'bla'
+
+      session.left.update_record STRANGE_TABLE, 'id' => 1, STRANGE_COLUMN => 'blub'
+      select_row.call[STRANGE_COLUMN].should == 'blub'
+
+      session.left.delete_record STRANGE_TABLE, 'id' => 1
+      select_row.call.should be_nil
     ensure
       session.left.rollback_db_transaction
     end

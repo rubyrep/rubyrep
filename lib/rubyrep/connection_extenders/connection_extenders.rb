@@ -76,7 +76,7 @@ module RR
       # Hack to get Postgres schema support under JRuby to par with the standard
       # ruby version
       if RUBY_PLATFORM =~ /java/ and config[:adapter].to_sym == :postgresql
-        connection.extend RR::ConnectionExtenders::JdbcPostgreSQLExtender
+        connection.extend RR::ConnectionExtenders::PostgreSQLExtender
         connection.initialize_search_path
       end
 

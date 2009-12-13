@@ -15,6 +15,24 @@ module RR
         @active = false
       end
 
+      # Terrible monkey patch for ActiveRecord::ConnectionAdapters::JdbcAdapter:
+      # Since JRuby 1.3.0 select returns already type cases values (e. g. numbers
+      # as actual integers, not strings).
+      # However standard Ruby returns everything as String.
+      # To have consistent behaviour, I am here explicitely casting all non-strings
+      # back to String.
+      def select(sql, name=nil)
+        rows = execute(sql,name)
+        rows.each do |row|
+          row.each_pair do |column, value|
+            unless value == nil or value.kind_of?(String)
+              row[column] = value.to_s
+            end
+          end
+        end
+        rows
+      end
+
       # Returns an ordered list of primary key column names of the given table
       def primary_key_names(table)
         if tables.grep(/^#{table}$/i).empty?
@@ -55,44 +73,26 @@ module RR
         result
       end
     end
+  end
+end
 
-    # PostgreSQL specific functionality not provided by the standard JDBC
-    # connection extender:
-    # * Hack to get schema support for Postgres under JRuby on par with the
-    #   standard ruby version.
-    module JdbcPostgreSQLExtender
-      require 'jdbc_adapter/jdbc_postgre'
-      require "#{File.dirname(__FILE__)}/postgresql_extender"
-
-      include PostgreSQLExtender
-
-      class JdbcPostgreSQLColumn < ActiveRecord::ConnectionAdapters::Column
-        include ::JdbcSpec::PostgreSQL::Column
+# activerecord-jdbc-adapter 0.9.1 (7b3f3eca08149567070837fad63696052dc36cd6)
+# improves SQLite binary support by overwriting the global string_to_binary
+# methods.
+# This appears to break binary support for MySQL.
+# And here comes the monkey patch to revert it again...
+require 'active_record/connection_adapters/jdbc_adapter_spec'
+require 'jdbc_adapter/jdbc_sqlite3'
+module ::ActiveRecord
+  module ConnectionAdapters
+    class JdbcColumn < Column
+      def self.string_to_binary(value)
+        value
       end
 
-      # Returns the list of all column definitions for a table.
-      def columns(table_name, name = nil)
-        # Limit, precision, and scale are all handled by the superclass.
-        column_definitions(table_name).collect do |name, type, default, notnull|
-          JdbcPostgreSQLColumn.new(name, default, type, notnull == 'f')
-        end
-      end
-
-      # Sets the schema search path as per configuration parameters
-      def initialize_search_path
-        execute "SET search_path TO #{config[:schema_search_path]}" if config[:schema_search_path]
-      end
-
-      # Converts the given Time object into the correctly formatted string
-      # representation.
-      # 
-      # Monkeypatched as activerecord-jdbcpostgresql-adapter (at least in version
-      # 0.8.2) does otherwise "loose" the microseconds when writing Time values
-      # to the database.
-      def quoted_date(value)
-        "#{value.strftime("%Y-%m-%d %H:%M:%S")}#{value.respond_to?(:usec) ? ".#{value.usec.to_s.rjust(6, '0')}" : ""}"
+      def self.binary_to_string(value)
+        value
       end
     end
   end
 end
-

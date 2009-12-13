@@ -107,6 +107,15 @@ module RR
         SQL
       end
 
+      # Disables schema extraction from table names by overwriting the according
+      # ActiveRecord method.
+      # Necessary to support table names containing dots (".").
+      # (This is possible as rubyrep exclusively uses the search_path setting to
+      # support PostgreSQL schemas.)
+      def extract_pg_identifier_from_name(name)
+        return name, nil
+      end
+
       # Returns an ordered list of primary key column names of the given table
       def primary_key_names(table)
         row = self.select_one(<<-end_sql)
@@ -176,6 +185,63 @@ module RR
         end
         result
       end
+
+      # Sets the schema search path as per configuration parameters
+      def initialize_search_path
+        execute "SET search_path TO #{config[:schema_search_path] || 'public'}"
+      end
+
+      # *** Moneky patch***
+      # Returns the column objects for the named table.
+      # Fixes JRuby schema support
+      def columns(table_name, name = nil)
+        jdbc_connection = @connection.connection # the actual JDBC DatabaseConnection
+        @unquoted_schema ||= select_one("show search_path")['search_path']
+
+        # check if table exists
+        table_results = jdbc_connection.meta_data.get_tables(
+          jdbc_connection.catalog,
+          @unquoted_schema,
+          table_name,
+          ["TABLE","VIEW","SYNONYM"].to_java(:string)
+        )
+        table_exists = table_results.next
+        table_results.close
+        raise "table '#{table_name}' not found" unless table_exists
+
+        # get ResultSet for columns of table
+        column_results = jdbc_connection.meta_data.get_columns(
+          jdbc_connection.catalog,
+          @unquoted_schema,
+          table_name,
+          nil
+        )
+        
+        # create the Column objects
+        columns = []
+        while column_results.next
+          
+          # generate type clause
+          type_clause = column_results.get_string('TYPE_NAME')
+          precision = column_results.get_int('COLUMN_SIZE')
+          scale = column_results.get_int('DECIMAL_DIGITS')
+          if precision > 0
+            type_clause += "(#{precision}#{scale > 0 ? ",#{scale}" : ""})"
+          end
+
+          # create column
+          columns << ::ActiveRecord::ConnectionAdapters::JdbcColumn.new(
+            @config,
+            column_results.get_string('COLUMN_NAME'),
+            column_results.get_string('COLUMN_DEF'),
+            type_clause,
+            column_results.get_string('IS_NULLABLE').strip == "NO"
+          )
+        end
+        column_results.close
+        
+        columns
+      end if RUBY_PLATFORM =~ /java/
 
       # *** Monkey patch***
       # Returns the list of a table's column names, data types, and default values.

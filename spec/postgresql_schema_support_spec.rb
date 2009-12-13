@@ -61,7 +61,7 @@ describe "PostgreSQL schema support" do
         should == 'select "id", "name" from "rr_simple" order by "id"'
     end
 
-    it "TypeCasingCursor should work" do
+    it "TypeCastingCursor should work" do
       session = Session.new
       org_cursor = session.left.select_cursor(:query => "select id, name from rr_simple where id = 1")
       cursor = TypeCastingCursor.new session.left, 'rr_simple', org_cursor
