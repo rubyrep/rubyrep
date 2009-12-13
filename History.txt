@@ -1,3 +1,8 @@
+== 1.1.0 2009-12-15
+
+* Feature: filtering of sync / replication events with custom specified functionality
+* Feature: compatibility with JRuby 1.4.0 and ActiveRecord 2.3.5
+
 == 1.0.9 2009-10-14
 
 * Bug fix: ReplicationRun#run should load only one change log record to figure out if there are pending changes
