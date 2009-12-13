@@ -55,7 +55,7 @@ describe "ConnectionExtender", :shared => true do
     result = session.left.select_cursor(:table => 'scanner_records', :row_buffer_size => 2)
     result.next_row
     result.next_row
-    result.next_row['id'].should == '3'
+    result.next_row['id'].should == 3
     result.clear
   end
 
@@ -63,7 +63,7 @@ describe "ConnectionExtender", :shared => true do
     session = Session.new
     result = session.left.select_cursor :table => 'extender_one_record'
     result.next?.should be_true
-    result.next_row.should == {'id' => "1", 'name' => 'Alice'}
+    result.next_row.should == {'id' => 1, 'name' => 'Alice'}
   end
   
   it "select_cursor next_row should raise if there are no records" do
@@ -74,21 +74,16 @@ describe "ConnectionExtender", :shared => true do
   
   it "select_cursor next_row should handle multi byte characters correctly" do
     session = Session.new
-    result = session.left.select_cursor :query => "select id, multi_byte from extender_type_check"
-    row = result.next_row
-    row.should == {
-      'id' => "1", 
-      'multi_byte' => "よろしくお願(ねが)いします yoroshiku onegai shimasu: I humbly ask for your favor."
-    }
+    result = session.left.select_record(:table => "extender_type_check")['multi_byte'].
+      should == "よろしくお願(ねが)いします yoroshiku onegai shimasu: I humbly ask for your favor."
   end
   
   it "select_cursor should read null values correctly" do
     session = Session.new
-    result = session.left.select_cursor(
+    result = session.left.select_record(
       :table => 'extender_combined_key',
-      :row_keys => [{'first_id' => 3, 'second_id' => 1}]
-    )
-    result.next_row.should == {'first_id' => '3', 'second_id' => '1', 'name' => nil}
+      :row_keys => ['first_id' => 3, 'second_id' => 1]
+    ).should == {'first_id' => 3, 'second_id' => 1, 'name' => nil}
   end
 
   it "should read and write binary data correctly" do
@@ -105,11 +100,10 @@ describe "ConnectionExtender", :shared => true do
       )
       row['md5'].should == Digest::MD5.hexdigest(org_data)
 
-      cursor = session.left.select_cursor(
-        :query => "select id, binary_test from extender_type_check where id = 6"
-      )
-      cursor = TypeCastingCursor.new session.left, 'extender_type_check', cursor
-      result_data = cursor.next_row['binary_test']
+      result_data = session.left.select_record(
+        :table => "extender_type_check",
+        :row_keys => ["id" => 6]
+      )['binary_test']
       Digest::MD5.hexdigest(result_data).should == Digest::MD5.hexdigest(org_data)
     ensure
       session.left.rollback_db_transaction
@@ -127,9 +121,10 @@ describe "ConnectionExtender", :shared => true do
       sql = "insert into extender_type_check(id, text_test) values(2, '#{org_data}')"
       session.left.execute sql
 
-      org_cursor = session.left.select_cursor(:query => "select id, text_test from extender_type_check where id = 2")
-      cursor = TypeCastingCursor.new session.left, 'extender_type_check', org_cursor
-      result_data = cursor.next_row['text_test']
+      result_data = session.left.select_record(
+        :table => "extender_type_check",
+        :row_keys => ["id" => 2]
+      )["text_test"]
     ensure
       session.left.rollback_db_transaction
     end

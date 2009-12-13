@@ -115,9 +115,9 @@ describe ProxyConnection do
   # (To verify the behaviour for all supported databases)
 
   it "select_cursor should return the result fetcher" do
-    fetcher = @connection.select_cursor(:table => 'scanner_records')
+    fetcher = @connection.select_cursor(:table => 'scanner_records', :type_cast => false)
     fetcher.connection.should == @connection
-    fetcher.options.should == {:table => 'scanner_records'}
+    fetcher.options.should == {:table => 'scanner_records', :type_cast => false}
   end
 
   it "select_cursor should return a type casting cursor if :type_cast option is specified" do
@@ -222,8 +222,10 @@ describe ProxyConnection do
     @connection.begin_db_transaction
     begin
       @connection.insert_record('scanner_records', 'id' => 9, 'name' => 'bla')
-      @connection.select_one("select * from scanner_records where id = 9") \
-        .should == {'id' => '9', 'name' => 'bla'}
+      @connection.select_record(
+        :table => 'scanner_records',
+        :row_keys => ['id' => 9]
+      ).should == {'id' => 9, 'name' => 'bla'}
     ensure
       @connection.rollback_db_transaction
     end
@@ -233,10 +235,10 @@ describe ProxyConnection do
     @connection.begin_db_transaction
     begin
       @connection.insert_record('extender_combined_key', 'first_id' => 8, 'second_id' => '9')
-      @connection.select_one(
-        "select first_id, second_id 
-         from extender_combined_key where (first_id, second_id) = (8, 9)") \
-        .should == {'first_id' => '8', 'second_id' => '9'}
+      @connection.select_record(
+        :table => 'extender_combined_key',
+        :row_keys => ['first_id' => 8, 'second_id' => 9]
+      ).should == {'first_id' => 8, 'second_id' => 9, 'name' => nil}
     ensure
       @connection.rollback_db_transaction
     end
@@ -246,10 +248,10 @@ describe ProxyConnection do
     @connection.begin_db_transaction
     begin
       @connection.insert_record('extender_combined_key', 'first_id' => 8, 'second_id' => '9', 'name' => nil)
-      @connection.select_one(
-        "select first_id, second_id, name 
-         from extender_combined_key where (first_id, second_id) = (8, 9)") \
-        .should == {'first_id' => '8', 'second_id' => '9', "name" => nil}
+      @connection.select_record(
+        :table => 'extender_combined_key',
+        :row_keys => ['first_id' => 8, 'second_id' => 9]
+      ).should == {'first_id' => 8, 'second_id' => 9, "name" => nil}
     ensure
       @connection.rollback_db_transaction
     end
@@ -289,8 +291,10 @@ describe ProxyConnection do
     @connection.begin_db_transaction
     begin
       @connection.update_record('scanner_records', 'id' => 1, 'name' => 'update_test')
-      @connection.select_one("select * from scanner_records where id = 1") \
-        .should == {'id' => '1', 'name' => 'update_test'}
+      @connection.select_record(
+        :table => "scanner_records",
+        :row_keys => ['id' => 1]
+      ).should == {'id' => 1, 'name' => 'update_test'}
     ensure
       @connection.rollback_db_transaction
     end
@@ -314,10 +318,10 @@ describe ProxyConnection do
     @connection.begin_db_transaction
     begin
       @connection.update_record('extender_combined_key', 'first_id' => 1, 'second_id' => '1', 'name' => 'xy')
-      @connection.select_one(
-        "select first_id, second_id, name
-         from extender_combined_key where (first_id, second_id) = (1, 1)") \
-        .should == {'first_id' => '1', 'second_id' => '1', 'name' => 'xy'}
+      @connection.select_record(
+        :table => 'extender_combined_key',
+        :row_keys => ['first_id' => 1, 'second_id' => 1]
+      ).should == {'first_id' => 1, 'second_id' => 1, 'name' => 'xy'}
     ensure
       @connection.rollback_db_transaction
     end
@@ -329,10 +333,10 @@ describe ProxyConnection do
       @connection.update_record 'extender_combined_key',
         {'first_id' => '8', 'second_id' => '9', 'name' => 'xy'},
         {'first_id' => '1', 'second_id' => '1'}
-      @connection.select_one(
-        "select first_id, second_id, name
-         from extender_combined_key where (first_id, second_id) = (8, 9)") \
-        .should == {'first_id' => '8', 'second_id' => '9', 'name' => 'xy'}
+      @connection.select_record(
+        :table => 'extender_combined_key',
+        :row_keys => ['first_id' => 8, 'second_id' => 9]
+      ).should == {'first_id' => 8, 'second_id' => 9, 'name' => 'xy'}
     ensure
       @connection.rollback_db_transaction
     end
@@ -342,10 +346,10 @@ describe ProxyConnection do
     @connection.begin_db_transaction
     begin
       @connection.update_record('extender_combined_key', 'first_id' => 1, 'second_id' => '1', 'name' => nil)
-      @connection.select_one(
-        "select first_id, second_id, name
-         from extender_combined_key where (first_id, second_id) = (1, 1)") \
-        .should == {'first_id' => '1', 'second_id' => '1', 'name' => nil}
+      @connection.select_record(
+        :table => 'extender_combined_key',
+        :row_keys => ['first_id' => 1, 'second_id' => 1]
+      ).should == {'first_id' => 1, 'second_id' => 1, 'name' => nil}
     ensure
       @connection.rollback_db_transaction
     end
@@ -364,10 +368,10 @@ describe ProxyConnection do
       }
       @connection.update_record('extender_type_check', test_data)
 
-      org_cursor = @connection.select_cursor(:query => "select * from extender_type_check where id = 1")
-      cursor = TypeCastingCursor.new @connection, 'extender_type_check', org_cursor
-      result_data = cursor.next_row
-      result_data.should == test_data
+      @connection.select_record(
+        :table => "extender_type_check",
+        :row_keys => ["id" => 1]
+      ).should == test_data
     ensure
       @connection.rollback_db_transaction
     end

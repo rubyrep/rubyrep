@@ -121,8 +121,8 @@ describe ReplicationRun do
       run = ReplicationRun.new session, TaskSweeper.new(1)
       run.run
 
-      session.right.select_one("select * from extender_no_record").should == {
-        'id' => '1',
+      session.right.select_record(:table => "extender_no_record").should == {
+        'id' => 1,
         'name' => 'bla'
       }
     ensure
@@ -172,8 +172,8 @@ describe ReplicationRun do
       run = ReplicationRun.new session, TaskSweeper.new(1)
       run.run
 
-      session.right.select_all("select * from extender_no_record").should == [{
-        'id' => '2',
+      session.right.select_records(:table => "extender_no_record").should == [{
+        'id' => 2,
         'name' => 'blub'
       }]
     ensure
@@ -358,8 +358,8 @@ describe ReplicationRun do
       run = ReplicationRun.new session, TaskSweeper.new(1)
       run.run
 
-      session.right.select_one("select * from extender_no_record").should == {
-        'id' => '1',
+      session.right.select_record(:table => "extender_no_record").should == {
+        'id' => 1,
         'name' => 'bla'
       }
 

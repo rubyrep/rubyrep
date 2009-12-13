@@ -429,8 +429,8 @@ describe Replicators::TwoWayReplicator do
       }
       replicator.replicate_difference diff, 2
 
-      session.left.select_one("select * from extender_no_record").should == {
-        'id' => '1',
+      session.left.select_record(:table => "extender_no_record").should == {
+        'id' => 1,
         'name' => 'blub'
       }
     ensure
@@ -705,8 +705,8 @@ describe Replicators::TwoWayReplicator do
       }
       replicator.replicate_difference diff, 2
 
-      session.right.select_one("select * from extender_no_record").should == {
-        'id' => '2',
+      session.right.select_record(:table => "extender_no_record").should == {
+        'id' => 2,
         'name' => 'bla'
       }
     ensure

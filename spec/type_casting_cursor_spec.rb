@@ -16,9 +16,10 @@ describe TypeCastingCursor do
   
   it "next_row should delegate next? and clear to the original cursor" do
     session = Session.new
-    org_cursor = session.left.select_cursor(:query => "select id from extender_type_check where id = 1")
-    
-    cursor = TypeCastingCursor.new session.left, 'extender_type_check', org_cursor
+    cursor = session.left.select_cursor(
+      :query => "select id from extender_type_check where id = 1",
+      :table => "extender_type_check"
+    )
     cursor.next?.should be_true
     row = cursor.next_row
     cursor.next?.should be_false
@@ -27,11 +28,11 @@ describe TypeCastingCursor do
   
   it "next_row should cast rows - including uncommon data types - correctly" do
     session = Session.new
-    org_cursor = session.left.select_cursor(:query => "select id, decimal_test, timestamp, binary_test from extender_type_check where id = 1")
-    cursor = TypeCastingCursor.new session.left, 'extender_type_check', org_cursor
+    row = session.left.select_record(
+      :query => "select id, decimal_test, timestamp, binary_test from extender_type_check where id = 1",
+      :table => "extender_type_check"
+    )
 
-    row = cursor.next_row
-    
     # verify that the row fields have been converted to the correct types
     row['id'].should be_an_instance_of(Fixnum)
     row['timestamp'].should be_an_instance_of(Time)
@@ -45,6 +46,5 @@ describe TypeCastingCursor do
       'timestamp' => Time.local(2007,"nov",10,20,15,1),
       'binary_test' => Marshal.dump(['bla',:dummy,1,2,3])
     }
-    cursor.clear
   end
 end

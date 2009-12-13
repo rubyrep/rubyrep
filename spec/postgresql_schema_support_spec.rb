@@ -63,7 +63,10 @@ describe "PostgreSQL schema support" do
 
     it "TypeCastingCursor should work" do
       session = Session.new
-      org_cursor = session.left.select_cursor(:query => "select id, name from rr_simple where id = 1")
+      org_cursor = session.left.select_cursor(
+        :query => "select id, name from rr_simple where id = 1",
+        :type_cast => false
+      )
       cursor = TypeCastingCursor.new session.left, 'rr_simple', org_cursor
 
       row = cursor.next_row

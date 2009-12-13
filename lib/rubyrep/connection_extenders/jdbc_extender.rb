@@ -15,24 +15,6 @@ module RR
         @active = false
       end
 
-      # Terrible monkey patch for ActiveRecord::ConnectionAdapters::JdbcAdapter:
-      # Since JRuby 1.3.0 select returns already type cases values (e. g. numbers
-      # as actual integers, not strings).
-      # However standard Ruby returns everything as String.
-      # To have consistent behaviour, I am here explicitely casting all non-strings
-      # back to String.
-      def select(sql, name=nil)
-        rows = execute(sql,name)
-        rows.each do |row|
-          row.each_pair do |column, value|
-            unless value == nil or value.kind_of?(String)
-              row[column] = value.to_s
-            end
-          end
-        end
-        rows
-      end
-
       # Returns an ordered list of primary key column names of the given table
       def primary_key_names(table)
         if tables.grep(/^#{table}$/i).empty?

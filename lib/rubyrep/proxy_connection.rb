@@ -184,19 +184,46 @@ module RR
     # * first build the query based on options forwarded to #table_select_query
     # +options+ is a hash with
     # * :+query+: executes the given query
-    # * :+type_cast+: if +true+, build a type casting cursor around the result
-    # * :+table+: name of the table from which to read data
+    # * :+type_cast+:
+    #   Unless explicitely disabled with +false+, build type casting cursor
+    #   around result.
+    # * :+table+:
+    #   Name of the table from which to read data.
+    #   Required unless type casting is disabled.
     # * further options as taken by #table_select_query to build the query
     # * :+row_buffer_size+:
     #   Integer controlling how many rows a read into memory at one time.
     def select_cursor(options)
       cursor = ResultFetcher.new(self, options)
-      if options[:type_cast]
+      unless options[:type_cast] == false
         cursor = TypeCastingCursor.new(self, options[:table], cursor)
       end
       cursor
     end
+
+    # Reads the designated record from the database.
+    # Refer to #select_cursor for details parameter description.
+    # Returns the first matching row (column_name => value hash or +nil+).
+    def select_record(options)
+      cursor = select_cursor({:row_buffer_size => 1}.merge(options))
+      row = cursor.next? ? cursor.next_row : nil
+      cursor.clear
+      row
+    end
     
+    # Reads the designated records from the database.
+    # Refer to #select_cursor for details parameter description.
+    # Returns an array of matching rows (column_name => value hashes).
+    def select_records(options)
+      cursor = select_cursor(options)
+      rows = []
+      while cursor.next?
+        rows << cursor.next_row
+      end
+      cursor.clear
+      rows
+    end
+
     # Create a session on the proxy side according to provided configuration hash.
     # +config+ is a hash as described by ActiveRecord::Base#establish_connection
     def initialize(config)

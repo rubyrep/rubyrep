@@ -12,10 +12,8 @@ describe NoisyConnection do
 
   it "select_cursor should return correct results" do
     @connection.sweeper.should_receive(:ping).exactly(4).times
-    fetcher = @connection.select_cursor(:table => 'scanner_records')
-    row = fetcher.next_row
-    row.should == {
-      'id' => '1',
+    @connection.select_record(:table => 'scanner_records').should == {
+      'id' => 1,
       'name' => 'Alice - exists in both databases'
     }
   end
@@ -26,9 +24,8 @@ describe NoisyConnection do
     begin
       @connection.insert_record('extender_combined_key', 'first_id' => 8, 'second_id' => '9', 'name' => nil)
       @connection.select_one(
-        "select first_id, second_id, name
-         from extender_combined_key where (first_id, second_id) = (8, 9)") \
-        .should == {'first_id' => '8', 'second_id' => '9', "name" => nil}
+        "select name from extender_combined_key where (first_id, second_id) = (8, 9)"
+      ).should == {"name" => nil}
     ensure
       @connection.rollback_db_transaction
     end
@@ -39,8 +36,9 @@ describe NoisyConnection do
     @connection.begin_db_transaction
     begin
       @connection.update_record('scanner_records', 'id' => 1, 'name' => 'update_test')
-      @connection.select_one("select * from scanner_records where id = 1") \
-        .should == {'id' => '1', 'name' => 'update_test'}
+      @connection.select_one(
+        "select name from scanner_records where id = 1"
+      ).should == {'name' => 'update_test'}
     ensure
       @connection.rollback_db_transaction
     end

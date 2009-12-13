@@ -121,8 +121,8 @@ describe LoggedChange do
       change = LoggedChange.new loader
       change.load_specified 'left_table', {'id' => 1}
 
-      change.first_changed_at.to_s.should == t1.to_s
-      change.last_changed_at.to_s.should == t2.to_s
+      (change.first_changed_at - t1).abs.should < 1
+      (change.last_changed_at - t2).abs.should < 1
     ensure
       session.left.rollback_db_transaction
     end
