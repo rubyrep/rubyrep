@@ -2,6 +2,37 @@ require File.dirname(__FILE__) + '/spec_helper.rb'
 
 include RR
 
+describe ConnectionExtenders do
+  before(:each) do
+    Initializer.configuration = standard_config
+  end
+
+  it "db_connect should install the already created logger" do
+    configuration = deep_copy(Initializer.configuration)
+    io = StringIO.new
+    logger = Logger.new(io)
+    configuration.left[:logger] = logger
+    session = Session.new configuration
+    session.left.select_one "select 'left_query'"
+    session.right.select_one "select 'right_query'"
+
+    io.string.should =~ /left_query/
+    io.string.should_not =~ /right_query/
+  end
+
+  it "db_connect should create and install the specified logger" do
+    configuration = deep_copy(Initializer.configuration)
+    io = StringIO.new
+    configuration.left[:logger] = io
+    session = Session.new configuration
+    session.left.select_one "select 'left_query'"
+    session.right.select_one "select 'right_query'"
+
+    io.string.should =~ /left_query/
+    io.string.should_not =~ /right_query/
+  end
+end
+
 describe ConnectionExtenders, "Registration" do
   before(:each) do
     Initializer.configuration = standard_config
@@ -34,7 +65,7 @@ describe ConnectionExtenders, "Registration" do
     
     ConnectionExtenders.db_connect Initializer.configuration.left
   end
-    
+
   it "db_connect should use jdbc configuration adapter and extender under jruby" do
     fake_ruby_platform 'java' do
       mock_active_record :once

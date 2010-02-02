@@ -1,3 +1,7 @@
+== 1.1.1 2009-02-02
+
+* Feature: optional use of an SQL logger
+
 == 1.1.0 2009-12-15
 
 * Feature: filtering of sync / replication events with custom specified functionality

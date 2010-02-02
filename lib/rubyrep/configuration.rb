@@ -10,8 +10,17 @@ module RR
     # Connection settings for the "right" database.
     # Takes a similar hash as ActiveRecord::Base.establish_connection.
     # Additional settings in case a proxy is used:
-    # * +proxy_host+: name or IP address of where the proxy is running
-    # * +proxy_port+: port on which the proxy is listening
+    # * :+proxy_host+: name or IP address of where the proxy is running
+    # * :+proxy_port+: port on which the proxy is listening
+    # Other additional settings:
+    # * :+logger+:
+    #   Specify an SQL statement logger for this database connection.
+    #   Can be either
+    #   * a logger instance itself (Logger or Log4r::Logger) or
+    #   * the parameter to create a Logger with Logger.new
+    #   Examples:
+    #     +config.left[:logger] = STDOUT
+    #     +config.right[:logger] = Logger.new('rubyrep_debug.log')
     attr_accessor :right
     
     # Returns true unless running on windows...

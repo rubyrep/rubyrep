@@ -59,7 +59,7 @@ module RR
         DummyActiveRecord.establish_connection(config)
       end
       connection = DummyActiveRecord.connection
-
+      
       # Delete the database connection from ActiveRecords's 'memory'
       ActiveRecord::Base.connection_handler.connection_pools.delete DummyActiveRecord.name
       
@@ -98,25 +98,45 @@ module RR
     def self.connection_cache=(cache)
       @@connection_cache = cache
     end
+
+    # Installs the configured logger (if any) into the database connection.
+    # * +db_connection+: database connection (as produced by #db_connect)
+    # * +config+: database configuration (as provided to #db_connect)
+    def self.install_logger(db_connection, config)
+      if config[:logger]
+        if config[:logger].respond_to?(:debug)
+          logger = config[:logger]
+        else
+          logger = Logger.new(config[:logger])
+        end
+        db_connection.instance_variable_set :@logger, logger
+      end
+    end
     
     # Creates database connections by calling #db_connect_without_cache with the 
     # provided +config+ configuration hash.
     # A new database connection is created only if no according cached connection
     # is available.
     def self.db_connect(config)
-      config_dump = Marshal.dump config.reject {|key, | [:proxy_host, :proxy_port].include? key}
-      config_checksum = Digest::SHA1.hexdigest(config_dump)
-      @@connection_cache ||= {}
-      cached_db_connection = connection_cache[config_checksum]
-      if use_cache? and cached_db_connection and cached_db_connection.active?
-        cached_db_connection
-      else
+      if not use_cache?
         db_connection = db_connect_without_cache config
-        connection_cache[config_checksum] = db_connection if @@use_cache
-        db_connection
+      else
+        config_dump = Marshal.dump config.reject {|key, | [:proxy_host, :proxy_port, :logger].include? key}
+        config_checksum = Digest::SHA1.hexdigest(config_dump)
+        @@connection_cache ||= {}
+
+        db_connection = connection_cache[config_checksum]
+        unless db_connection and db_connection.active?
+          db_connection = db_connect_without_cache config
+          connection_cache[config_checksum] = db_connection
+        end
       end
+
+      install_logger db_connection, config
+
+      db_connection
     end
-    
+
     # If status == true: enable the cache. If status == false: don' use cache
     # Returns the old connection caching status
     def self.use_db_connection_cache(status)
