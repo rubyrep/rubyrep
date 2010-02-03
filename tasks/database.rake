@@ -94,6 +94,14 @@ def create_postgres_schema(config)
     create_table :rr_duplicate do |t|
       t.column :name, :string
     end
+
+    create_table :rx_pending_changes do |t|
+      t.column :change_table, :string
+      t.column :change_key, :string
+      t.column :change_new_key, :string
+      t.column :change_type, :string
+      t.column :change_time, :timestamp
+    end
   end
 end
 

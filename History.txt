@@ -1,6 +1,7 @@
 == 1.1.1 2009-02-02
 
 * Feature: optional use of an SQL logger
+* Bug fix: under postgresql, rubyrep triggers now finds the pending_changes table also if not included in current search path
 
 == 1.1.0 2009-12-15
 

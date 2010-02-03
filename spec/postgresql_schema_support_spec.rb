@@ -7,6 +7,7 @@ require File.dirname(__FILE__) + "/../config/test_config.rb"
 describe "PostgreSQL schema support" do
   before(:each) do
     config = deep_copy(standard_config)
+    config.options[:rep_prefix] = 'rx'
     config.left[:schema_search_path] = 'rr'
     config.right[:schema_search_path] = 'rr'
     Initializer.configuration = config
@@ -79,7 +80,7 @@ describe "PostgreSQL schema support" do
 
     it "sequence_values should pick the table in the target schema" do
       session = Session.new
-      session.left.sequence_values('rr', 'rr_duplicate').keys.should == ["rr_duplicate_id_seq"]
+      session.left.sequence_values('rx', 'rr_duplicate').keys.should == ["rr_duplicate_id_seq"]
     end
 
     it "clear_sequence_setup should pick the table in the target schema" do
@@ -150,6 +151,24 @@ describe "PostgreSQL schema support" do
       end
     end
 
+    it "initializer should create tables in target schema" do
+      session = nil
+      begin
+        config = deep_copy(Initializer.configuration)
+        config.options[:rep_prefix] = 'ry'
+        session = Session.new config
+        session.left.begin_db_transaction
+
+        initializer = ReplicationInitializer.new(session)
+        initializer.create_change_log(:left)
+
+        # no exception ==> means table was created in target schema
+        session.left.select_one("select id from rr.ry_pending_changes")
+      ensure
+        session.left.rollback_db_transaction if session
+      end
+    end
+
     it "create_trigger, trigger_exists? and drop_trigger should work" do
       session = nil
       begin
@@ -160,6 +179,17 @@ describe "PostgreSQL schema support" do
         initializer.create_trigger :left, 'rr_trigger_test'
         initializer.trigger_exists?(:left, 'rr_trigger_test').
           should be_true
+
+        # Verify that the trigger can find the pending_changes table even if
+        # current search_path does not include it.
+        session.left.execute "set search_path = 'public'"
+        session.left.execute <<-EOF
+          insert into rr.rr_trigger_test(first_id, second_id) values(10, 11)
+        EOF
+        session.left.execute "set search_path = 'rr'"
+        session.left.select_one("select change_key from rx_pending_changes")['change_key'].
+          should == "first_id|10|second_id|11"
+
         initializer.drop_trigger(:left, 'rr_trigger_test')
         initializer.trigger_exists?(:left, 'rr_trigger_test').
           should be_false

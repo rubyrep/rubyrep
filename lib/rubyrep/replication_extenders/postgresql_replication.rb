@@ -15,6 +15,25 @@ module RR
       end
       private :key_clause
 
+      # Returns the schema prefix (including dot) that will be used by the
+      # triggers to write into the rubyrep infrastructure tables.
+      # To avoid setting the wrong prefix, it will only return a schema prefix
+      # if the current search path
+      # * consists of only a single schema
+      # * does not consists of a variable search path
+      #   (i. e. the default "$user")
+      def schema_prefix
+        unless @schema_prefix
+          search_path = select_one("show search_path")['search_path']
+          if search_path =~ /[,$]/
+            @schema_prefix = ""
+          else
+            @schema_prefix = %("#{search_path}".)
+          end
+        end
+        @schema_prefix
+      end
+
       # Creates or replaces the replication trigger function.
       # See #create_replication_trigger for a descriptions of the +params+ hash.
       def create_or_replace_replication_trigger_function(params)
@@ -39,13 +58,13 @@ module RR
             BEGIN
               #{activity_check}
               IF (TG_OP = 'DELETE') THEN
-                INSERT INTO #{params[:log_table]}(change_table, change_key, change_type, change_time) 
+                INSERT INTO #{schema_prefix}#{params[:log_table]}(change_table, change_key, change_type, change_time)
                   SELECT '#{params[:table]}', #{key_clause('OLD', params)}, 'D', now();
               ELSIF (TG_OP = 'UPDATE') THEN
-                INSERT INTO #{params[:log_table]}(change_table, change_key, change_new_key, change_type, change_time)
+                INSERT INTO  #{schema_prefix}#{params[:log_table]}(change_table, change_key, change_new_key, change_type, change_time)
                   SELECT '#{params[:table]}', #{key_clause('OLD', params)}, #{key_clause('NEW', params)}, 'U', now();
               ELSIF (TG_OP = 'INSERT') THEN
-                INSERT INTO #{params[:log_table]}(change_table, change_key, change_type, change_time)
+                INSERT INTO  #{schema_prefix}#{params[:log_table]}(change_table, change_key, change_type, change_time)
                   SELECT '#{params[:table]}', #{key_clause('NEW', params)}, 'I', now();
               END IF;
               RETURN NULL; -- result is ignored since this is an AFTER trigger
@@ -71,7 +90,7 @@ module RR
         execute(<<-end_sql)
           CREATE TRIGGER "#{params[:trigger_name]}"
           AFTER INSERT OR UPDATE OR DELETE ON "#{params[:table]}"
-              FOR EACH ROW EXECUTE PROCEDURE "#{params[:trigger_name]}"();
+              FOR EACH ROW EXECUTE PROCEDURE #{schema_prefix}"#{params[:trigger_name]}"();
         end_sql
       end
 
