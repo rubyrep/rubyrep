@@ -19,8 +19,8 @@ module RR
     #   * a logger instance itself (Logger or Log4r::Logger) or
     #   * the parameter to create a Logger with Logger.new
     #   Examples:
-    #     +config.left[:logger] = STDOUT
-    #     +config.right[:logger] = Logger.new('rubyrep_debug.log')
+    #     config.left[:logger] = STDOUT
+    #     config.right[:logger] = Logger.new('rubyrep_debug.log')
     attr_accessor :right
     
     # Returns true unless running on windows...
