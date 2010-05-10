@@ -10,7 +10,7 @@ module RR
       # * +params+: the parameter hash as described in #create_rep_trigger
       def key_clause(trigger_var, params)
         params[:keys].
-          map { |key| "'#{key}#{params[:key_sep]}' || #{trigger_var}.#{key}"}.
+          map { |key| "'#{key}#{params[:key_sep]}' || #{trigger_var}.#{quote_column_name(key)}"}.
           join(" || '#{params[:key_sep]}' || ")
       end
       private :key_clause

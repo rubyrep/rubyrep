@@ -1,3 +1,7 @@
+== 1.1.2 2009-05-10
+
+* Bug fix: escape primary keys in replication triggers
+
 == 1.1.1 2009-02-02
 
 * Feature: optional use of an SQL logger

@@ -271,6 +271,15 @@ def create_sample_schema(database, config)
       return name, nil
     end
 
+    create_table :table_with_strange_key, :id => false do |t|
+      t.column STRANGE_COLUMN, :integer
+    end
+
+    ActiveRecord::Base.connection.execute(<<-end_sql)
+      ALTER TABLE table_with_strange_key ADD CONSTRAINT table_with_strange_key_pkey
+        PRIMARY KEY (#{ActiveRecord::Base.connection.quote_column_name(STRANGE_COLUMN)})
+    end_sql
+
     create_table STRANGE_TABLE do |t|
       t.column :first_fk, :integer
       t.column :second_fk, :integer
@@ -330,6 +339,7 @@ def drop_sample_schema(config)
   ActiveRecord::Schema.define do
     drop_table :rr_referencing rescue nil
     drop_table :rr_duplicate rescue nil
+    drop_table :table_with_strange_key rescue nil
     drop_table STRANGE_TABLE rescue nil
     drop_table :extender_type_check rescue nil
     drop_table :extender_no_record rescue nil

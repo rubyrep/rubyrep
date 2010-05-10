@@ -64,7 +64,7 @@ describe "Unusual table and column name support" do
     end
   end
 
-  it "should support trigger operations" do
+  it "should support trigger operations for strange tables" do
     trigger_name = 'rr_' + STRANGE_TABLE
     session = Session.new
     begin
@@ -95,6 +95,40 @@ describe "Unusual table and column name support" do
         session.left.drop_replication_trigger trigger_name, STRANGE_TABLE
       end
       session.left.execute "delete from #{session.left.quote_table_name(STRANGE_TABLE)}"
+      session.left.execute "delete from rr_pending_changes"
+    end
+  end
+
+  it "should support trigger operations for table with strange primary keys" do
+    trigger_name = 'rr_table_with_strange_key'
+    session = Session.new
+    begin
+      session.left.replication_trigger_exists?(trigger_name, :table_with_strange_key).should be_false
+      session.left.create_replication_trigger({
+          :trigger_name => trigger_name,
+          :table => :table_with_strange_key,
+          :keys => [STRANGE_COLUMN],
+          :log_table => 'rr_pending_changes',
+          :activity_table => 'rr_running_flags',
+          :key_sep => '|',
+          :exclude_rr_activity => true
+        })
+      session.left.replication_trigger_exists?(trigger_name, :table_with_strange_key).should be_true
+      session.left.insert_record 'table_with_strange_key', {
+        STRANGE_COLUMN => '11'
+      }
+      log_record = session.left.select_one(
+        "select * from rr_pending_changes where change_table = 'table_with_strange_key'")
+      log_record['change_key'].should == "#{STRANGE_COLUMN}|11"
+      log_record['change_type'].should == 'I'
+
+      session.left.drop_replication_trigger trigger_name, :table_with_strange_key
+      session.left.replication_trigger_exists?(trigger_name, :table_with_strange_key).should be_false
+    ensure
+      if session.left.replication_trigger_exists?(trigger_name, :table_with_strange_key)
+        session.left.drop_replication_trigger trigger_name, :table_with_strange_key
+      end
+      session.left.execute "delete from #{session.left.quote_table_name(:table_with_strange_key)}"
       session.left.execute "delete from rr_pending_changes"
     end
   end
