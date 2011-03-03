@@ -45,25 +45,23 @@ end
 
 # Generate all the Rake tasks
 # Run 'rake -T' to see list of generated tasks (from gem root directory)
-hoe = Hoe.new(GEM_NAME, VERS) do |p|
-  p.author = AUTHOR 
-  p.description = DESCRIPTION
-  p.email = EMAIL
-  p.summary = DESCRIPTION
-  p.url = HOMEPATH
-  p.rubyforge_name = RUBYFORGE_PROJECT if RUBYFORGE_PROJECT
-  p.test_globs = ["test/**/test_*.rb"]
-  p.clean_globs |= ['**/.*.sw?', '*.gem', '.config', '**/.DS_Store']  #An array of file patterns to delete on clean.
-  
+hoe = Hoe.spec(GEM_NAME) do
+  self.version = VERS
+  developer AUTHOR, EMAIL
+  description = DESCRIPTION
+  summary = DESCRIPTION
+  url = HOMEPATH
+  rubyforge_name = RUBYFORGE_PROJECT if RUBYFORGE_PROJECT
+  test_globs = ["test/**/test_*.rb"]
+  clean_globs |= ['**/.*.sw?', '*.gem', '.config', '**/.DS_Store']  #An array of file patterns to delete on clean.
+
   # == Optional
-  p.changes = p.paragraphs_of("History.txt", 0..1).join("\\n\\n")
-  #p.extra_deps = []     # An array of rubygem dependencies [name, version], e.g. [ ['active_support', '>= 1.3.1'] ]
-  p.extra_deps = [
-    ['activesupport', '>= 2.3.5'],
-    ['activerecord' , '>= 2.3.5']
-  ]
+  changes = paragraphs_of("History.txt", 0..1).join("\\n\\n")
+  #extra_deps = []     # An array of rubygem dependencies [name, version], e.g. [ ['active_support', '>= 1.3.1'] ]
+  extra_deps << ['activesupport', '>= 2.3.5']
+  extra_deps << ['activerecord' , '>= 2.3.5']
   
-  #p.spec_extras = {}    # A hash of extra values to set in the gemspec.
+  #spec_extras = {}    # A hash of extra values to set in the gemspec.
   
 end
 
