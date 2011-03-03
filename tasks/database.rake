@@ -18,7 +18,7 @@ def create_database(config)
       @charset   = ENV['CHARSET']   || 'utf8'
       @collation = ENV['COLLATION'] || 'utf8_general_ci'
       begin
-        connection = RR::ConnectionExtenders.db_connect(config.merge({'database' => nil}))
+        connection = RR::ConnectionExtenders.db_connect(config.merge({:database => nil}))
         connection.create_database(config[:database], {:charset => @charset, :collation => @collation})
         RR::ConnectionExtenders.db_connect(config)
       rescue
