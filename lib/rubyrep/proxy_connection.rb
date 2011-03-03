@@ -239,6 +239,11 @@ module RR
       end
       cursors.clear
 
+      if connection.log_subscriber
+        ActiveSupport::Notifications.notifier.unsubscribe connection.log_subscriber
+        connection.log_subscriber = nil
+      end
+
       self.connection.disconnect!
     end
     

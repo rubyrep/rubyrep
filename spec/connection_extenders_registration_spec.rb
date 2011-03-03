@@ -10,9 +10,13 @@ describe ConnectionExtenders do
   it "db_connect should install the already created logger" do
     configuration = deep_copy(Initializer.configuration)
     io = StringIO.new
-    logger = Logger.new(io)
+    logger = ActiveSupport::BufferedLogger.new(io)
     configuration.left[:logger] = logger
     session = Session.new configuration
+
+    session.left.connection.instance_eval {@logger}.should == logger
+    session.right.connection.instance_eval {@logger}.should_not == logger
+
     session.left.select_one "select 'left_query'"
     session.right.select_one "select 'right_query'"
 

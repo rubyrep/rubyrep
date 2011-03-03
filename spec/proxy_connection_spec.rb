@@ -17,7 +17,19 @@ describe ProxyConnection do
   end
   
   it "destroy should disconnect from the database" do
+    if ActiveSupport.const_defined?(:Notifications)
+      ConnectionExtenders::install_logger @connection.connection, :logger => StringIO.new
+      log_subscriber = @connection.connection.log_subscriber
+
+      ActiveSupport::Notifications.notifier.listeners_for("sql.active_record").should include(log_subscriber)
+    end
+
     @connection.destroy
+
+    if ActiveSupport.const_defined?(:Notifications)
+      ActiveSupport::Notifications.notifier.listeners_for("sql.active_record").should_not include(log_subscriber)
+      @connection.connection.log_subscriber.should be_nil
+    end
 
     @connection.connection.active?.should == false
   end

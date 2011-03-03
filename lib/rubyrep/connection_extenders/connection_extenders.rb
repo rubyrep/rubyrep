@@ -1,3 +1,8 @@
+class ActiveRecord::ConnectionAdapters::AbstractAdapter
+  # The current log subscriber
+  attr_accessor :log_subscriber
+end
+
 class ActiveRecord::ConnectionAdapters::Column
   # Bug in ActiveRecord parsing of PostgreSQL timestamps with microseconds:
   # Certain values are incorrectly rounded, thus ending up with timestamps
@@ -107,9 +112,17 @@ module RR
         if config[:logger].respond_to?(:debug)
           logger = config[:logger]
         else
-          logger = Logger.new(config[:logger])
+          logger = ActiveSupport::BufferedLogger.new(config[:logger])
         end
         db_connection.instance_variable_set :@logger, logger
+        if ActiveSupport.const_defined?(:Notifications)
+          connection_object_id = db_connection.object_id
+          db_connection.log_subscriber = ActiveSupport::Notifications.subscribe("sql.active_record") do |name, start, finish, id, payload|
+            if payload[:connection_id] == connection_object_id and logger.debug?
+              logger.debug payload[:sql].squeeze(" ")
+            end
+          end
+        end
       end
     end
     
