@@ -45,7 +45,7 @@ module RR
         activity_check = ""
         if params[:exclude_rr_activity] then
           activity_check = <<-end_sql
-            PERFORM ACTIVE FROM #{params[:activity_table]};
+            PERFORM ACTIVE FROM #{schema_prefix}#{params[:activity_table]};
             IF FOUND THEN
               RETURN NULL;
             END IF;
