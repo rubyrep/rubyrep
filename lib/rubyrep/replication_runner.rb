@@ -2,6 +2,12 @@ $LOAD_PATH.unshift File.dirname(__FILE__) + '/../lib'
 
 require 'optparse'
 require 'thread'
+require 'monitor'
+
+class Monitor
+  alias lock mon_enter
+  alias unlock mon_exit
+end
 
 module RR
   # This class implements the functionality of the 'replicate' command.
@@ -94,7 +100,7 @@ EOS
     # Initializes the waiter thread used for replication pauses and processing
     # the process TERM signal.
     def init_waiter
-      @termination_mutex = Mutex.new
+      @termination_mutex = Monitor.new
       @termination_mutex.lock
       @waiter_thread ||= Thread.new {@termination_mutex.lock; self.termination_requested = true}
       %w(TERM INT).each do |signal|
