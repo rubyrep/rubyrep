@@ -58,23 +58,8 @@ module RR
   end
 end
 
-# activerecord-jdbc-adapter 0.9.1 (7b3f3eca08149567070837fad63696052dc36cd6)
-# improves SQLite binary support by overwriting the global string_to_binary
-# methods.
-# This appears to break binary support for MySQL.
-# And here comes the monkey patch to revert it again...
-require 'active_record/connection_adapters/jdbc_adapter_spec'
-require 'jdbc_adapter/jdbc_sqlite3'
-module ::ActiveRecord
-  module ConnectionAdapters
-    class JdbcColumn < Column
-      def self.string_to_binary(value)
-        value
-      end
-
-      def self.binary_to_string(value)
-        value
-      end
-    end
-  end
+require 'activerecord-jdbc-adapter'
+if ArJdbc.const_defined?(:PostgreSQL)
+  ArJdbc::PostgreSQL::RecordNotUnique = ActiveRecord::RecordNotUnique unless ArJdbc::PostgreSQL.const_defined?(:RecordNotUnique)
+  ArJdbc::PostgreSQL::InvalidForeignKey = ActiveRecord::InvalidForeignKey  unless ArJdbc::PostgreSQL.const_defined?(:InvalidForeignKey)
 end

@@ -9,7 +9,7 @@ describe ProxyConnection do
   end
 
   it "initialize should connect to the database" do
-    @connection.connection.active?.should == true
+    (!!@connection.connection.active?).should == true
   end
 
   it "initialize should store the configuratin" do
@@ -31,7 +31,7 @@ describe ProxyConnection do
       @connection.connection.log_subscriber.should be_nil
     end
 
-    @connection.connection.active?.should == false
+    (!!@connection.connection.active?).should == false
   end
 
   it "cursors should return the current cursor hash or an empty hash if nil" do
