@@ -52,6 +52,18 @@ module RR
           end_sql
         end
 
+        version_string = select_value("select version();")
+        version = version_string.gsub(/^\s*postgresql\s*([0-9.]+).*$/i, '\1')
+        if version >= '8.4'
+          modification_check = <<-end_sql
+            IF NEW IS NOT DISTINCT FROM OLD THEN
+              RETURN NULL;
+            END IF;
+          end_sql
+        else
+          modification_check = ""
+        end
+
         # now create the trigger
         execute(<<-end_sql)
           CREATE OR REPLACE FUNCTION "#{params[:trigger_name]}"() RETURNS TRIGGER AS $change_trigger$
@@ -61,6 +73,7 @@ module RR
                 INSERT INTO #{schema_prefix}#{params[:log_table]}(change_table, change_key, change_type, change_time)
                   SELECT '#{params[:table]}', #{key_clause('OLD', params)}, 'D', now();
               ELSIF (TG_OP = 'UPDATE') THEN
+                #{modification_check}
                 INSERT INTO  #{schema_prefix}#{params[:log_table]}(change_table, change_key, change_new_key, change_type, change_time)
                   SELECT '#{params[:table]}', #{key_clause('OLD', params)}, #{key_clause('NEW', params)}, 'U', now();
               ELSIF (TG_OP = 'INSERT') THEN
