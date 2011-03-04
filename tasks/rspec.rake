@@ -41,18 +41,14 @@ namespace :spec do
   desc "Run the specs for all supported databases"
   task :all_dbs do
     [:postgres, :mysql].each do |test_db|
-      puts "Running specs for #{test_db.id2name}"
-      ENV['RR_TEST_DB'] = test_db.id2name
-      system "spec spec"
+      puts "Running specs for #{test_db}"
+      system "bash -c 'RR_TEST_DB=#{test_db} spec spec'"
     end
   end
   
   desc "Run the specs for all supported databases and ruby platforms" 
   task :all_rubies do
-    puts "Running spec:all_dbs in standard ruby"
-    system "rake spec:all_dbs"
-    puts "Running spec:all_dbs in jruby"
-    system "export PATH=#{JRUBY_HOME}/bin:$PATH; rake spec:all_dbs"
+    system %(rvm exec bash -c 'for db in postgres mysql; do echo "`rvm current` - $db:"; RR_TEST_DB=$db spec spec; done')
   end
   
   begin
