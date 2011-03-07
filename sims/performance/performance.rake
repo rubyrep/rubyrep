@@ -1,3 +1,4 @@
+
 require 'rake'
 require 'benchmark'
 
@@ -136,7 +137,7 @@ def populate_rep_data
     # Updating progress bar
     progress_bar.step
     
-    database = [:left, :right].rand
+    database = [:left, :right][rand(2)]
 
     case rand(100)
     when 0...BIG_REP_INSERT
@@ -147,7 +148,7 @@ def populate_rep_data
       next_id += 1
       session.send(database).insert_record 'big_rep', attributes
     when BIG_REP_INSERT...BIG_REP_UPDATE
-      id = all_ids[database].rand
+      id = all_ids[database][rand(all_ids[database].size)]
       attributes = session.send(database).select_one("select * from big_rep where id = '#{id}'")
       column = number_columns[rand(number_columns.size)]
       attributes[column] = rand(1000)
