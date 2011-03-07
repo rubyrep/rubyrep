@@ -1,3 +1,12 @@
+== 1.2.0 2011-03-07
+
+* Feature: compatibility with Rails 3
+* Feature: do not replicate record updates that didn't change any fields (props to daudo)
+* Bug fix: reducing deadlock problems (props to gtanzillo)
+* Bug fix: adding missing schema prefix in PostgreSQL triggers
+* Bug fix: scans / syncs fail due to incorrect handling of case sensitivity of string primary key columns
+* Bug fix: reducing risk of foreign key conflicts during replication (props for root cause analysis to TonyB)
+
 == 1.1.2 2009-05-10
 
 * Bug fix: escape primary keys in replication triggers
