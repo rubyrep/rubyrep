@@ -135,6 +135,68 @@ describe ReplicationRun do
     end
   end
 
+  it "run should replication records with foreign key constraints" do
+    begin
+      config = deep_copy(standard_config)
+      config.options[:committer] = :never_commit
+
+      session = Session.new(config)
+
+      session.left.insert_record 'referencing_table', {
+        'id' => '5',
+      }
+      session.left.insert_record 'rr_pending_changes', {
+        'change_table' => 'referencing_table',
+        'change_key' => 'id|5',
+        'change_type' => 'I',
+        'change_time' => Time.now
+      }
+
+      session.left.insert_record 'referenced_table2', {
+        'id' => '6',
+      }
+      session.left.insert_record 'rr_pending_changes', {
+        'change_table' => 'referenced_table2',
+        'change_key' => 'id|6',
+        'change_type' => 'I',
+        'change_time' => Time.now
+      }
+
+      session.left.update_record 'referencing_table', {
+        'id' => 5,
+        'third_fk' => '6'
+      }
+      session.left.insert_record 'rr_pending_changes', {
+        'change_table' => 'referencing_table',
+        'change_key' => 'id|5',
+        'change_new_key' => 'id|5',
+        'change_type' => 'U',
+        'change_time' => Time.now
+      }
+
+      run = ReplicationRun.new session, TaskSweeper.new(1)
+      run.run
+
+      session.right.select_record(:table => "referencing_table", :from => {'id' => 5}).should == {
+        'id' => 5,
+        'first_fk' => nil,
+        'second_fk' => nil,
+        'third_fk' => 6
+      }
+    ensure
+      Committers::NeverCommitter.rollback_current_session
+      if session
+        session.left.execute "delete from referencing_table where id = 5"
+        session.left.execute "delete from referenced_table2 where id = 6"
+
+        session.right.execute "delete from referencing_table where id = 5"
+        session.right.execute "delete from referenced_table2 where id = 6"
+        
+        session.left.execute "delete from rr_pending_changes"
+      end
+    end
+  end
+
   it "run should not replicate filtered changes" do
     begin
       config = deep_copy(standard_config)

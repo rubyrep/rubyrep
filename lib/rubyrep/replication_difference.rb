@@ -19,6 +19,10 @@ module RR
     # * :+no_diff+: changes in both databases constitute no difference
     attr_accessor :type
 
+    # Is set to +true+ if first replication attempt failed but it should be tried again later
+    attr_accessor :second_chance
+    alias_method :second_chance?, :second_chance
+
     # A hash with keys :+left+ and / or :+right+.
     # Hash values are LoggedChange instances.
     def changes

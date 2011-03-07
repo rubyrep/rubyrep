@@ -11,6 +11,11 @@ module RR
     # The current TaskSweeper
     attr_accessor :sweeper
 
+    # An array of ReplicationDifference which originally failed replication but should be tried one more time
+    def second_chancers
+      @second_chancers ||= []
+    end
+
     # Returns the current ReplicationHelper; creates it if necessary
     def helper
       @helper ||= ReplicationHelper.new(self)
@@ -39,6 +44,20 @@ module RR
       end
     end
 
+    # Returns the next available ReplicationDifference.
+    # (Either new unprocessed differences or if not available, the first available 'second chancer'.)
+    #
+    def load_difference
+      @loaders ||= LoggedChangeLoaders.new(session)
+      @loaders.update # ensure the cache of change log records is up-to-date
+      diff = ReplicationDifference.new @loaders
+      diff.load
+      unless diff.loaded? or second_chancers.empty?
+        diff = second_chancers.shift
+      end
+      diff
+    end
+
     # Executes the replication run.
     def run
       return unless [:left, :right].any? do |database|
@@ -57,29 +76,36 @@ module RR
       # Check for this and if timed out, return (silently).
       return if sweeper.terminated?
 
-      loaders = LoggedChangeLoaders.new(session)
-
       success = false
       begin
         replicator # ensure that replicator is created and has chance to validate settings
 
         loop do
           begin
-            loaders.update # ensure the cache of change log records is up-to-date
-            diff = ReplicationDifference.new loaders
-            diff.load
+            diff = load_difference
             break unless diff.loaded?
             break if sweeper.terminated?
             if diff.type != :no_diff and not event_filtered?(diff)
               replicator.replicate_difference diff
             end
           rescue Exception => e
-            begin
-              helper.log_replication_outcome diff, e.message,
-                e.class.to_s + "\n" + e.backtrace.join("\n")
-            rescue Exception => _
-              # if logging to database itself fails, re-raise the original exception
-              raise e
+            if e.message =~ /violates foreign key constraint|foreign key constraint fails/i and !diff.second_chance?
+              # Note:
+              # Identifying the foreign key constraint violation via regular expression is
+              # database dependent and *dirty*.
+              # It would be better to use the ActiveRecord #translate_exception mechanism.
+              # However as per version 3.0.5 this doesn't work yet properly.
+
+              diff.second_chance = true
+              second_chancers << diff
+            else
+              begin
+                helper.log_replication_outcome diff, e.message,
+                  e.class.to_s + "\n" + e.backtrace.join("\n")
+              rescue Exception => _
+                # if logging to database itself fails, re-raise the original exception
+                raise e
+              end
             end
           end
         end
