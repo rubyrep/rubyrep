@@ -19,7 +19,15 @@ module RR
       return 1 unless left_row 
       rank = 0
       primary_key_names.any? do |key|
-        rank = left_row[key] <=> right_row[key]
+        if left_row[key].kind_of?(String)
+          # When databases order strings, then 'a' < 'A' while for Ruby 'A' < 'a'
+          # ==> Use a combination of case sensitive and case insensitive comparing to
+          #     reproduce the database behaviour.
+          rank = left_row[key].casecmp(right_row[key]) # deal with 'a' to 'B' comparisons
+          rank = -(left_row[key] <=> right_row[key]) if rank == 0 # deal with 'a' to 'A' comparisons
+        else
+          rank = left_row[key] <=> right_row[key]
+        end
         rank != 0
       end
       rank
