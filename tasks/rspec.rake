@@ -40,7 +40,7 @@ namespace :spec do
   
   desc "Run the specs for all supported databases"
   task :all_dbs do
-    [:postgres, :mysql].each do |test_db|
+    [:postgres, :mysql2].each do |test_db|
       puts "Running specs for #{test_db}"
       system "bash -c 'RR_TEST_DB=#{test_db} spec spec'"
     end
@@ -48,7 +48,7 @@ namespace :spec do
   
   desc "Run the specs for all supported databases and ruby platforms" 
   task :all_rubies do
-    system %(rvm exec bash -c 'for db in postgres mysql; do echo "`rvm current` - $db:"; RR_TEST_DB=$db spec spec; done')
+    system %(rvm exec bash -c 'for db in postgres mysql2; do echo "`rvm current` - $db:"; RR_TEST_DB=$db spec spec; done')
   end
   
   begin

@@ -3,7 +3,7 @@
 
 RR::Initializer::run do |config|
   config.left = {
-    :adapter  => 'mysql',   
+    :adapter  => 'mysql2',   
     :database => 'rr_left',   
     :username => 'root',   
     :password => '',   
@@ -13,7 +13,7 @@ RR::Initializer::run do |config|
   }
 
   config.right = {
-    :adapter  => 'mysql',   
+    :adapter  => 'mysql2',   
     :database => 'rr_right',   
     :username => 'root',   
     :password => '',   

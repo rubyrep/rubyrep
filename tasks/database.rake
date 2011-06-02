@@ -14,7 +14,7 @@ def create_database(config)
     case config[:adapter]
     when 'postgresql'
       `createdb "#{config[:database]}" -E utf8`
-    when 'mysql'
+    when 'mysql2'
       @charset   = ENV['CHARSET']   || 'utf8'
       @collation = ENV['COLLATION'] || 'utf8_general_ci'
       begin
@@ -38,7 +38,7 @@ def drop_database(config)
   case config[:adapter]
   when 'postgresql'
     `dropdb "#{config[:database]}"`
-  when 'mysql'
+  when 'mysql2'
     connection = RR::ConnectionExtenders.db_connect(config.merge({'database' => nil}))
     connection.drop_database config[:database]
   else

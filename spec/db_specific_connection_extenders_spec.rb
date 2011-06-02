@@ -3,7 +3,7 @@ require 'yaml'
 
 include RR
 
-extenders = [:mysql, :postgres]
+extenders = [:mysql2, :postgres]
 
 extenders.each do |extender|
   describe "#{extender.to_s.capitalize} Connection Extender" do
