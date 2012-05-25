@@ -4,7 +4,7 @@ module RR
 
     # Provides various MySQL specific functionality required by Rubyrep.
     module MysqlExtender
-      RR::ConnectionExtenders.register :mysql => self
+      RR::ConnectionExtenders.register :mysql2 => self
 
       # Returns an ordered list of primary key column names of the given table
       def primary_key_names(table)

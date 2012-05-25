@@ -88,7 +88,7 @@ module RR
         case table_spec
         when /^\/.*\/$/ # matches e. g. '/^user/'
           table_spec = table_spec.sub(/^\/(.*)\/$/,'\1') # remove leading and trailing slash
-          matching_tables = tables(:left).grep(Regexp.new(table_spec, Regexp::IGNORECASE, 'U'))
+          matching_tables = tables(:left).grep(Regexp.new(table_spec, Regexp::IGNORECASE))
           matching_tables.each do |table|
             if !verify or tables(:right).include? table
               table_pairs << {:left => table, :right => table}

@@ -9,7 +9,7 @@ module RR
     CONFIG_TEMPLATE = <<EOF
 RR::Initializer::run do |config|
   config.left = {
-    :adapter  => 'postgresql', # or 'mysql'
+    :adapter  => 'postgresql', # or 'mysql2'
     :database => 'SCOTT',
     :username => 'scott',
     :password => 'tiger',
