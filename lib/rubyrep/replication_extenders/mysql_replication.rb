@@ -3,7 +3,7 @@ module RR
 
     # Provides Mysql specific functionality for database replication
     module MysqlReplication
-      RR::ReplicationExtenders.register :mysql => self
+      RR::ReplicationExtenders.register :mysql2 => self
 
       # Creates or replaces the replication trigger function.
       # See #create_replication_trigger for a descriptions of the +params+ hash.

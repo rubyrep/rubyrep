@@ -1,4 +1,4 @@
-require File.dirname(__FILE__) + '/spec_helper.rb'
+require 'spec_helper'
 
 include RR
 
@@ -31,12 +31,12 @@ describe Syncers::TwoWaySyncer do
     }
 
     # Verify that correct options don't raise errors.
-    helper.stub!(:sync_options).and_return(base_options)
+    helper.stub(:sync_options).and_return(base_options)
     lambda {Syncers::TwoWaySyncer.new(helper)}.should_not raise_error
 
     # Also lambda options should not raise errors.
     l = lambda {}
-    helper.stub!(:sync_options).and_return(base_options.merge(
+    helper.stub(:sync_options).and_return(base_options.merge(
         {
           :left_record_handling => l,
           :right_record_handling => l,
@@ -53,7 +53,7 @@ describe Syncers::TwoWaySyncer do
       {:logged_sync_events => [:invalid_logging_option]}
     ]
     invalid_options.each do |options|
-      helper.stub!(:sync_options).and_return(base_options.merge(options))
+      helper.stub(:sync_options).and_return(base_options.merge(options))
       lambda {Syncers::TwoWaySyncer.new(helper)}.should raise_error(ArgumentError)
     end
   end
@@ -63,7 +63,7 @@ describe Syncers::TwoWaySyncer do
 
     helper = SyncHelper.new(sync)
     helper.should_not_receive(:log_sync_outcome)
-    helper.stub!(:sync_options).and_return(
+    helper.stub(:sync_options).and_return(
       {
         :rep_prefix => 'rr',
         :left_record_handling => :ignore,
@@ -78,7 +78,7 @@ describe Syncers::TwoWaySyncer do
 
     helper = SyncHelper.new(sync)
     helper.should_not_receive(:log_sync_outcome)
-    helper.stub!(:sync_options).and_return(
+    helper.stub(:sync_options).and_return(
       {
         :rep_prefix => 'rr',
         :left_record_handling => :insert,
@@ -86,8 +86,8 @@ describe Syncers::TwoWaySyncer do
         :sync_conflict_handling => :right_wins,
         :logged_sync_events => [:ignored_changes, :ignored_conflicts]
       })
-    helper.stub!(:insert_record)
-    helper.stub!(:update_record)
+    helper.stub(:insert_record)
+    helper.stub(:update_record)
     syncer.sync_difference :left, :dummy_row
     syncer.sync_difference :right, :dummy_row
     syncer.sync_difference :conflict, [:left_dummy_row, :right_dummy_row]
@@ -100,7 +100,7 @@ describe Syncers::TwoWaySyncer do
     helper.should_receive(:log_sync_outcome).with(:dummy_row, 'left_record', :insert).ordered
     helper.should_receive(:log_sync_outcome).with(:dummy_row, 'right_record', :insert).ordered
     helper.should_receive(:log_sync_outcome).with(:left_dummy_row, 'conflict', :right_wins).ordered
-    helper.stub!(:sync_options).and_return(
+    helper.stub(:sync_options).and_return(
       {
         :rep_prefix => 'rr',
         :left_record_handling => :insert,
@@ -108,8 +108,8 @@ describe Syncers::TwoWaySyncer do
         :sync_conflict_handling => :right_wins,
         :logged_sync_events => [:all_changes, :all_conflicts]
       })
-    helper.stub!(:insert_record)
-    helper.stub!(:update_record)
+    helper.stub(:insert_record)
+    helper.stub(:update_record)
     syncer = Syncers::TwoWaySyncer.new(helper)
     syncer.sync_difference :left, :dummy_row
     syncer.sync_difference :right, :dummy_row
@@ -123,7 +123,7 @@ describe Syncers::TwoWaySyncer do
     helper.should_receive(:log_sync_outcome).with(:dummy_row, 'left_record', :ignore).ordered
     helper.should_receive(:log_sync_outcome).with(:dummy_row, 'right_record', :ignore).ordered
     helper.should_receive(:log_sync_outcome).with(:left_dummy_row, 'conflict', :ignore).ordered
-    helper.stub!(:sync_options).and_return(
+    helper.stub(:sync_options).and_return(
       {
         :rep_prefix => 'rr',
         :left_record_handling => :ignore,
@@ -140,7 +140,7 @@ describe Syncers::TwoWaySyncer do
   it "sync_difference should not do anything if ignore option is given" do
     sync = TableSync.new(Session.new, 'scanner_records')
     helper = SyncHelper.new(sync)
-    helper.stub!(:sync_options).and_return(
+    helper.stub(:sync_options).and_return(
       {
         :left_record_handling => :ignore,
         :right_record_handling => :ignore,
@@ -166,7 +166,7 @@ describe Syncers::TwoWaySyncer do
     l = lambda do |sync_helper, type, row|
       lambda_parameters << [sync_helper, type, row]
     end
-    helper.stub!(:sync_options).and_return(
+    helper.stub(:sync_options).and_return(
       {
         :left_record_handling => l,
         :right_record_handling => l,
@@ -189,7 +189,7 @@ describe Syncers::TwoWaySyncer do
   it "sync_difference should delete left or right records from source if that option is given" do
     sync = TableSync.new(Session.new, 'scanner_records')
     helper = SyncHelper.new(sync)
-    helper.stub!(:sync_options).and_return(
+    helper.stub(:sync_options).and_return(
       {
         :left_record_handling => :delete,
         :right_record_handling => :delete,
@@ -207,7 +207,7 @@ describe Syncers::TwoWaySyncer do
   it "sync_difference should insert left or right records to target if that option is given" do
     sync = TableSync.new(Session.new, 'scanner_records')
     helper = SyncHelper.new(sync)
-    helper.stub!(:sync_options).and_return(
+    helper.stub(:sync_options).and_return(
       {
         :left_record_handling => :insert,
         :right_record_handling => :insert,
@@ -225,7 +225,7 @@ describe Syncers::TwoWaySyncer do
   it "sync_difference should update the left database if conflict handling is specified with :right_wins" do
     sync = TableSync.new(Session.new, 'scanner_records')
     helper = SyncHelper.new(sync)
-    helper.stub!(:sync_options).and_return(
+    helper.stub(:sync_options).and_return(
       {
         :left_record_handling => :ignore,
         :right_record_handling => :ignore,
@@ -241,7 +241,7 @@ describe Syncers::TwoWaySyncer do
   it "sync_difference should update the right database if conflict handling is specified with :left_wins" do
     sync = TableSync.new(Session.new, 'scanner_records')
     helper = SyncHelper.new(sync)
-    helper.stub!(:sync_options).and_return(
+    helper.stub(:sync_options).and_return(
       {
         :left_record_handling => :ignore,
         :right_record_handling => :ignore,

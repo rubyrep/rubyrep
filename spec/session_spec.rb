@@ -1,4 +1,5 @@
-require File.dirname(__FILE__) + '/spec_helper.rb'
+require 'spec_helper'
+
 require 'yaml'
 
 include RR
@@ -6,11 +7,11 @@ include RR
 describe Session do # database connection caching is disabled
   before(:each) do
     Initializer.configuration = standard_config
-    @@old_cache_status = ConnectionExtenders.use_db_connection_cache(false)
+    @old_cache_status = ConnectionExtenders.use_db_connection_cache(false)
   end
   
   after(:each) do
-    ConnectionExtenders.use_db_connection_cache(@@old_cache_status)
+    ConnectionExtenders.use_db_connection_cache(@old_cache_status)
   end
   
   it "initialize should keep a reference of the Configuration object" do
@@ -64,10 +65,10 @@ describe Session do   # here database connection caching is _not_ disabled
 
   it "initialize should create (fake) proxy connections as per configuration" do
     dummy_proxy = Object.new
-    dummy_connection = mock("dummy connection")
-    dummy_connection.stub!(:tables).and_return([])
-    dummy_connection.stub!(:manual_primary_keys=)
-    dummy_connection.stub!(:select_one).and_return({'x' => '2'})
+    dummy_connection = double("dummy connection")
+    dummy_connection.stub(:tables).and_return([])
+    dummy_connection.stub(:manual_primary_keys=)
+    dummy_connection.stub(:select_one).and_return({'x' => '2'})
     dummy_proxy.should_receive(:create_session).and_return(dummy_connection)
     DRbObject.should_receive(:new).with(nil,"druby://localhost:9876").and_return(dummy_proxy)
 
@@ -93,7 +94,7 @@ describe Session do   # here database connection caching is _not_ disabled
     session = Session.new
     session.right.destroy
     session.right.connection.should_not be_active
-    lambda {session.right.select_one("select 1+1 as x")}.should raise_error
+    lambda {session.right.select_one("select 1+1 as x")}.should raise_error /connection.*closed|not connected|no connection/
     session.refresh
     session.right.connection.should be_active
     session.right.select_one("select 1+1 as x")['x'].to_i.should == 2
@@ -112,7 +113,7 @@ describe Session do   # here database connection caching is _not_ disabled
     session = Session.new(proxied_config)
     session.right.destroy
     session.right.connection.should_not be_active
-    lambda {session.right.select_one("select 1+1 as x")}.should raise_error
+    lambda {session.right.select_one("select 1+1 as x")}.should raise_error /connection.*closed|not connected|no connection/
     session.refresh
     session.right.connection.should be_active
     session.right.select_one("select 1+1 as x")['x'].to_i.should == 2

@@ -1,4 +1,4 @@
-require File.dirname(__FILE__) + '/spec_helper.rb'
+require 'spec_helper'
 
 include RR
 
@@ -52,7 +52,7 @@ describe TableSync do
     session = Session.new standard_config
     sync = TableSync.new(session, 'scanner_records')
 
-    sync.event_filtered?(:left, 'id' => 1).should be_false
+    sync.event_filtered?(:left, 'id' => 1).should be false
   end
 
   it "event_filtered? should return false if event filter does not filter sync events" do
@@ -61,7 +61,7 @@ describe TableSync do
     session = Session.new config
     sync = TableSync.new(session, 'scanner_records')
 
-    sync.event_filtered?(:left, 'id' => 1).should be_false
+    sync.event_filtered?(:left, 'id' => 1).should be false
   end
 
   it "event_filtered? should signal filtering (i. e. return true) if the event filter result is false" do
@@ -74,7 +74,7 @@ describe TableSync do
     session = Session.new config
     sync = TableSync.new(session, 'scanner_records')
     sync.helper = SyncHelper.new(sync)
-    sync.event_filtered?(:left, 'id' => 1).should be_true
+    sync.event_filtered?(:left, 'id' => 1).should be true
   end
 
   it "event_filtered? should return false if the event filter result is true" do
@@ -88,7 +88,7 @@ describe TableSync do
     session = Session.new config
     sync = TableSync.new(session, 'scanner_records')
     sync.helper = SyncHelper.new(sync)
-    sync.event_filtered?(:left, 'id' => 1, 'name' => 'bla').should be_false
+    sync.event_filtered?(:left, 'id' => 1, 'name' => 'bla').should be false
 
     # verify correct parameter assignment
     filter[:args].should == ['scanner_records', {'id' => 1}, sync.helper, :left, {'id' => 1, 'name' => 'bla'}]
@@ -120,8 +120,8 @@ describe TableSync do
       row['description'].should == 'left_wins'
 
       # verify that the table was synchronized
-      left_records = session.left.select_all("select * from scanner_records where id <> 6 order by id")
-      right_records = session.right.select_all("select * from scanner_records where id <> 6 order by id")
+      left_records = session.left.select_all("select * from scanner_records where id <> 6 order by id").to_a
+      right_records = session.right.select_all("select * from scanner_records where id <> 6 order by id").to_a
       left_records.should == right_records
 
       # verify that the filtered out record was not synced
@@ -129,8 +129,8 @@ describe TableSync do
         should be_nil
 
       # verify that hooks where called
-      before_hook_called.should be_true
-      after_hook_called.should be_true
+      before_hook_called.should be true
+      after_hook_called.should be true
     ensure
       Committers::NeverCommitter.rollback_current_session
       session.left.execute "delete from rr_logged_events"

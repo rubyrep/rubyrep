@@ -1,4 +1,4 @@
-require File.dirname(__FILE__) + '/spec_helper.rb'
+require 'spec_helper'
 
 include RR
 
@@ -14,23 +14,23 @@ describe ProxyBlockCursor do
   
   it "next? should return true if there is an already loaded unprocessed row" do
     @cursor.last_row = :dummy_row
-    @cursor.next?.should be_true
+    @cursor.next?.should be true
   end
   
   it "next? should return true if the database cursor has more rows" do
-    table_cursor = mock("DBCursor")
+    table_cursor = double("DBCursor")
     table_cursor.should_receive(:next?).and_return(true)
     @cursor.cursor = table_cursor
 
-    @cursor.next?.should be_true
+    @cursor.next?.should be true
   end
   
   it "next? should return false if there are no loaded or unloaded unprocessed rows" do
-    table_cursor = mock("DBCursor")
+    table_cursor = double("DBCursor")
     table_cursor.should_receive(:next?).and_return(false)
     @cursor.cursor = table_cursor
 
-    @cursor.next?.should be_false    
+    @cursor.next?.should be false
   end
   
   it "next_row should return last loaded unprocessed row or nil if there is none" do
@@ -41,7 +41,7 @@ describe ProxyBlockCursor do
   end
   
   it "next_row should return next row in database if there is no loaded unprocessed row available" do
-    table_cursor = mock("DBCursor")
+    table_cursor = double("DBCursor")
     table_cursor.should_receive(:next_row).and_return(:dummy_row)
     @cursor.cursor = table_cursor
 
@@ -89,7 +89,7 @@ describe ProxyBlockCursor do
   end
   
   it "current_checksum should return the current checksum" do
-    digest = mock("Digest")
+    digest = double("Digest")
     digest.should_receive(:hexdigest).and_return(:dummy_checksum)
     @cursor.digest = digest
     

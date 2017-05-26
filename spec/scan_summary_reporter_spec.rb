@@ -1,22 +1,18 @@
-require File.dirname(__FILE__) + '/spec_helper.rb'
+require 'spec_helper'
 
 include RR
 
 describe ScanReportPrinters::ScanSummaryReporter do
-  before(:each) do
-    $stdout.should_receive(:puts).any_number_of_times
-  end
-
   it "should register itself with ScanRunner" do
     RR::ScanReportPrinters.printers.any? do |printer|
       printer[:printer_class] == ScanReportPrinters::ScanSummaryReporter
-    end.should be_true
+    end.should be true
   end
   
   it "initialize should detect if the detailed number of differnces should be counted" do
-    ScanReportPrinters::ScanSummaryReporter.new(nil, nil).only_totals.should be_true
-    ScanReportPrinters::ScanSummaryReporter.new(nil, "bla").only_totals.should be_true
-    ScanReportPrinters::ScanSummaryReporter.new(nil, "detailed").only_totals.should be_false
+    ScanReportPrinters::ScanSummaryReporter.new(nil, nil).only_totals.should be true
+    ScanReportPrinters::ScanSummaryReporter.new(nil, "bla").only_totals.should be true
+    ScanReportPrinters::ScanSummaryReporter.new(nil, "detailed").only_totals.should be false
   end
   
   it "scan should count differences correctly in totals mode" do

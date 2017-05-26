@@ -1,4 +1,4 @@
-require File.dirname(__FILE__) + '/spec_helper.rb'
+require 'spec_helper'
 
 include RR
 
@@ -8,7 +8,7 @@ describe BaseRunner do
 
   it "process_options should make options as nil and teturn status as 1 if command line parameters are unknown" do
     # also verify that an error message is printed
-    $stderr.should_receive(:puts).any_number_of_times
+    $stderr.should_receive(:puts).at_least(1).times
     runner = BaseRunner.new
     status = runner.process_options ["--nonsense"]
     runner.options.should == nil
@@ -17,7 +17,7 @@ describe BaseRunner do
   
   it "process_options should make options as nil and return status as 1 if config option is not given" do
     # also verify that an error message is printed
-    $stderr.should_receive(:puts).any_number_of_times
+    $stderr.should_receive(:puts).at_least(1).times
     runner = BaseRunner.new
     status = runner.process_options ["table"]
     runner.options.should == nil
@@ -55,10 +55,9 @@ describe BaseRunner do
   end
 
   it "process_options should add runner specific options" do
-    BaseRunner.any_instance_should_receive(:add_specific_options) do
-      runner = BaseRunner.new
-      runner.process_options ["-c", "config_path"]
-    end
+    runner = BaseRunner.new
+    runner.should_receive(:add_specific_options)
+    runner.process_options ["-c", "config_path"]
   end
   
   it "process_options should assign the command line specified report printer" do
@@ -69,7 +68,7 @@ describe BaseRunner do
       ScanReportPrinters.register :dummy_printer_class, "-y", "--printer_y[=arg]", "description"
       
       runner = BaseRunner.new
-      runner.stub!(:session)
+      runner.stub(:session)
       runner.process_options ["-c", "config_path", "--printer_y=arg_for_y", "table_spec"]
       runner.report_printer_class.should == :dummy_printer_class
       runner.report_printer_arg.should == 'arg_for_y'
@@ -83,7 +82,7 @@ describe BaseRunner do
     begin
       ScanProgressPrinters.instance_eval { class_variable_set :@@progress_printers, nil }
 
-      printer_y_class = mock("printer_y_class")
+      printer_y_class = double("printer_y_class")
       printer_y_class.should_receive(:arg=)
 
       ScanProgressPrinters.register :printer_y_key, printer_y_class, "-y", "--printer_y[=arg]", "description"
@@ -110,23 +109,21 @@ describe BaseRunner do
   end
   
   it "run should not start a scan if the command line is invalid" do
-    $stderr.should_receive(:puts).any_number_of_times
-    BaseRunner.any_instance_should_not_receive(:execute) {
-      BaseRunner.run(["--nonsense"])
-    }
+    $stderr.should_receive(:puts).at_least(1).times
+    BaseRunner.any_instance.should_not_receive(:execute)
+    BaseRunner.run(["--nonsense"])
   end
 
   it "run should start a scan if the command line is correct" do
-    BaseRunner.any_instance_should_receive(:execute) {
-      BaseRunner.run(["--config=path", "table"])
-    }
+    BaseRunner.any_instance.should_receive(:execute)
+    BaseRunner.run(["--config=path", "table"])
   end
 
   it "report_printer should create and return the printer as specified per command line options" do
-    printer_class = mock("printer class")
+    printer_class = double("printer class")
     printer_class.should_receive(:new).with(:dummy_session, :dummy_arg).and_return(:dummy_printer)
     runner = BaseRunner.new
-    runner.stub!(:session).and_return(:dummy_session)
+    runner.stub(:session).and_return(:dummy_session)
     runner.report_printer_class = printer_class
     runner.report_printer_arg = :dummy_arg
     runner.report_printer.should == :dummy_printer
@@ -135,7 +132,7 @@ describe BaseRunner do
   
   it "report_printer should return the ScanSummaryReporter if no other printer was chosen" do
     runner = BaseRunner.new
-    runner.stub!(:session)
+    runner.stub(:session)
     runner.report_printer.should be_an_instance_of(ScanReportPrinters::ScanSummaryReporter)
   end
 
@@ -152,20 +149,20 @@ describe BaseRunner do
   end
   
   it "signal_scanning_completion should signal completion if the scan report printer supports it" do
-    printer = mock("printer")
+    printer = double("printer")
     printer.should_receive(:scanning_finished)
     printer.should_receive(:respond_to?).with(:scanning_finished).and_return(true)
     runner = BaseRunner.new
-    runner.stub!(:report_printer).and_return(printer)
+    runner.stub(:report_printer).and_return(printer)
     runner.signal_scanning_completion
   end
   
   it "signal_scanning_completion should not signal completion if the scan report printer doesn't supports it" do
-    printer = mock("printer")
+    printer = double("printer")
     printer.should_not_receive(:scanning_finished)
     printer.should_receive(:respond_to?).with(:scanning_finished).and_return(false)
     runner = BaseRunner.new
-    runner.stub!(:report_printer).and_return(printer)
+    runner.stub(:report_printer).and_return(printer)
     runner.signal_scanning_completion
   end
 
@@ -180,11 +177,11 @@ describe BaseRunner do
       }
 
       # create and install a dummy processor
-      processor = mock("dummy_processor")
+      processor = double("dummy_processor")
       processor.should_receive(:run).twice.and_yield(:left, :dummy_row)
 
       # verify that the scanner receives the progress printer
-      runner.stub!(:progress_printer).and_return(:dummy_printer_class)
+      runner.stub(:progress_printer).and_return(:dummy_printer_class)
       processor.should_receive(:progress_printer=).twice.with(:dummy_printer_class)
 
       runner.should_receive(:create_processor).twice.and_return(processor)
@@ -195,7 +192,7 @@ describe BaseRunner do
       runner.execute
 
       # verify that rubyrep infrastructure tables were excluded
-      runner.session.configuration.excluded_table_specs.include?(/^rr_.*/).should be_true
+      runner.session.configuration.excluded_table_specs.include?(/^rr_.*/).should be true
 
       $stdout.string.should =~ /scanner_records.* 1\n/
       $stdout.string.should =~ /extender_one_record.* 1\n/

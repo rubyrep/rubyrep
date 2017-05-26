@@ -1,4 +1,4 @@
-require File.dirname(__FILE__) + '/spec_helper.rb'
+require 'spec_helper'
 
 include RR
 
@@ -19,14 +19,14 @@ describe "PostgreSQL schema support" do
   if Initializer.configuration.left[:adapter] == 'postgresql'
     it "tables should show the tables from the schema and no others" do
       session = Session.new
-      session.left.tables.include?('rr_simple').should be_true
-      session.left.tables.include?('scanner_records').should be_false
+      session.left.tables.include?('rr_simple').should be true
+      session.left.tables.include?('scanner_records').should be false
     end
 
     it "tables should not show the tables from other schemas" do
       session = Session.new standard_config
-      session.left.tables.include?('scanner_records').should be_true
-      session.left.tables.include?('rr_simple').should be_false
+      session.left.tables.include?('scanner_records').should be true
+      session.left.tables.include?('rr_simple').should be false
     end
 
     it "primary_key_names should work" do
@@ -42,6 +42,9 @@ describe "PostgreSQL schema support" do
     it "column_names should work" do
       session = Session.new
       session.left.column_names('rr_simple').should == ['id', 'name']
+      lambda {
+        session.left.column_names('scanner_records')
+      }.should raise_error /relation.*scanner_records.*not exist/
     end
 
     it "column_names should pick the table in the target schema" do
@@ -62,13 +65,12 @@ describe "PostgreSQL schema support" do
         should == 'select "id", "name" from "rr_simple" order by "id"'
     end
 
-    it "TypeCastingCursor should work" do
+    it "cursor should work" do
       session = Session.new
-      org_cursor = session.left.select_cursor(
+      cursor = session.left.select_cursor(
         :query => "select id, name from rr_simple where id = 1",
-        :type_cast => false
+        :table => :rr_simple
       )
-      cursor = TypeCastingCursor.new session.left, 'rr_simple', org_cursor
 
       row = cursor.next_row
 
@@ -178,7 +180,7 @@ describe "PostgreSQL schema support" do
 
         initializer.create_trigger :left, 'rr_trigger_test'
         initializer.trigger_exists?(:left, 'rr_trigger_test').
-          should be_true
+          should be true
 
         # Verify that the trigger can find the pending_changes table even if
         # current search_path does not include it.
@@ -192,7 +194,7 @@ describe "PostgreSQL schema support" do
 
         initializer.drop_trigger(:left, 'rr_trigger_test')
         initializer.trigger_exists?(:left, 'rr_trigger_test').
-          should be_false
+          should be false
       ensure
         session.left.rollback_db_transaction if session
       end
@@ -205,8 +207,8 @@ describe "PostgreSQL schema support" do
       session = Session.new(config)
 
       tables = session.left.tables
-      tables.include?('rr_simple').should be_true
-      tables.include?('scanner_records').should be_true
+      tables.include?('rr_simple').should be true
+      tables.include?('scanner_records').should be true
     end
   end
 end

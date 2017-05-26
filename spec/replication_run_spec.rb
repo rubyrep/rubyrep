@@ -1,4 +1,4 @@
-require File.dirname(__FILE__) + '/spec_helper.rb'
+require 'spec_helper'
 
 include RR
 
@@ -64,12 +64,12 @@ describe ReplicationRun do
 
       # No event filter at all
       run = ReplicationRun.new session, TaskSweeper.new(1)
-      run.event_filtered?(diff).should be_false
+      run.event_filtered?(diff).should be false
 
       # Event filter that does not handle replication events
       session.configuration.options[:event_filter] = Object.new
       run = ReplicationRun.new session, TaskSweeper.new(1)
-      run.event_filtered?(diff).should be_false
+      run.event_filtered?(diff).should be false
 
       # event_filtered? should signal filtering (i. e. return true) if filter returns false.
       filter = Object.new
@@ -78,7 +78,7 @@ describe ReplicationRun do
       end
       session.configuration.options[:event_filter] = filter
       run = ReplicationRun.new session, TaskSweeper.new(1)
-      run.event_filtered?(diff).should be_true
+      run.event_filtered?(diff).should be true
 
       # event_filtered? should return false if filter returns true.
       filter = {}
@@ -88,7 +88,7 @@ describe ReplicationRun do
       end
       session.configuration.options[:event_filter] = filter
       run = ReplicationRun.new session, TaskSweeper.new(1)
-      run.event_filtered?(diff).should be_false
+      run.event_filtered?(diff).should be false
       filter[:args].should == ['extender_no_record', {'id' => 1}, run.helper, diff]
     ensure
       Committers::NeverCommitter.rollback_current_session
@@ -298,7 +298,7 @@ describe ReplicationRun do
         'change_time' => Time.now
       }
       run = ReplicationRun.new session, TaskSweeper.new(1)
-      run.replicator.stub!(:replicate_difference).and_return {raise Exception, 'dummy message'}
+      run.replicator.stub(:replicate_difference) {raise Exception, 'dummy message'}
       run.run
 
       row = session.left.select_one("select * from rr_logged_events")
@@ -324,8 +324,8 @@ describe ReplicationRun do
         'change_time' => Time.now
       }
       run = ReplicationRun.new session, TaskSweeper.new(1)
-      run.replicator.stub!(:replicate_difference).and_return {raise Exception, 'dummy message'}
-      run.helper.stub!(:log_replication_outcome).and_return {raise Exception, 'blub'}
+      run.replicator.stub(:replicate_difference) {raise Exception, 'dummy message'}
+      run.helper.stub(:log_replication_outcome) {raise Exception, 'blub'}
       lambda {run.run}.should raise_error(Exception, 'dummy message')
     ensure
       session.left.rollback_db_transaction
@@ -346,7 +346,7 @@ describe ReplicationRun do
         'change_time' => Time.now
       }
       sweeper = TaskSweeper.new(1)
-      sweeper.stub!(:terminated?).and_return(true)
+      sweeper.stub(:terminated?).and_return(true)
       run = ReplicationRun.new session, sweeper
       LoggedChangeLoaders.should_not_receive(:new)
       run.run
@@ -370,7 +370,7 @@ describe ReplicationRun do
         'change_time' => Time.now
       }
       sweeper = TaskSweeper.new(1)
-      sweeper.should_receive(:terminated?).any_number_of_times.and_return(false, true)
+      sweeper.should_receive(:terminated?).at_least(1).times.and_return(false, true)
       run = ReplicationRun.new session, sweeper
       run.helper.should_receive(:finalize).with(false)
       run.run

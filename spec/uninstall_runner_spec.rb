@@ -1,4 +1,4 @@
-require File.dirname(__FILE__) + '/spec_helper.rb'
+require 'spec_helper'
 
 include RR
 
@@ -13,7 +13,7 @@ describe UninstallRunner do
 
   it "process_options should make options as nil and teturn status as 1 if command line parameters are unknown" do
     # also verify that an error message is printed
-    $stderr.should_receive(:puts).any_number_of_times
+    $stderr.should_receive(:puts).at_least(1).times
     runner = UninstallRunner.new
     status = runner.process_options ["--nonsense"]
     runner.options.should == nil
@@ -22,7 +22,7 @@ describe UninstallRunner do
 
   it "process_options should make options as nil and return status as 1 if config option is not given" do
     # also verify that an error message is printed
-    $stderr.should_receive(:puts).any_number_of_times
+    $stderr.should_receive(:puts).at_least(1).times
     runner = UninstallRunner.new
     status = runner.process_options []
     runner.options.should == nil
@@ -45,16 +45,14 @@ describe UninstallRunner do
   end
 
   it "run should not start an uninstall if the command line is invalid" do
-    $stderr.should_receive(:puts).any_number_of_times
-    UninstallRunner.any_instance_should_not_receive(:execute) {
-      UninstallRunner.run(["--nonsense"])
-    }
+    $stderr.should_receive(:puts).at_least(1).times
+    expect_any_instance_of(UninstallRunner).to_not receive(:execute)
+    UninstallRunner.run(["--nonsense"])
   end
 
   it "run should start an uninstall if the command line is correct" do
-    UninstallRunner.any_instance_should_receive(:execute) {
-      UninstallRunner.run(["--config=path"])
-    }
+    expect_any_instance_of(UninstallRunner).to receive(:execute)
+    UninstallRunner.run(["--config=path"])
   end
 
   it "session should create and return the session" do
@@ -76,14 +74,14 @@ describe UninstallRunner do
       initializer.create_trigger :left, 'scanner_records'
 
       runner = UninstallRunner.new
-      runner.stub!(:session).and_return(session)
+      runner.stub(:session).and_return(session)
 
       runner.execute
 
-      initializer.trigger_exists?(:left, 'scanner_records').should be_false
-      initializer.change_log_exists?(:left).should be_false
-      session.right.tables.include?('rx_running_flags').should be_false
-      initializer.event_log_exists?.should be_false
+      initializer.trigger_exists?(:left, 'scanner_records').should be false
+      initializer.change_log_exists?(:left).should be false
+      session.right.tables.include?('rx_running_flags').should be false
+      initializer.event_log_exists?.should be false
 
       $stdout.string =~ /uninstall completed/i
     ensure

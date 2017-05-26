@@ -3,19 +3,6 @@ class ActiveRecord::ConnectionAdapters::AbstractAdapter
   attr_accessor :log_subscriber
 end
 
-class ActiveRecord::ConnectionAdapters::Column
-  # Bug in ActiveRecord parsing of PostgreSQL timestamps with microseconds:
-  # Certain values are incorrectly rounded, thus ending up with timestamps
-  # that are off by one microsecond.
-  # This monkey patch fixes the problem.
-  def self.fast_string_to_time(string)
-    if string =~ Format::ISO_DATETIME
-      microsec = ($7.to_f * 1_000_000).round # used to be #to_i instead
-      new_time $1.to_i, $2.to_i, $3.to_i, $4.to_i, $5.to_i, $6.to_i, microsec
-    end
-  end
-end
-
 module RR
   
   # Connection extenders provide additional database specific functionality
@@ -39,10 +26,18 @@ module RR
       @extenders.merge! extender
     end
 
-    # Dummy ActiveRecord descendant only used to create database connections.
-    class DummyActiveRecord < ActiveRecord::Base
+    # Creates a new ActiveRecord::Base descending class that can be used to create and manage
+    # database connections.
+    #
+    # @return [Class] the new ActiveRecord::Base descending class
+    def self.active_record_class_for_database_connection
+      active_record_class = Class.new(ActiveRecord::Base)
+      @active_record_class_counter ||= 0
+      @active_record_class_counter += 1
+      RR.const_set("DummyActiveRecord#{@active_record_class_counter}", active_record_class)
+      active_record_class
     end
-    
+
     # Creates an ActiveRecord database connection according to the provided +config+ connection hash.
     # Possible values of this parameter are described in ActiveRecord::Base#establish_connection.
     # The database connection is extended with the correct ConnectionExtenders module.
@@ -52,38 +47,29 @@ module RR
     # To go around this, we delete ActiveRecord's memory of the existing database connection
     # as soon as it is created.
     def self.db_connect_without_cache(config)
-      if RUBY_PLATFORM =~ /java/
-        adapter = config[:adapter]
-        
-        # As recommended in the activerecord-jdbc-adapter use the jdbc versions
-        # of the Adapters. E. g. instead of "postgresql", "jdbcpostgresql".
-        adapter = 'jdbc' + adapter unless adapter =~ /^jdbc/
+      # active_record_class = active_record_class_for_connection(config)
+      # active_record_class = DummyActiveRecord.dup
+      active_record_class = active_record_class_for_database_connection
+      active_record_class.establish_connection(config)
 
-        DummyActiveRecord.establish_connection(config.merge(:adapter => adapter))
-      else
-        DummyActiveRecord.establish_connection(config)
+
+      # To suppress Postgres debug messages (which cannot be suppress in another way),
+      # temporarily replace stdout.
+      org_stdout = $stdout
+      $stdout = StringIO.new
+      begin
+        connection = active_record_class.connection
+      ensure
+        puts $stdout.string
+        $stdout = org_stdout
       end
-      connection = DummyActiveRecord.connection
-      
-      # Delete the database connection from ActiveRecords's 'memory'
-      ActiveRecord::Base.connection_handler.connection_pools.delete DummyActiveRecord.name
-      
-      extender = ""
-      if RUBY_PLATFORM =~ /java/
-        extender = :jdbc
-      elsif ConnectionExtenders.extenders.include? config[:adapter].to_sym
+
+      if ConnectionExtenders.extenders.include? config[:adapter].to_sym
         extender = config[:adapter].to_sym
       else
         raise "No ConnectionExtender available for :#{config[:adapter]}"
       end
       connection.extend ConnectionExtenders.extenders[extender]
-      
-      # Hack to get Postgres schema support under JRuby to par with the standard
-      # ruby version
-      if RUBY_PLATFORM =~ /java/ and config[:adapter].to_sym == :postgresql
-        connection.extend RR::ConnectionExtenders::PostgreSQLExtender
-        connection.initialize_search_path
-      end
 
       replication_module = ReplicationExtenders.extenders[config[:adapter].to_sym]
       connection.extend replication_module if replication_module
@@ -112,14 +98,15 @@ module RR
         if config[:logger].respond_to?(:debug)
           logger = config[:logger]
         else
-          logger = ActiveSupport::BufferedLogger.new(config[:logger])
+          logger = ActiveSupport::Logger.new(config[:logger])
         end
         db_connection.instance_variable_set :@logger, logger
         if ActiveSupport.const_defined?(:Notifications)
           connection_object_id = db_connection.object_id
           db_connection.log_subscriber = ActiveSupport::Notifications.subscribe("sql.active_record") do |name, start, finish, id, payload|
             if payload[:connection_id] == connection_object_id and logger.debug?
-              logger.debug payload[:sql].squeeze(" ")
+              sql = payload[:sql].squeeze(" ") rescue payload[:sql]
+              logger.debug sql
             end
           end
         end
@@ -146,7 +133,6 @@ module RR
       end
 
       install_logger db_connection, config
-
       db_connection
     end
 

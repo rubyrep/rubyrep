@@ -4,7 +4,7 @@ module RR
 
     # Provides various MySQL specific functionality required by Rubyrep.
     module MysqlExtender
-      RR::ConnectionExtenders.register :mysql => self
+      RR::ConnectionExtenders.register :mysql2 => self
 
       # Returns an ordered list of primary key column names of the given table
       def primary_key_names(table)
@@ -53,6 +53,28 @@ module RR
           result[table] = [] unless result.include? table
         end
         result
+      end
+
+      # Quotes the value so it can be used in SQL insert / update statements.
+      #
+      # @param [Object] value the target value
+      # @param [ActiveRecord::ConnectionAdapters::MySQL::Column] column the target column
+      # @return [String] the quoted string
+      def column_aware_quote(value, column)
+        if column.sql_type == 'blob' and RUBY_PLATFORM == 'java'
+          quote(column.type_cast_for_database(value))
+        else
+          quote(value)
+        end
+      end
+
+      # Casts a value returned from the database back into the according ruby type.
+      #
+      # @param [Object] value the received value
+      # @param [ActiveRecord::ConnectionAdapters::AbstractMysqlAdapter::Column] column the originating column
+      # @return [Object] the casted value
+      def fixed_type_cast(value, column)
+        column.type_cast_from_database value
       end
     end
   end

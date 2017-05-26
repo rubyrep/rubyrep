@@ -1,4 +1,4 @@
-require File.dirname(__FILE__) + '/spec_helper.rb'
+require 'spec_helper'
 
 include RR
 
@@ -386,7 +386,7 @@ describe LoggedChange do
   it "key_from_raw_key should work with multi character key_sep strings" do
     loader = LoggedChangeLoader.new Session.new, :left
     change = LoggedChange.new loader
-    change.stub!(:key_sep).and_return('BLA')
+    change.stub(:key_sep).and_return('BLA')
     change.key_to_hash("aBLA1BLAbBLA2").should == {
       'a' => '1',
       'b' => '2'

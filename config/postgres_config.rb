@@ -4,10 +4,11 @@
 RR::Initializer::run do |config|
   config.left = {
     :adapter  => 'postgresql',   
-    :database => 'rr_left',   
+    :database => 'rr_left',
     :username => 'postgres',   
     :password => 'password',   
-    :host     => 'localhost'
+    :host     => 'localhost',
+    :min_messages => 'warning'
   }
 
   config.right = {
@@ -15,7 +16,8 @@ RR::Initializer::run do |config|
     :database => 'rr_right',   
     :username => 'postgres',   
     :password => 'password',   
-    :host     => 'localhost'
+    :host     => 'localhost',
+    :min_messages => 'warning'
   }
 
 end

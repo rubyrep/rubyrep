@@ -1,4 +1,4 @@
-require File.dirname(__FILE__) + '/spec_helper.rb'
+require 'spec_helper'
 
 include RR
 
@@ -34,8 +34,8 @@ describe TableScan do
     session = Session.new
     scan = TableScan.new(session, 'extender_one_record', 'extender_no_record')
 
-    progress_printer_class = mock("progress printer class")
-    progress_printer = mock("progress printer")
+    progress_printer_class = double("progress printer class")
+    progress_printer = double("progress printer")
     progress_printer_class.should_receive(:new).
       with(1, scan.session, 'extender_one_record', 'extender_no_record').
       and_return(progress_printer)

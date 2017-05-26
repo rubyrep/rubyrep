@@ -1,4 +1,4 @@
-require File.dirname(__FILE__) + '/spec_helper.rb'
+require 'spec_helper'
 
 include RR
 
@@ -75,10 +75,10 @@ describe ReplicationInitializer do
 
       initializer.create_trigger :left, 'trigger_test'
       initializer.trigger_exists?(:left, 'trigger_test').
-        should be_true
+        should be true
       initializer.drop_trigger(:left, 'trigger_test')
       initializer.trigger_exists?(:left, 'trigger_test').
-        should be_false
+        should be false
     ensure
       session.left.rollback_db_transaction if session
     end
@@ -163,19 +163,19 @@ describe ReplicationInitializer do
   it "change_log_exists? should return true if replication log exists" do
     config = deep_copy(standard_config)
     initializer = ReplicationInitializer.new(Session.new(config))
-    initializer.change_log_exists?(:left).should be_true
+    initializer.change_log_exists?(:left).should be true
     config.options[:rep_prefix] = 'r2'
     initializer = ReplicationInitializer.new(Session.new(config))
-    initializer.change_log_exists?(:left).should be_false
+    initializer.change_log_exists?(:left).should be false
   end
 
   it "event_log_exists? should return true if event log exists" do
     config = deep_copy(standard_config)
     initializer = ReplicationInitializer.new(Session.new(config))
-    initializer.event_log_exists?.should be_true
+    initializer.event_log_exists?.should be true
     config.options[:rep_prefix] = 'r2'
     initializer = ReplicationInitializer.new(Session.new(config))
-    initializer.event_log_exists?.should be_false
+    initializer.event_log_exists?.should be false
   end
 
   it "create_event_log / drop_event_log should create / drop the event log" do
@@ -185,10 +185,10 @@ describe ReplicationInitializer do
     initializer = ReplicationInitializer.new(session)
     initializer.drop_logged_events if initializer.event_log_exists?
 
-    $stderr.stub! :write
-    initializer.event_log_exists?.should be_false
+    $stderr.stub :write
+    initializer.event_log_exists?.should be false
     initializer.create_event_log
-    initializer.event_log_exists?.should be_true
+    initializer.event_log_exists?.should be true
 
     # verify that replication log has 8 byte, auto-generating primary key
     session.left.insert_record 'r2_logged_events', {'id' => 1e18.to_i, 'change_key' => 'blub'}
@@ -196,7 +196,7 @@ describe ReplicationInitializer do
       to_i.should == 1e18.to_i
 
     initializer.drop_event_log
-    initializer.event_log_exists?.should be_false
+    initializer.event_log_exists?.should be false
   end
 
   it "create_change_log / drop_change_log should create / drop the replication log" do
@@ -206,10 +206,10 @@ describe ReplicationInitializer do
     initializer = ReplicationInitializer.new(session)
     initializer.drop_change_log(:left) if initializer.change_log_exists?(:left)
 
-    $stderr.stub! :write
-    initializer.change_log_exists?(:left).should be_false
+    $stderr.stub :write
+    initializer.change_log_exists?(:left).should be false
     initializer.create_change_log(:left)
-    initializer.change_log_exists?(:left).should be_true
+    initializer.change_log_exists?(:left).should be true
 
     # verify that replication log has 8 byte, auto-generating primary key
     session.left.insert_record 'r2_pending_changes', {'change_key' => 'bla'}
@@ -220,7 +220,7 @@ describe ReplicationInitializer do
       to_i.should == 1e18.to_i
 
     initializer.drop_change_log(:left)
-    initializer.change_log_exists?(:left).should be_false
+    initializer.change_log_exists?(:left).should be false
   end
 
   it "ensure_activity_markers should not create the tables if they already exist" do
@@ -237,8 +237,8 @@ describe ReplicationInitializer do
       session = Session.new(config)
       initializer = ReplicationInitializer.new(session)
       initializer.ensure_activity_markers
-      session.left.tables.include?('rx_running_flags').should be_true
-      session.right.tables.include?('rx_running_flags').should be_true
+      session.left.tables.include?('rx_running_flags').should be true
+      session.right.tables.include?('rx_running_flags').should be true
 
       # right columns?
       columns = session.left.columns('rx_running_flags')
@@ -380,7 +380,7 @@ describe ReplicationInitializer do
     config = deep_copy(standard_config)
     initializer = ReplicationInitializer.new(Session.new(config))
     initializer.exclude_rubyrep_tables
-    initializer.session.configuration.excluded_table_specs.include?(/^rr_.*/).should be_true
+    initializer.session.configuration.excluded_table_specs.include?(/^rr_.*/).should be true
   end
 
   it "restore_unconfigured_tables should remove triggers and sequences setups of unconfigured tables" do
@@ -399,12 +399,12 @@ describe ReplicationInitializer do
 
       # verify that the unconfigured tables are restored and pending changes deleted
       initializer.restore_unconfigured_tables
-      initializer.trigger_exists?(:right, 'scanner_records').should be_false
+      initializer.trigger_exists?(:right, 'scanner_records').should be false
       session.right.sequence_values('rr', 'scanner_records').values[0][:increment].should == 1
       session.right.select_one("select * from rr_pending_changes where change_table = 'scanner_records'").should be_nil
 
       # verify that the configured tables are not touched
-      initializer.trigger_exists?(:right, 'scanner_left_records_only').should be_true
+      initializer.trigger_exists?(:right, 'scanner_left_records_only').should be true
       session.right.sequence_values('rr', 'scanner_left_records_only').values[0][:increment].should == 2
       session.right.select_one("select * from rr_pending_changes where change_table = 'scanner_left_records_only'").should_not be_nil
     ensure
@@ -448,8 +448,8 @@ describe ReplicationInitializer do
     $stdout = StringIO.new
     begin
       initializer = ReplicationInitializer.new(session)
-      initializer.should_receive(:ensure_infrastructure).any_number_of_times
-      initializer.should_receive(:restore_unconfigured_tables).any_number_of_times
+      initializer.should_receive(:ensure_infrastructure).at_least(1).times
+      initializer.should_receive(:restore_unconfigured_tables).at_least(1).times
       initializer.prepare_replication
 
       received_session.should == session
@@ -459,22 +459,22 @@ describe ReplicationInitializer do
       session.right.sequence_values('rr','scanner_left_records_only').values[0][:increment].should == 2
 
       # verify table was synced
-      left_records = session.left.select_all("select * from  scanner_left_records_only order by id")
-      right_records = session.left.select_all("select * from  scanner_left_records_only order by id")
+      left_records = session.left.select_all("select * from  scanner_left_records_only order by id").to_a
+      right_records = session.left.select_all("select * from  scanner_left_records_only order by id").to_a
       left_records.should == right_records
 
       # verify rubyrep activity is _not_ logged
       session.right.select_all("select * from rr_pending_changes").should be_empty
 
       # verify other data changes are logged
-      initializer.trigger_exists?(:left, 'scanner_left_records_only').should be_true
+      initializer.trigger_exists?(:left, 'scanner_left_records_only').should be true
       session.left.insert_record 'scanner_left_records_only', {'id' => 10, 'name' => 'bla'}
-      changes = session.left.select_all("select change_key from rr_pending_changes")
+      changes = session.left.select_all("select change_key from rr_pending_changes").to_a
       changes.size.should == 1
       changes[0]['change_key'].should == 'id|10'
 
       # verify that the 'rr_pending_changes' table was not touched
-      initializer.trigger_exists?(:left, 'rr_pending_changes').should be_false
+      initializer.trigger_exists?(:left, 'rr_pending_changes').should be false
 
       # verify that :initial_sync => false is honored
       session.right.select_all("select * from table_with_manual_key").should be_empty

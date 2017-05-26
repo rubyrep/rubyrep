@@ -1,4 +1,4 @@
-require File.dirname(__FILE__) + '/spec_helper.rb'
+require 'spec_helper'
 
 include RR
 
@@ -13,7 +13,7 @@ describe GenerateRunner do
 
   it "process_options should make options as nil and teturn status as 1 if command line parameters are unknown" do
     # also verify that an error message is printed
-    $stderr.should_receive(:puts).any_number_of_times
+    $stderr.should_receive(:puts).at_least(1).times
     runner = GenerateRunner.new
     status = runner.process_options ["--nonsense"]
     runner.options.should == nil
@@ -22,7 +22,7 @@ describe GenerateRunner do
 
   it "process_options should make options as nil and return status as 1 if file name is not given" do
     # also verify that an error message is printed
-    $stderr.should_receive(:puts).any_number_of_times
+    $stderr.should_receive(:puts).at_least(1).times
     runner = GenerateRunner.new
     status = runner.process_options []
     runner.options.should == nil
@@ -45,16 +45,16 @@ describe GenerateRunner do
   end
 
   it "run should not start the generate command if the command line is invalid" do
-    $stderr.should_receive(:puts).any_number_of_times
-    GenerateRunner.any_instance_should_not_receive(:execute) {
-      GenerateRunner.run(["--nonsense"])
-    }
+    $stderr.should_receive(:puts).at_least(1).times
+    expect_any_instance_of(GenerateRunner).to_not receive(:execute)
+
+    GenerateRunner.run(["--nonsense"])
   end
 
   it "run should start an uninstall if the command line is correct" do
-    GenerateRunner.any_instance_should_receive(:execute) {
-      GenerateRunner.run(["my_file_name"])
-    }
+    expect_any_instance_of(GenerateRunner).to receive(:execute)
+
+    GenerateRunner.run(["my_file_name"])
   end
 
   it "execute should refuse to overwrite an existing file" do
@@ -75,7 +75,7 @@ describe GenerateRunner do
       runner = GenerateRunner.new
       runner.options = {:file_name => 'my_config_template'}
       runner.execute
-      File.exists?('my_config_template').should be_true
+      File.exists?('my_config_template').should be true
     ensure
       File.delete 'my_config_template' rescue nil
     end

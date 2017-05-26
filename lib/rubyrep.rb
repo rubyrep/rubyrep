@@ -6,6 +6,7 @@ require 'yaml'
 
 gem 'activerecord', '>= 3.0.5'
 require 'active_record'
+require 'ap'
 
 require 'version'
 require 'configuration'
@@ -56,8 +57,7 @@ require 'generate_runner'
 require 'noisy_connection'
 
 Dir["#{File.dirname(__FILE__)}/rubyrep/connection_extenders/*.rb"].each do |extender|
-  # jdbc_extender.rb is only loaded if we are running on jruby
-  require extender unless extender =~ /jdbc/ and not RUBY_PLATFORM =~ /java/
+  require extender
 end
 
 require 'replication_initializer'

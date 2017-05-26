@@ -1,17 +1,16 @@
-require File.dirname(__FILE__) + '/spec_helper.rb'
+require 'spec_helper'
 
 include RR
 
 describe ScanReportPrinters::ScanDetailReporter do
   before(:each) do
     Initializer.configuration = standard_config
-    $stdout.should_receive(:puts).any_number_of_times
   end
 
   it "should register itself with ScanRunner" do
     RR::ScanReportPrinters.printers.any? do |printer|
       printer[:printer_class] == ScanReportPrinters::ScanDetailReporter
-    end.should be_true
+    end.should be true
   end
   
   it "initialize should store the provided session" do

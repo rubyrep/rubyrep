@@ -1,4 +1,4 @@
-require File.dirname(__FILE__) + '/spec_helper.rb'
+require 'spec_helper'
 
 include RR
 
@@ -64,14 +64,14 @@ describe Syncers::OneWaySyncer do
     helper = SyncHelper.new(sync)
 
     # verify correct behaviour if syncing to the left
-    helper.stub!(:sync_options).and_return({:direction => :left})
+    helper.stub(:sync_options).and_return({:direction => :left})
     syncer = Syncers::OneWaySyncer.new(helper)
     syncer.source.should == :right
     syncer.target.should == :left
     syncer.source_record_index.should == 1
 
     # verify correct behaviour if syncing to the right
-    helper.stub!(:sync_options).and_return({:direction => :right})
+    helper.stub(:sync_options).and_return({:direction => :right})
     syncer = Syncers::OneWaySyncer.new(helper)
     syncer.source.should == :left
     syncer.target.should == :right
@@ -88,7 +88,7 @@ describe Syncers::OneWaySyncer do
   it "sync_difference should only delete if :delete option is given" do
     sync = TableSync.new(Session.new, 'scanner_records')
     helper = SyncHelper.new(sync)
-    helper.stub!(:sync_options).and_return({:direction => :left})
+    helper.stub(:sync_options).and_return({:direction => :left})
     syncer = Syncers::OneWaySyncer.new(helper)
     helper.should_not_receive(:delete_record)
     helper.should_not_receive(:update_record)
@@ -99,7 +99,7 @@ describe Syncers::OneWaySyncer do
   it "sync_difference should delete in the right database" do
     sync = TableSync.new(Session.new, 'scanner_records')
     helper = SyncHelper.new(sync)
-    helper.stub!(:sync_options).and_return({:direction => :left, :delete => true})
+    helper.stub(:sync_options).and_return({:direction => :left, :delete => true})
     syncer = Syncers::OneWaySyncer.new(helper)
     helper.should_receive(:delete_record).with(:left, 'scanner_records', :dummy_record)
     helper.should_not_receive(:update_record)
@@ -107,7 +107,7 @@ describe Syncers::OneWaySyncer do
     syncer.sync_difference(:left, :dummy_record)
 
     helper = SyncHelper.new(sync)
-    helper.stub!(:sync_options).and_return({:direction => :right, :delete => true})
+    helper.stub(:sync_options).and_return({:direction => :right, :delete => true})
     syncer = Syncers::OneWaySyncer.new(helper)
     helper.should_receive(:delete_record).with(:right, 'scanner_records', :dummy_record)
     syncer.sync_difference(:right, :dummy_record)
@@ -116,7 +116,7 @@ describe Syncers::OneWaySyncer do
   it "sync_difference should not insert if :insert option is not true" do
     sync = TableSync.new(Session.new, 'scanner_records')
     helper = SyncHelper.new(sync)
-    helper.stub!(:sync_options).and_return({:direction => :left, :insert => false})
+    helper.stub(:sync_options).and_return({:direction => :left, :insert => false})
     syncer = Syncers::OneWaySyncer.new(helper)
     helper.should_not_receive(:delete_record)
     helper.should_not_receive(:update_record)
@@ -127,7 +127,7 @@ describe Syncers::OneWaySyncer do
   it "sync_difference should insert in the right database" do
     sync = TableSync.new(Session.new, 'scanner_records')
     helper = SyncHelper.new(sync)
-    helper.stub!(:sync_options).and_return({:direction => :left, :insert => true})
+    helper.stub(:sync_options).and_return({:direction => :left, :insert => true})
     syncer = Syncers::OneWaySyncer.new(helper)
     helper.should_not_receive(:delete_record)
     helper.should_not_receive(:update_record)
@@ -135,7 +135,7 @@ describe Syncers::OneWaySyncer do
     syncer.sync_difference(:right, :dummy_record)
 
     helper = SyncHelper.new(sync)
-    helper.stub!(:sync_options).and_return({:direction => :right, :insert => true})
+    helper.stub(:sync_options).and_return({:direction => :right, :insert => true})
     syncer = Syncers::OneWaySyncer.new(helper)
     helper.should_receive(:insert_record).with(:right, 'scanner_records', :dummy_record)
     syncer.sync_difference(:left, :dummy_record)
@@ -144,7 +144,7 @@ describe Syncers::OneWaySyncer do
   it "sync_difference should not update if :update option is not true" do
     sync = TableSync.new(Session.new, 'scanner_records')
     helper = SyncHelper.new(sync)
-    helper.stub!(:sync_options).and_return({:direction => :left, :update => false})
+    helper.stub(:sync_options).and_return({:direction => :left, :update => false})
     syncer = Syncers::OneWaySyncer.new(helper)
     helper.should_not_receive(:delete_record)
     helper.should_not_receive(:update_record)
@@ -155,7 +155,7 @@ describe Syncers::OneWaySyncer do
   it "sync_difference should update the right values in the right database" do
     sync = TableSync.new(Session.new, 'scanner_records')
     helper = SyncHelper.new(sync)
-    helper.stub!(:sync_options).and_return({:direction => :left, :update => true})
+    helper.stub(:sync_options).and_return({:direction => :left, :update => true})
     syncer = Syncers::OneWaySyncer.new(helper)
     helper.should_not_receive(:delete_record)
     helper.should_receive(:update_record).with(:left, 'scanner_records', :right_record)
@@ -163,7 +163,7 @@ describe Syncers::OneWaySyncer do
     syncer.sync_difference(:conflict, [:left_record, :right_record])
 
     helper = SyncHelper.new(sync)
-    helper.stub!(:sync_options).and_return({:direction => :right, :update => true})
+    helper.stub(:sync_options).and_return({:direction => :right, :update => true})
     syncer = Syncers::OneWaySyncer.new(helper)
     helper.should_receive(:update_record).with(:right, 'scanner_records', :left_record)
     syncer.sync_difference(:conflict, [:left_record, :right_record])

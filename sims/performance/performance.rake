@@ -2,7 +2,7 @@
 require 'rake'
 require 'benchmark'
 
-require File.dirname(__FILE__) + '/../sim_helper'
+require File.expand_path(File.dirname(__FILE__) + '/../sim_helper')
 
 # Prepares the database schema for the performance tests.
 def prepare_schema
@@ -32,20 +32,20 @@ BIG_SCAN_MODIFIED = BIG_SCAN_SAME + 3
 BIG_SCAN_LEFT_ONLY = BIG_SCAN_MODIFIED + 1 # difference to 100% will be right_only records
 
 def big_scan_columns
-  @@big_scan_columns ||= nil
-  unless @@big_scan_columns
+  @big_scan_columns ||= nil
+  unless @big_scan_columns
     session = RR::Session.new
-    @@big_scan_columns = session.left.column_names('big_scan')
+    @big_scan_columns = session.left.column_names('big_scan')
   end
-  @@big_scan_columns
+  @big_scan_columns
 end
 
 def text_columns
-  @@text_columns ||= big_scan_columns.select {|column_name| column_name =~ /^text/}
+  @text_columns ||= big_scan_columns.select {|column_name| column_name =~ /^text/}
 end
 
 def number_columns
-  @@number_columns ||= big_scan_columns.select {|column_name| column_name =~ /^number/}
+  @number_columns ||= big_scan_columns.select {|column_name| column_name =~ /^number/}
 end
 
 def random_attributes
@@ -193,37 +193,17 @@ namespace :sims do
     
     desc "Runs the big_scan simulation"
     task :scan do
-      Spec::Runner::CommandLine.run(
-        Spec::Runner::OptionParser.parse(
-          ['--options', "spec/spec.opts", "./sims/performance/big_scan_spec.rb"],
-          $stdout, $stderr))
+      system "rspec sims/performance/big_scan_spec.rb"
     end
     
     desc "Runs the big_sync simulation"
     task :sync do
-      Spec::Runner::CommandLine.run(
-        Spec::Runner::OptionParser.parse(
-          ['--options', "spec/spec.opts", "./sims/performance/big_sync_spec.rb"],
-          $stdout, $stderr))
+      system "rspec sims/performance/big_sync_spec.rb"
     end
 
     desc "Runs the big_rep simulation"
     task :rep do
-      Spec::Runner::CommandLine.run(
-        Spec::Runner::OptionParser.parse(
-          ['--options', "spec/spec.opts", "./sims/performance/big_rep_spec.rb"],
-          $stdout, $stderr))
-    end
-
-    begin
-      require 'ruby-prof/task'
-      RubyProf::ProfileTask.new do |t|
-        t.test_files = FileList["./sims/performance/*_spec.rb"]
-        t.output_dir = 'profile'
-        t.printer = :flat
-        t.min_percent = 1
-      end
-    rescue LoadError
+      system "rspec sims/performance/big_rep_spec.rb"
     end
   end
 end

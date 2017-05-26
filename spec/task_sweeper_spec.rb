@@ -1,4 +1,4 @@
-require File.dirname(__FILE__) + '/spec_helper.rb'
+require 'spec_helper'
 
 include RR
 
@@ -21,7 +21,7 @@ describe TaskSweeper do
   it "should return if task stalls" do
     start = Time.now
     TaskSweeper.timeout(0.01) {sleep 10}.should be_terminated
-    (Time.now - start < 5).should be_true
+    (Time.now - start < 5).should be true
   end
 
   it "should not return if task is active" do
@@ -32,7 +32,7 @@ describe TaskSweeper do
         sweeper.ping
       end
     end.should_not be_terminated
-    (Time.now - start > 0.4).should be_true
+    (Time.now - start > 0.4).should be true
 
   end
 
@@ -42,6 +42,6 @@ describe TaskSweeper do
       sleep 0.05
       terminated = sweeper.terminated?
     end.join
-    terminated.should be_true
+    terminated.should be true
   end
 end

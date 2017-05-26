@@ -1,11 +1,13 @@
-require File.dirname(__FILE__) + '/spec_helper.rb'
+# encoding: UTF-8
+
+require 'spec_helper'
 require 'yaml'
 require 'digest/md5'
 
 include RR
 
 # All ConnectionExtenders need to pass this spec
-describe "ConnectionExtender", :shared => true do
+shared_examples "ConnectionExtender" do
   before(:each) do
   end
 
@@ -47,7 +49,7 @@ describe "ConnectionExtender", :shared => true do
   it "select_cursor should handle zero result queries" do
     session = Session.new
     result = session.left.select_cursor :table => 'extender_no_record'
-    result.next?.should be_false
+    result.next?.should be false
   end
   
   it "select_cursor should work if row_buffer_size is smaller than table size" do
@@ -62,7 +64,7 @@ describe "ConnectionExtender", :shared => true do
   it "select_cursor should allow iterating through records" do
     session = Session.new
     result = session.left.select_cursor :table => 'extender_one_record'
-    result.next?.should be_true
+    result.next?.should be true
     result.next_row.should == {'id' => 1, 'name' => 'Alice'}
   end
   
@@ -108,33 +110,54 @@ describe "ConnectionExtender", :shared => true do
     ensure
       session.left.rollback_db_transaction
     end
-    result_data.should == org_data
+    result_data.b.should == org_data.b
   end
-  
+
   it "should read and write text data correctly" do
     session = Session.new
 
-    org_data = "よろしくお願(ねが)いします yoroshiku onegai shimasu: I humbly ask for your favor."
-    result_data = nil
+    org_data = "よろしくお願(ねが)いします yoroshiku onegai shimasu\\: I humbly ask for your favor."
     begin
       session.left.begin_db_transaction
-      sql = "insert into extender_type_check(id, text_test) values(2, '#{org_data}')"
-      session.left.execute sql
+      session.left.insert_record('extender_type_check', {'id' => 3, 'text_test' => org_data})
 
-      result_data = session.left.select_record(
+      session.left.select_one(
+        'select md5(text_test) as md5 from extender_type_check where id = 3'
+      )['md5'].should == Digest::MD5.hexdigest(org_data) # ensure it was written correctly
+
+      session.left.select_record(
         :table => "extender_type_check",
-        :row_keys => ["id" => 2]
-      )["text_test"]
+        :row_keys => ["id" => 3]
+      )["text_test"].should == org_data # ensure it was read correctly
     ensure
       session.left.rollback_db_transaction
     end
-    result_data.should == org_data
   end
   
+  it "should read and write timestamps correctly" do
+    session = Session.new
+
+    org_data = Time.now
+    result_data = nil
+    begin
+      session.left.begin_db_transaction
+      session.left.insert_record :extender_type_check, id: 2, timestamp: org_data
+
+      row = session.left.select_record(
+        :table => "extender_type_check",
+        :row_keys => ["id" => 2]
+      )
+      result_data = row["timestamp"]
+    ensure
+      session.left.rollback_db_transaction
+    end
+    result_data.should be_within(1).of(org_data)
+  end
+
   it "cursors returned by select_cursor should support clear" do
     session = Session.new
     result = session.left.select_cursor :table => 'extender_one_record'
-    result.next?.should be_true
+    result.next?.should be true
     result.should respond_to(:clear)
     result.clear
   end

@@ -1,4 +1,4 @@
-require File.dirname(__FILE__) + '/spec_helper.rb'
+require 'spec_helper'
 
 include RR
 
@@ -17,7 +17,7 @@ describe ProxyRowCursor do
     session = create_mock_proxy_connection 'dummy_table', ['dummy_id']
     cursor = ProxyRowCursor.new session, 'dummy_table'
     
-    table_cursor = mock("DBCursor")
+    table_cursor = double("DBCursor")
     table_cursor.should_receive(:next?).and_return(true)
     cursor.cursor = table_cursor
     
@@ -28,7 +28,7 @@ describe ProxyRowCursor do
     session = create_mock_proxy_connection 'dummy_table', ['dummy_id']
     cursor = ProxyRowCursor.new session, 'dummy_table'
     
-    table_cursor = mock("DBCursor")
+    table_cursor = double("DBCursor")
     table_cursor.should_receive(:next_row).and_return(:dummy_row)
     cursor.cursor = table_cursor
     
@@ -39,7 +39,7 @@ describe ProxyRowCursor do
     session = create_mock_proxy_connection 'dummy_table', ['dummy_id']
     cursor = ProxyRowCursor.new session, 'dummy_table'
     
-    table_cursor = mock("DBCursor")
+    table_cursor = double("DBCursor")
     table_cursor.should_receive(:next_row).and_return('dummy_id' => 'dummy_value')
     
     cursor.cursor = table_cursor

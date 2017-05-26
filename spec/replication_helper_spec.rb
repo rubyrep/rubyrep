@@ -1,4 +1,6 @@
-require File.dirname(__FILE__) + '/spec_helper.rb'
+require 'bigdecimal'
+
+require 'spec_helper'
 
 include RR
 
@@ -22,26 +24,42 @@ describe ReplicationHelper do
     helper.session.should == rep_run.session
   end
 
-  it "type_cast should convert the row values correctly" do
-    rep_run = ReplicationRun.new(Session.new, TaskSweeper.new(1))
+  it "type_cast should convert unconverted values correctly" do
+    session = Session.new
 
-    helper = ReplicationHelper.new(rep_run)
-    helper.type_cast('scanner_records', 'id' => '1', 'name' => 'bla').
-      should == {'id' => 1, 'name' => 'bla'}
+    decimal_data = BigDecimal.new("99999.00001")
+    multi_byte_data = "よろしくお願(ねが)いします yoroshiku onegai shimasu: I humbly ask for your favor."
+    binary_data = Marshal.dump(['bla',:dummy,1,2,3])
+    timestamp = Time.now.utc
 
-    string_row = {
-      'id' => '1',
-      'decimal_test' => '1.234',
-      'timestamp' => 'Sat Nov 10 20:15:01 +0900 2007',
-      'binary_test' => "\004\b[\n\"\bbla:\ndummyi\006i\ai\b"
-    }
-    row = helper.type_cast('extender_type_check', string_row)
-    row.should == {
-      'id' => 1,
-      'decimal_test' => BigDecimal.new("1.234"),
-      'timestamp' => Time.local(2007,"nov",10,20,15,1),
-      'binary_test' => Marshal.dump(['bla',:dummy,1,2,3])
-    }
+    begin
+      session.left.begin_db_transaction
+      session.left.insert_record(
+        'extender_type_check',
+        {
+          'id' => 99,
+          'decimal_test' => decimal_data,
+          'multi_byte' => multi_byte_data,
+          'binary_test' => binary_data,
+          'timestamp' => timestamp
+        }
+      )
+      org_row = session.left.connection.select_one(
+        'select * from extender_type_check where id = 99'
+      )
+      rep_run = ReplicationRun.new(session, TaskSweeper.new(1))
+      helper = ReplicationHelper.new(rep_run)
+
+      row = helper.type_cast('extender_type_check', org_row)
+
+      row['id'].should == 99
+      row['decimal_test'].should == decimal_data
+      row['multi_byte'].should == multi_byte_data
+      row['binary_test'].should == binary_data
+      row['timestamp'].should be_within(2).of(timestamp)
+    ensure
+      session.left.rollback_db_transaction
+    end
   end
 
   it "new_transaction? should delegate to the committer" do
@@ -50,7 +68,7 @@ describe ReplicationHelper do
     helper = ReplicationHelper.new(rep_run)
     c = helper.instance_eval {@committer}
     c.should_receive(:new_transaction?).and_return(true)
-    helper.new_transaction?.should be_true
+    helper.new_transaction?.should be true
   end
 
   it "replication_run should return the current ReplicationRun instance" do
@@ -120,9 +138,9 @@ describe ReplicationHelper do
   it "options_for_table should merge the configured options into the default two way replicator options" do
     rep_run = ReplicationRun.new(Session.new, TaskSweeper.new(1))
     helper = ReplicationHelper.new(rep_run)
-    helper.options_for_table('scanner_records').include?(:left_change_handling).should be_true
-    helper.options_for_table('scanner_records').include?(:right_change_handling).should be_true
-    helper.options_for_table('scanner_records').include?(:replication_conflict_handling).should be_true
+    helper.options_for_table('scanner_records').include?(:left_change_handling).should be true
+    helper.options_for_table('scanner_records').include?(:right_change_handling).should be true
+    helper.options_for_table('scanner_records').include?(:replication_conflict_handling).should be true
   end
 
   it "log_replication_outcome should log the replication outcome correctly" do
@@ -151,7 +169,7 @@ describe ReplicationHelper do
 
       helper.log_replication_outcome diff, 'ignore', 'ignored'
 
-      row = session.left.select_one("select * from rr_logged_events order by id desc")
+      row = session.left.select_record(query: "select * from rr_logged_events order by id desc", table: :rr_logged_events)
       row['activity'].should == 'replication'
       row['change_table'].should == 'extender_combined_key'
       row['diff_type'].should == 'conflict'
@@ -160,7 +178,7 @@ describe ReplicationHelper do
       row['right_change_type'].should == 'delete'
       row['description'].should == 'ignoreX'
       row['long_description'].should == 'ignoredY'
-      Time.parse(row['event_time']).should >= 10.seconds.ago
+      row['event_time'].should >= 10.seconds.ago
       row['diff_dump'].should == diff.to_yaml
     ensure
       session.left.rollback_db_transaction if session

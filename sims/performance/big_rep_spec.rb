@@ -34,6 +34,18 @@ describe "Big Rep" do
       record_quantity(session, :right, 'rr_pending_changes')
   end
 
+  # Removes test data
+  #
+  # @param [Session] session the target session
+  # @param [Initializer] initializer the target initializer
+  def cleanup(session, initializer)
+    [:left, :right].each do |database|
+      initializer.drop_trigger database, 'big_rep' if initializer.trigger_exists? database, 'big_rep'
+      session.send(database).execute "delete from big_rep"
+      session.send(database).execute "delete from rr_pending_changes"
+    end
+  end
+
   # Runs a replication of the big_rep table.
   def run_rep
     config = deep_copy(Initializer.configuration)
@@ -41,32 +53,41 @@ describe "Big Rep" do
       :committer => :buffered_commit,
       :replication_conflict_handling => :later_wins,
     }
+    config.options[:event_filter] = filter = {}
 
     session = Session.new config
     initializer = ReplicationInitializer.new session
     begin
+      cleanup session, initializer
       [:left, :right].each do |database|
         session.send(database).execute "insert into big_rep select * from big_rep_backup"
         session.send(database).execute "insert into rr_pending_changes select * from big_rep_pending_changes"
         initializer.create_trigger database, 'big_rep'
       end
 
+      filter[:number_changes] = lambda { number_changes(session)}
+      def filter.before_replicate(*args)
+        if self[:last_check].nil? || self[:last_check] < 1.second.ago || args.empty?
+          self[:last_check] = Time.now
+          new_remaining_changes = self[:number_changes].call
+          steps = self[:remaining_changes] - new_remaining_changes
+          self[:progress_bar].step steps
+          self[:remaining_changes] = new_remaining_changes
+        end
+        true
+      end
+      filter[:remaining_changes] = filter[:number_changes].call
+      filter[:progress_bar] = ScanProgressPrinters::ProgressBar.new(
+        filter[:remaining_changes],
+        session,
+        'big_rep',
+        'big_re'
+      )
+
       puts "\nReplicating (#{session.proxied? ? :proxied : :direct}) table big_rep (#{number_changes(session)} changes)"
 
-      t = Thread.new do
-        remaining_changes = number_changes(session)
-        progress_bar = ScanProgressPrinters::ProgressBar.new(remaining_changes, session, 'big_rep', 'big_rep')
-        while remaining_changes > 0
-          sleep 1
-          new_remaining_changes = number_changes(session)
-          progress_bar.step remaining_changes - new_remaining_changes
-          remaining_changes = new_remaining_changes
-        end
-      end
-
       run = ReplicationRun.new session, TaskSweeper.new(5)
-      benchmark = Benchmark.measure { run.run }
-      t.join 10
+      benchmark = Benchmark.measure { run.run; filter.before_replicate }
       puts "\n  time required: #{benchmark}"
 
       left_fingerprint = {
@@ -79,11 +100,7 @@ describe "Big Rep" do
       }
       left_fingerprint.should == right_fingerprint
     ensure
-      [:left, :right].each do |database|
-        initializer.drop_trigger database, 'big_rep'
-        session.send(database).execute "delete from big_rep"
-        session.send(database).execute "delete from rr_pending_changes"
-      end
+      cleanup session, initializer
     end
   end
 

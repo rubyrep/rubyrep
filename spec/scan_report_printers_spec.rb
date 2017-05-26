@@ -1,4 +1,4 @@
-require File.dirname(__FILE__) + '/spec_helper.rb'
+require 'spec_helper'
 
 include RR
 
@@ -41,11 +41,11 @@ describe ScanReportPrinters do
       ScanReportPrinters.instance_eval { class_variable_set :@@report_printers, nil }
 
       # register a printer class which will not be selected in the command line options
-      printer_x = mock("printer_x")
+      printer_x = double("printer_x")
       ScanReportPrinters.register printer_x, "-x", "--printer_x"
 
       # register a printer class that will be selected in the command line options
-      printer_y = mock("printer_y")
+      printer_y = double("printer_y")
 
       ScanReportPrinters.register printer_y, "-y", "--printer_y[=arg]", "description"
 

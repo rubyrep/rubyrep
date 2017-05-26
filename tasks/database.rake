@@ -2,19 +2,19 @@ $LOAD_PATH.unshift File.dirname(__FILE__) + "../lib/rubyrep"
 require 'rake'
 require 'rubyrep'
 
-require File.dirname(__FILE__) + '/task_helper.rb'
-require File.dirname(__FILE__) + '/../config/test_config'
-require File.dirname(__FILE__) + '/../spec/spec_helper'
+require_relative 'task_helper.rb'
+require_relative '../config/test_config'
+require_relative '../spec/spec_helper'
 
 # Creates the databases for the given configuration hash
 def create_database(config)
   begin
     RR::ConnectionExtenders.db_connect(config)
-  rescue
+  rescue StandardError, LoadError
     case config[:adapter]
     when 'postgresql'
       `createdb "#{config[:database]}" -E utf8`
-    when 'mysql'
+    when 'mysql2'
       @charset   = ENV['CHARSET']   || 'utf8'
       @collation = ENV['COLLATION'] || 'utf8_general_ci'
       begin
@@ -62,11 +62,11 @@ def create_postgres_schema(config)
     end
     execute "insert into rr_simple(id, name) values(1, 'bla')"
 
-    create_table :rr_referenced, :id => true do |t|
+    create_table :rr_referenced do |t|
       t.column :name, :string
     end
 
-    create_table :rr_referencing, :id => true do |t|
+    create_table :rr_referencing do |t|
       t.column :rr_referenced_id, :integer
     end
 
@@ -166,11 +166,11 @@ def create_sample_schema(database, config)
         PRIMARY KEY (first_id, second_id)
     end_sql
 
-    create_table :referenced_table2, :id => true do |t|
+    create_table :referenced_table2 do |t|
       t.column :name, :string
     end
 
-    create_table :referencing_table, :id => true do |t|
+    create_table :referencing_table do |t|
       t.column :first_fk, :integer
       t.column :second_fk, :integer
       t.column :third_fk, :integer
@@ -367,7 +367,7 @@ def drop_sample_schema(config)
 end
 
 class ExtenderCombinedKey < ActiveRecord::Base
-  set_table_name "extender_combined_key"
+  self.table_name = "extender_combined_key"
   include CreateWithKey  
 end
 
@@ -376,17 +376,17 @@ class ScannerRecords < ActiveRecord::Base
 end
 
 class ScannerLeftRecordsOnly < ActiveRecord::Base
-  set_table_name "scanner_left_records_only"
+  self.table_name = "scanner_left_records_only"
   include CreateWithKey
 end
 
 class ExtenderOneRecord < ActiveRecord::Base
-  set_table_name "extender_one_record"
+  self.table_name = "extender_one_record"
   include CreateWithKey
 end
 
 class ExtenderTypeCheck < ActiveRecord::Base
-  set_table_name "extender_type_check"
+  self.table_name = "extender_type_check"
   include CreateWithKey
 end
 

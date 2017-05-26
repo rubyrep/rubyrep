@@ -1,4 +1,4 @@
-require File.dirname(__FILE__) + '/spec_helper.rb'
+require 'spec_helper'
 
 include RR
 
@@ -82,34 +82,34 @@ describe Configuration do
     config = Configuration.new
     config.include_tables('a')
     config.include_tables(/b/)
-    config.included_table_specs.include?('a').should be_true
-    config.included_table_specs.include?(/b/).should be_true
+    config.included_table_specs.include?('a').should be true
+    config.included_table_specs.include?(/b/).should be true
   end
 
   it "include_table should alias to include_tables" do
     config = Configuration.new
     config.include_table('a')
-    config.included_table_specs.include?('a').should be_true
+    config.included_table_specs.include?('a').should be true
   end
 
   it "exclude_tables should exclude the specified table specs" do
     config = Configuration.new
     config.exclude_tables('a')
     config.exclude_tables(/b/)
-    config.excluded_table_specs.include?('a').should be_true
-    config.excluded_table_specs.include?(/b/).should be_true
+    config.excluded_table_specs.include?('a').should be true
+    config.excluded_table_specs.include?(/b/).should be true
   end
 
   it "exclude_table should alias to exclude_tables" do
     config = Configuration.new
     config.exclude_table('a')
-    config.excluded_table_specs.include?('a').should be_true
+    config.excluded_table_specs.include?('a').should be true
   end
 
   it "exclude_rubyrep_tables should exclude the rubyrep infrastructure tables" do
     config = Configuration.new
     config.exclude_rubyrep_tables
-    config.excluded_table_specs.include?(/^rr_.*/).should be_true
+    config.excluded_table_specs.include?(/^rr_.*/).should be true
   end
 
   it "excluded_table_specs should return the list of excluded table specifications" do

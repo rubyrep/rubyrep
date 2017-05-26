@@ -1,4 +1,4 @@
-require File.dirname(__FILE__) + '/spec_helper.rb'
+require 'spec_helper'
 
 include RR
 
@@ -17,12 +17,11 @@ describe ProxyCursor do
     cursor.primary_key_names.should == ['dummy_key']
   end
   
-  it "prepare_fetch should initiate the query and wrap it for type casting" do
+  it "prepare_fetch should initiate the query" do
     connection = ProxyConnection.new Initializer.configuration.left
     
     cursor = ProxyCursor.new(connection, 'scanner_records')
     cursor.prepare_fetch
-    cursor.cursor.should be_an_instance_of(TypeCastingCursor)
     cursor.cursor.next_row.should == {'id' => 1, 'name' => 'Alice - exists in both databases'}
   end
   
@@ -46,7 +45,7 @@ describe ProxyCursor do
     connection = create_mock_proxy_connection 'dummy_table', ['dummy_key']
     cursor = ProxyCursor.new connection, 'dummy_table'
     
-    table_cursor = mock("DBCursor")
+    table_cursor = double("DBCursor")
     table_cursor.should_receive(:clear)
     cursor.cursor = table_cursor
     

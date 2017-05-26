@@ -1,4 +1,4 @@
-require File.dirname(__FILE__) + '/spec_helper.rb'
+require 'spec_helper'
 
 include RR
 
@@ -68,7 +68,7 @@ describe "Unusual table and column name support" do
     trigger_name = 'rr_' + STRANGE_TABLE
     session = Session.new
     begin
-      session.left.replication_trigger_exists?(trigger_name, STRANGE_TABLE).should be_false
+      session.left.replication_trigger_exists?(trigger_name, STRANGE_TABLE).should be false
       session.left.create_replication_trigger({
           :trigger_name => trigger_name,
           :table => STRANGE_TABLE,
@@ -78,7 +78,7 @@ describe "Unusual table and column name support" do
           :key_sep => '|',
           :exclude_rr_activity => true
         })
-      session.left.replication_trigger_exists?(trigger_name, STRANGE_TABLE).should be_true
+      session.left.replication_trigger_exists?(trigger_name, STRANGE_TABLE).should be true
       session.left.insert_record STRANGE_TABLE, {
         'id' => 11,
         STRANGE_COLUMN => 'blub'
@@ -89,7 +89,7 @@ describe "Unusual table and column name support" do
       log_record['change_type'].should == 'I'
 
       session.left.drop_replication_trigger trigger_name, STRANGE_TABLE
-      session.left.replication_trigger_exists?(trigger_name, STRANGE_TABLE).should be_false
+      session.left.replication_trigger_exists?(trigger_name, STRANGE_TABLE).should be false
     ensure
       if session.left.replication_trigger_exists?(trigger_name, STRANGE_TABLE)
         session.left.drop_replication_trigger trigger_name, STRANGE_TABLE
@@ -103,7 +103,7 @@ describe "Unusual table and column name support" do
     trigger_name = 'rr_table_with_strange_key'
     session = Session.new
     begin
-      session.left.replication_trigger_exists?(trigger_name, :table_with_strange_key).should be_false
+      session.left.replication_trigger_exists?(trigger_name, :table_with_strange_key).should be false
       session.left.create_replication_trigger({
           :trigger_name => trigger_name,
           :table => :table_with_strange_key,
@@ -113,7 +113,7 @@ describe "Unusual table and column name support" do
           :key_sep => '|',
           :exclude_rr_activity => true
         })
-      session.left.replication_trigger_exists?(trigger_name, :table_with_strange_key).should be_true
+      session.left.replication_trigger_exists?(trigger_name, :table_with_strange_key).should be true
       session.left.insert_record 'table_with_strange_key', {
         STRANGE_COLUMN => '11'
       }
@@ -123,7 +123,7 @@ describe "Unusual table and column name support" do
       log_record['change_type'].should == 'I'
 
       session.left.drop_replication_trigger trigger_name, :table_with_strange_key
-      session.left.replication_trigger_exists?(trigger_name, :table_with_strange_key).should be_false
+      session.left.replication_trigger_exists?(trigger_name, :table_with_strange_key).should be false
     ensure
       if session.left.replication_trigger_exists?(trigger_name, :table_with_strange_key)
         session.left.drop_replication_trigger trigger_name, :table_with_strange_key

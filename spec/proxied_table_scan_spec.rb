@@ -1,4 +1,4 @@
-require File.dirname(__FILE__) + '/spec_helper.rb'
+require 'spec_helper'
 
 include RR
 
@@ -134,7 +134,7 @@ describe ProxiedTableScan do
     session = Session.new
     scan = ProxiedTableScan.new session, 'scanner_records'
     number_steps = 0
-    scan.should_receive(:update_progress).any_number_of_times do |steps|
+    scan.should_receive(:update_progress).at_least(1).times do |steps|
       number_steps += steps
     end
     scan.run {|_, _|}

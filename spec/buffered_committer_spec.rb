@@ -1,4 +1,4 @@
-require File.dirname(__FILE__) + '/spec_helper.rb'
+require 'spec_helper'
 
 include RR
 
@@ -13,14 +13,14 @@ describe Committers::BufferedCommitter do
 
   # Stubs out the starting of transactions in the given Session.
   def stub_begin_transaction(session)
-    session.left.stub! :begin_db_transaction
-    session.right.stub! :begin_db_transaction
+    session.left.stub :begin_db_transaction
+    session.right.stub :begin_db_transaction
   end
 
   # Stubs out the executing of SQL statements for the given Session.
   def stub_execute(session)
-    session.left.stub! :execute
-    session.right.stub! :execute
+    session.left.stub :execute
+    session.right.stub :execute
   end
 
   it "trigger_mode_switcher should return and if necessary create the trigger mode switcher" do
@@ -58,7 +58,7 @@ describe Committers::BufferedCommitter do
     stub_begin_transaction session
     stub_execute session
     committer = Committers::BufferedCommitter.new(session)
-    committer.maintain_activity_status?.should be_true
+    committer.maintain_activity_status?.should be true
   end
 
   it "maintain_activity_status should return false if activity marker does not exist" do
@@ -68,7 +68,7 @@ describe Committers::BufferedCommitter do
     stub_begin_transaction session
     stub_execute session
     committer = Committers::BufferedCommitter.new(session)
-    committer.maintain_activity_status?.should be_false
+    committer.maintain_activity_status?.should be false
   end
 
   it "commit_frequency should return the configured commit frequency" do
@@ -123,8 +123,8 @@ describe Committers::BufferedCommitter do
   it "commit_db_transactions should clear the activity marker table" do
     session = Session.new
     stub_begin_transaction session
-    session.left.stub!(:commit_db_transaction)
-    session.right.stub!(:commit_db_transaction)
+    session.left.stub(:commit_db_transaction)
+    session.right.stub(:commit_db_transaction)
     stub_execute session
     committer = Committers::BufferedCommitter.new(session)
 
@@ -138,8 +138,8 @@ describe Committers::BufferedCommitter do
     config.options[:rep_prefix] = 'rx'
     session = Session.new config
     stub_begin_transaction session
-    session.left.stub!(:commit_db_transaction)
-    session.right.stub!(:commit_db_transaction)
+    session.left.stub(:commit_db_transaction)
+    session.right.stub(:commit_db_transaction)
     stub_execute session
     committer = Committers::BufferedCommitter.new(session)
 
@@ -205,9 +205,9 @@ describe Committers::BufferedCommitter do
     committer.should_receive(:commit_db_transactions).twice
     committer.should_receive(:begin_db_transactions).twice
     committer.commit
-    committer.new_transaction?.should be_false
+    committer.new_transaction?.should be false
     3.times {committer.commit}
-    committer.new_transaction?.should be_true
+    committer.new_transaction?.should be true
   end
 
   it "insert_record should commit" do

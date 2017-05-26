@@ -1,9 +1,15 @@
 begin
-  require 'spec'
+  require 'rspec'
 rescue LoadError
   require 'rubygems'
   gem 'rspec'
-  require 'spec'
+  require 'rspec'
+end
+
+if ENV['COVERAGE']
+  require 'simplecov'
+  SimpleCov.add_filter 'tasks/*'
+  SimpleCov.start
 end
 
 require 'drb'
@@ -13,55 +19,10 @@ $LOAD_PATH.unshift File.join(File.dirname(__FILE__), "..", "lib")
 $LOAD_PATH.unshift File.dirname(__FILE__)
 
 require 'rubyrep'
-require 'connection_extender_interface_spec'
 
 unless self.class.const_defined?('STRANGE_TABLE')
-  if ENV['RR_TEST_DB'] == 'postgres' || ENV['RR_TEST_DB'] == nil
-    STRANGE_TABLE = 'table_with.stränge Name山'
-  else
-    STRANGE_TABLE = 'table_with_stränge Name山'
-  end
+  STRANGE_TABLE = 'table_with_stränge_Name山'
   STRANGE_COLUMN = 'stränge. Column山'
-end
-
-class Module
-  # Used to verify that an instance of the class / module receives a call of the
-  # specified method.
-  # This is for cases where a method call has to be mocked of an object that is 
-  # not yet created. 
-  # (Couldn't find out how to do that using existing rspec mocking features.)
-  def any_instance_should_receive(method, &blck)
-    tmp_method = "original_before_mocking_#{method}".to_sym
-    logger_key = "#{self.name}_#{method}"
-    $mock_method_marker ||= {}
-    $mock_method_marker[logger_key] = Spec::Mocks::Mock.new("#{name} Instance")
-    $mock_method_marker[logger_key].should_receive(method).at_least(:once)
-    self.send :alias_method, tmp_method, method
-    self.class_eval "def #{method}(*args); $mock_method_marker['#{logger_key}'].#{method}; end"
-    blck.call
-  ensure
-    $mock_method_marker.delete logger_key
-    self.send :alias_method, method, tmp_method rescue nil
-  end
-
-  # Used to verify that an instance of the class / module does not receive a 
-  # call of the specified method.
-  # This is for cases where a method call has to be mocked of an object that is 
-  # not yet created. 
-  # (Couldn't find out how to do that using existing rspec mocking features.)
-  def any_instance_should_not_receive(method, &blck)
-    tmp_method = "original_before_mocking_#{method}".to_sym
-    logger_key = "#{self.name}_#{method}"
-    $mock_method_marker ||= {}
-    $mock_method_marker[logger_key] = Spec::Mocks::Mock.new("#{name} Instance")
-    $mock_method_marker[logger_key].should_not_receive(method)
-    self.send :alias_method, tmp_method, method
-    self.class_eval "def #{method}(*args); $mock_method_marker['#{logger_key}'].#{method}; end"
-    blck.call
-  ensure
-    $mock_method_marker.delete logger_key
-    self.send :alias_method, method, tmp_method rescue nil
-  end
 end
 
 class RR::Session
@@ -69,35 +30,21 @@ class RR::Session
   def inspect; 'session'; end
 end
 
-class ActiveRecord::Base
-  class << self
-    # Hack:
-    # The default inspect method (as per activerecord version 2.2.2) tries to
-    # send commands to the database.
-    # This leads to rcov failing.
-    # As workaround this is disabling the attempts to connect to the database.
-    def inspect
-      super
-    end
-  end
-end
-
 # If number_of_calls is :once, mock ActiveRecord for 1 call.
 # If number_of_calls is :twice, mock ActiveRecord for 2 calls.
 def mock_active_record(number_of_calls)
-  ConnectionExtenders::DummyActiveRecord.should_receive(:establish_connection).send(number_of_calls) \
-    .and_return {|config| $used_config = config}
-    
-  dummy_connection = Object.new
+  ar_class = ConnectionExtenders.active_record_class_for_database_connection
+  ar_class.should_receive(:establish_connection).send(number_of_calls) {|config| $used_config = config}
+  ConnectionExtenders.stub(:active_record_class_for_database_connection).and_return(ar_class)
+
+  dummy_connection = double(:connection)
   # We have a spec testing behaviour for non-existing extenders.
   # So extend might not be called in all cases
-  dummy_connection.stub!(:extend)
-  dummy_connection.stub!(:tables).and_return([])
-  dummy_connection.stub!(:initialize_search_path)
-  dummy_connection.stub!(:select_one).and_return({'x' => '2'})
-    
-  ConnectionExtenders::DummyActiveRecord.should_receive(:connection).send(number_of_calls) \
-    .and_return {dummy_connection}
+  dummy_connection.stub(:extend)
+  dummy_connection.stub(:tables).and_return([])
+  dummy_connection.stub(:select_one).and_return({'x' => '2'})
+
+  ar_class.should_receive(:connection).send(number_of_calls) {dummy_connection}
 end
 
 # Creates a mock ProxyConnection with the given
@@ -105,7 +52,7 @@ end
 #   * primary_key_names: array of mock primary column names
 #   * column_names: array of mock column names, if nil: doesn't mock this function
 def create_mock_proxy_connection(mock_table, primary_key_names, column_names = nil)
-  session = mock("ProxyConnection")
+  session = double("ProxyConnection")
   if primary_key_names
     session.should_receive(:primary_key_names) \
       .with(mock_table) \
@@ -116,25 +63,7 @@ def create_mock_proxy_connection(mock_table, primary_key_names, column_names = n
       .with(mock_table) \
       .and_return(column_names)
   end
-  session.should_receive(:quote_value) \
-    .any_number_of_times \
-    .with(an_instance_of(String), an_instance_of(String), anything) \
-    .and_return { |table, column, value| value}
-  
-  session.should_receive(:connection) \
-    .any_number_of_times \
-    .and_return {dummy_connection}
-  
-  session.should_receive(:quote_column_name) \
-    .any_number_of_times \
-    .with(an_instance_of(String)) \
-    .and_return { |column_name| "'#{column_name}'" }
-      
-  session.should_receive(:quote_table_name) \
-    .any_number_of_times \
-    .with(an_instance_of(String)) \
-    .and_return { |table_name| "'#{table_name}'" }
-      
+
   session
 end
 
@@ -291,9 +220,13 @@ def ensure_proxy
         #puts "Proxy started (took #{time} seconds)"
         # Ensure that the started proxy is terminated with the completion of the spec run.
         at_exit do
-          proxy = DRbObject.new nil, drb_url
-          proxy.terminate! rescue DRb::DRbConnError
-        end if $start_proxy_as_external_process
+          if $start_proxy_as_external_process
+            proxy = DRbObject.new nil, drb_url
+            proxy.terminate! rescue DRb::DRbConnError
+          else
+            DRb.stop_service
+          end
+        end
       else
         raise "Could not start proxy"
       end
@@ -302,4 +235,23 @@ def ensure_proxy
     # if we got till here, then a proxy is running or was successfully started
     $proxy_confirmed_running = true
   end
+end
+
+# Captures output to +$stdout+ and +$stderr+. Returns the captured output.
+#
+# @return [String] the captured output
+def capture_output
+  string_io = StringIO.new
+  old_stdout, $stdout = $stdout, string_io
+  old_stderr, $stderr = $stderr, string_io
+  yield
+  return string_io.string
+ensure
+  $stdout = old_stdout
+  $stderr = old_stderr
+end
+
+RSpec.configure do |config|
+  config.expect_with(:rspec) { |c| c.syntax = [:should, :expect] }
+  config.mock_with(:rspec) { |mocks| mocks.syntax = [:should, :expect] }
 end

@@ -128,10 +128,19 @@ EOS
       raise e
     end
 
+    # For testing: will be called after replication preparation is finished
+    def replication_preparation_finished
+    end
+
+    # For testing: will be called after a replication run is finished
+    def replication_run_finished
+    end
+
     # Executes an endless loop of replication runs
     def execute
       init_waiter
       prepare_replication
+      replication_preparation_finished
 
       until termination_requested do
         begin
@@ -145,6 +154,7 @@ EOS
           end
         end
         pause_replication
+        replication_run_finished
       end
     end
 

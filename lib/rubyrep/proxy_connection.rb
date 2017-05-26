@@ -66,9 +66,27 @@ module RR
         end
 
         self.rows = connection.select_all query
+
+        ###############
+        # Below approach can only be used starting with activerecord version 5.
+        # And as of 2017-05-18 jruby (i.e. version 9.1.7.0) supports only up to activerecord version 4.2.
+        ###############
+        # result = connection.select_all(query)
+        # column_types = result.column_types
+        # columns = result.columns
+        # identity_type = ActiveRecord::Type::Value.new
+        # types = columns.map { |name| column_types.fetch(name, identity_type) }
+        # self.rows = result.rows.map do |values|
+        #   row = {}
+        #   columns.zip(types, values).each do |name, type, value|
+        #     row[name] = type.deserialize(value)
+        #   end
+        #   row
+        # end
+
         self.current_row_index = 0
       end
-      self.current_row_index < self.rows.size
+      self.current_row_index < self.rows.length
     end
 
     # Returns the row as a column => value hash and moves the cursor to the next row.
@@ -77,7 +95,7 @@ module RR
       self.last_row = self.rows[self.current_row_index]
       self.current_row_index += 1
 
-      if self.current_row_index == self.rows.size
+      if self.current_row_index == self.rows.length
         self.rows = nil
       end
 
@@ -184,20 +202,12 @@ module RR
     # * first build the query based on options forwarded to #table_select_query
     # +options+ is a hash with
     # * :+query+: executes the given query
-    # * :+type_cast+:
-    #   Unless explicitely disabled with +false+, build type casting cursor
-    #   around result.
-    # * :+table+:
-    #   Name of the table from which to read data.
-    #   Required unless type casting is disabled.
     # * further options as taken by #table_select_query to build the query
     # * :+row_buffer_size+:
     #   Integer controlling how many rows a read into memory at one time.
     def select_cursor(options)
       cursor = ResultFetcher.new(self, options)
-      unless options[:type_cast] == false
-        cursor = TypeCastingCursor.new(self, options[:table], cursor)
-      end
+      cursor = TypeCastingCursor.new(self, options[:table], cursor)
       cursor
     end
 
@@ -255,7 +265,7 @@ module RR
         table_columns[table] = {}
         columns(table).each {|c| table_columns[table][c.name] = c}
       end
-      connection.quote value, table_columns[table][column]
+      connection.column_aware_quote value, table_columns[table][column.to_s]
     end
     
     # Create a cursor for the given table.

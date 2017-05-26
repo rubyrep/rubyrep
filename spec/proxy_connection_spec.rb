@@ -1,4 +1,4 @@
-require File.dirname(__FILE__) + '/spec_helper.rb'
+require 'spec_helper'
 
 include RR
 
@@ -47,7 +47,7 @@ describe ProxyConnection do
   end
   
   it "destroy should destroy and unregister any stored cursors" do
-    cursor = mock("Cursor")
+    cursor = double("Cursor")
     cursor.should_receive(:destroy)
     
     @connection.save_cursor cursor
@@ -57,7 +57,7 @@ describe ProxyConnection do
   end
 
   it "destroy_cursor should destroy and unregister the provided cursor" do
-    cursor = mock("Cursor")
+    cursor = double("Cursor")
     cursor.should_receive(:destroy)
     
     @connection.save_cursor cursor
@@ -76,7 +76,7 @@ describe ProxyConnection do
 
     cursor.should be_an_instance_of(ProxyRowCursor)
     cursor.next_row_keys_and_checksum[0].should == {'id' => 2} # verify that 'from' range was used
-    cursor.next?.should be_false # verify that 'to' range was used
+    cursor.next?.should be false # verify that 'to' range was used
   end
   
   it "column_names should return the column names of the specified table" do
@@ -95,13 +95,13 @@ describe ProxyConnection do
   end
 
   it "primary_key_names should return the manual primary keys if they exist" do
-    @connection.stub!(:manual_primary_keys).
+    @connection.stub(:manual_primary_keys).
       and_return({'scanner_records' => ['manual_key']})
     @connection.primary_key_names('scanner_records').should == ['manual_key']
   end
 
   it "primary_key_names should not cache or manually overwrite if :raw option is given" do
-    @connection.stub!(:manual_primary_keys).
+    @connection.stub(:manual_primary_keys).
       and_return({'scanner_records' => ['manual_key']})
     key1 = @connection.primary_key_names('scanner_records', :raw => true)
     key1.should == ['id']
@@ -130,11 +130,6 @@ describe ProxyConnection do
     fetcher = @connection.select_cursor(:table => 'scanner_records', :type_cast => false)
     fetcher.connection.should == @connection
     fetcher.options.should == {:table => 'scanner_records', :type_cast => false}
-  end
-
-  it "select_cursor should return a type casting cursor if :type_cast option is specified" do
-    fetcher = @connection.select_cursor(:table => 'scanner_records', :type_cast => true)
-    fetcher.should be_an_instance_of(TypeCastingCursor)
   end
 
   it "table_select_query should handle queries without any conditions" do
@@ -222,7 +217,7 @@ describe ProxyConnection do
     results = cursor.prepare_fetch(select_options)
     results.next_row.should == {'text_id' => 'a', 'name' => 'Alice'}
     results.next_row.should == {'text_id' => 'b', 'name' => 'Bob'}
-    results.next?.should be_false
+    results.next?.should be false
   end
   
   it "table_insert_query should return the correct SQL query" do

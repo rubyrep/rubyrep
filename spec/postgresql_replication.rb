@@ -1,10 +1,10 @@
-require File.dirname(__FILE__) + '/spec_helper.rb'
+require 'spec_helper'
+
 require 'yaml'
-require 'config/test_config.rb'
 
 include RR
 
-describe "PostgreSQLReplication", :shared => true do
+shared_examples "PostgreSQLReplication" do
   before(:each) do
   end
 
@@ -14,7 +14,7 @@ describe "PostgreSQLReplication", :shared => true do
       session = Session.new
       session.left.begin_db_transaction
       unless session.left.select_all("select lanname from pg_language where lanname = 'plpgsql'").empty?
-        session.left.execute "DROP LANGUAGE plpgsql"
+        session.left.execute "DROP EXTENSION plpgsql"
       end
       params = {
         :trigger_name => 'rr_trigger_test',

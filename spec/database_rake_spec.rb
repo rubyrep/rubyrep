@@ -1,4 +1,5 @@
-require File.dirname(__FILE__) + '/spec_helper.rb'
+require 'spec_helper'
+
 load File.dirname(__FILE__) + '/../tasks/database.rake'
 
 describe "database.rake" do

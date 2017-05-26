@@ -1,4 +1,4 @@
-require File.dirname(__FILE__) + '/spec_helper.rb'
+require 'spec_helper'
 
 include RR
 
@@ -31,9 +31,10 @@ describe SyncHelper do
   it "ensure_event_log should ask the replication_initializer to ensure the event log" do
     sync = TableSync.new(Session.new, 'scanner_records')
     helper = SyncHelper.new(sync)
-    ReplicationInitializer.any_instance_should_receive(:ensure_event_log) do
-      helper.ensure_event_log
-    end
+
+    expect_any_instance_of(ReplicationInitializer).to receive(:ensure_event_log)
+
+    helper.ensure_event_log
   end
 
   it "log_sync_outcome should log the replication outcome correctly" do
@@ -55,7 +56,7 @@ describe SyncHelper do
         'my_long_description'
       )
       
-      row = session.left.select_one("select * from rr_logged_events order by id desc")
+      row = session.left.select_record(query: "select * from rr_logged_events order by id desc", table: :rr_logged_events)
       row['activity'].should == 'sync'
       row['change_table'].should == 'scanner_records'
       row['diff_type'].should == 'my_sync_type'
@@ -64,7 +65,7 @@ describe SyncHelper do
       row['right_change_type'].should be_nil
       row['description'].should == 'my_outcomeX'
       row['long_description'].should == 'my_long_descriptionY'
-      Time.parse(row['event_time']).should >= 10.seconds.ago
+      row['event_time'].should >= 10.seconds.ago
       row['diff_dump'].should == nil
     ensure
       session.left.rollback_db_transaction if session

@@ -1,4 +1,4 @@
-require File.dirname(__FILE__) + '/spec_helper.rb'
+require 'spec_helper'
 
 include RR
 
@@ -26,7 +26,7 @@ describe TriggerModeSwitcher do
   it "restore_triggers should restore the triggers" do
     switcher = TriggerModeSwitcher.new(Session.new)
 
-    switcher.stub!(:switch_trigger_mode)
+    switcher.stub(:switch_trigger_mode)
     switcher.exclude_rr_activity :left, 'left1'
     switcher.should_receive(:switch_trigger_mode).with(:left, 'left1', false).once
     switcher.restore_triggers
@@ -56,7 +56,7 @@ describe TriggerModeSwitcher do
         'name' => 'bla'
       }
 
-      rows = session.left.select_all("select * from rr_pending_changes order by id")
+      rows = session.left.select_all("select * from rr_pending_changes order by id").to_a
       rows.each {|row| row.delete 'id'; row.delete 'change_time'}
       rows.should == [{
         'change_table' => 'trigger_test',

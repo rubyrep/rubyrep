@@ -1,4 +1,4 @@
-require File.dirname(__FILE__) + '/spec_helper.rb'
+require 'spec_helper'
 
 include RR
 
@@ -18,7 +18,7 @@ describe SyncRunner do
       and_return(:sorted_dummy_table_pairs)
 
     sync_runner = SyncRunner.new
-    sync_runner.stub!(:session).and_return(session)
+    sync_runner.stub(:session).and_return(session)
 
     sync_runner.prepare_table_pairs(:dummy_table_pairs).should == :sorted_dummy_table_pairs
   end
@@ -48,8 +48,8 @@ describe SyncRunner do
       $stdout.string.should =~
         /scanner_records .* 5\n/
 
-      left_records = session.left.connection.select_all("select * from scanner_records order by id")
-      right_records = session.right.connection.select_all("select * from scanner_records order by id")
+      left_records = session.left.connection.select_all("select * from scanner_records order by id").to_a
+      right_records = session.right.connection.select_all("select * from scanner_records order by id").to_a
       left_records.should == right_records
     ensure
       $stdout = org_stdout

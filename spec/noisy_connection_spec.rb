@@ -65,9 +65,6 @@ describe NoisyConnection do
       @connection.execute "insert into scanner_records(id,name) values(99, 'bla')"
       @connection.sweeper.should_receive(:ping).exactly(2).times
       @connection.commit_db_transaction
-      initializer.silence_ddl_notices(:left) do # avoid PostgreSQL warning that no transaction is open
-        @connection.rollback_db_transaction
-      end
       @connection.select_one("select name from scanner_records where id = 99")['name'].
         should == 'bla'
     ensure

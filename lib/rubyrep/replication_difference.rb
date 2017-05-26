@@ -93,7 +93,7 @@ module RR
 
     # Prevents session and change loaders from going into YAML output
     def to_yaml_properties
-      instance_variables.sort.reject {|var_name| ['@session', '@loaders'].include? var_name}
+      instance_variables.sort.reject {|var_name| [:'@session', :'@loaders'].include? var_name}
     end
 
   end

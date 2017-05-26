@@ -1,8 +1,6 @@
-require File.dirname(__FILE__) + '/spec_helper.rb'
+require 'spec_helper'
 
 include RR
-
-require File.dirname(__FILE__) + "/../config/test_config.rb"
 
 describe "PostgreSQL support" do
   before(:each) do
@@ -12,7 +10,7 @@ describe "PostgreSQL support" do
   after(:each) do
   end
 
-  if Initializer.configuration.left[:adapter] == 'postgresql'
+  if standard_config.left[:adapter] == 'postgresql'
 
     it "should read & write microsecond times" do
       session = nil
@@ -23,11 +21,10 @@ describe "PostgreSQL support" do
           {'id' => 2, 'timestamp' => Time.local(2009, "feb", 16, 20, 48, 1, 543)}
         )
 
-        org_cursor = session.left.select_cursor(
+        cursor = session.left.select_cursor(
           :query => "select id, timestamp from extender_type_check where id = 2",
-          :type_cast => false
+          :table => :extender_type_check
         )
-        cursor = TypeCastingCursor.new session.left, 'extender_type_check', org_cursor
 
         row = cursor.next_row
         row['timestamp'].usec.should == 543
@@ -46,11 +43,10 @@ describe "PostgreSQL support" do
           {'id' => 2, 'timestamp' => Time.local(2009, "feb", 16, 13, 37, 11, 126291)}
         )
 
-        org_cursor = session.left.select_cursor(
+        cursor = session.left.select_cursor(
           :query => "select id, timestamp from extender_type_check where id = 2",
-          :type_cast => false
+          :table => :extender_type_check
         )
-        cursor = TypeCastingCursor.new session.left, 'extender_type_check', org_cursor
 
         row = cursor.next_row
         row['timestamp'].usec.should == 126291

@@ -92,7 +92,7 @@ module RR
       columns = @table_columns[table]
       type_casted_row = {}
       row.each_pair do |column_name, value|
-        type_casted_row[column_name] = columns[column_name].type_cast(value)
+        type_casted_row[column_name] = session.left.connection.fixed_type_cast value, columns[column_name]
       end
       type_casted_row
     end

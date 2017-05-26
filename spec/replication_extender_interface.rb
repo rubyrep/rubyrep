@@ -1,10 +1,11 @@
-require File.dirname(__FILE__) + '/spec_helper.rb'
+require 'spec_helper'
+
 require 'yaml'
 
 include RR
 
 # All ReplicationExtenders need to pass this spec
-describe "ReplicationExtender", :shared => true do
+shared_examples "ReplicationExtender" do
   before(:each) do
   end
 
@@ -40,12 +41,21 @@ describe "ReplicationExtender", :shared => true do
 
       # Verify that the timestamps are created correctly
       rows.each do |row|
-        Time.parse(row['change_time']).to_i >= change_start.to_i
-        Time.parse(row['change_time']).to_i <= Time.now.to_i
+        change_time = row['change_time']
+        if ENV['RR_TEST_DB'] == 'postgres'
+          # time is stored in UTC but activerecord attaches local time zone
+          change_time += ' UTC'
+        elsif ENV['RR_TEST_DB'] == 'mysql'
+          # time is stored in local time zone but activerecord attaches UTC time zone
+          change_time = change_time.to_s.sub(/ UTC$/, '')
+        end
+        change_time = Time.parse(change_time)
+        change_time.should >= change_start - 10.seconds
+        change_time.should <= Time.now + 10.seconds
       end
 
       rows.each {|row| row.delete 'id'; row.delete 'change_time'}
-      rows.should == [
+      rows.should =~ [
         {'change_table' => 'trigger_test', 'change_key' => 'first_id|1|second_id|2', 'change_new_key' => nil, 'change_type' => 'I'},
         {'change_table' => 'trigger_test', 'change_key' => 'first_id|1|second_id|2', 'change_new_key' => 'first_id|1|second_id|9', 'change_type' => 'U'},
         {'change_table' => 'trigger_test', 'change_key' => 'first_id|1|second_id|9', 'change_new_key' => nil, 'change_type' => 'D'},
@@ -90,7 +100,7 @@ describe "ReplicationExtender", :shared => true do
 
       rows = session.left.connection.select_all("select * from rr_pending_changes order by id")
       rows.each {|row| row.delete 'id'; row.delete 'change_time'}
-      rows.should == [{
+      rows.should =~ [{
           'change_table' => 'trigger_test',
           'change_key' => 'first_id|1|second_id|3',
           'change_new_key' => nil,
@@ -122,7 +132,7 @@ describe "ReplicationExtender", :shared => true do
       }
       rows = session.left.connection.select_all("select * from rr_pending_changes order by id")
       rows.each {|row| row.delete 'id'; row.delete 'change_time'}
-      rows.should == [{
+      rows.should =~ [{
           'change_table' => 'extender_no_record',
           'change_key' => 'id|9',
           'change_new_key' => nil,
@@ -157,7 +167,7 @@ describe "ReplicationExtender", :shared => true do
       }
       rows = session.left.connection.select_all("select * from rr_pending_changes order by id")
       rows.each {|row| row.delete 'id'; row.delete 'change_time'}
-      rows.should == [{
+      rows.should =~ [{
           'change_table' => 'scanner_text_key',
           'change_key' => 'text_id|よろしくお願(ねが)いします yoroshiku onegai shimasu: I humbly ask for your favor.',
           'change_new_key' => nil,
@@ -195,10 +205,10 @@ describe "ReplicationExtender", :shared => true do
       session.left.create_replication_trigger params
 
       session.left.replication_trigger_exists?('rr_trigger_test', 'trigger_test').
-        should be_true
+        should be true
       session.left.drop_replication_trigger('rr_trigger_test', 'trigger_test')
       session.left.replication_trigger_exists?('rr_trigger_test', 'trigger_test').
-        should be_false
+        should be false
     ensure
       session.left.rollback_db_transaction if session
     end
@@ -347,7 +357,7 @@ describe "ReplicationExtender", :shared => true do
       session = Session.new
       initializer = ReplicationInitializer.new(session)
       initializer.silence_ddl_notices(:left) do
-        session.left.drop_table 'big_key_test' if session.left.tables.include? 'big_key_test'
+        session.left.drop_table 'big_key_test' if session.left.connection.tables.include? 'big_key_test'
         session.left.create_table 'big_key_test'.to_sym
         session.left.add_column 'big_key_test', :name, :string
         session.left.remove_column 'big_key_test', 'id'

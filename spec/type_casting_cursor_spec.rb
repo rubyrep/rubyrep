@@ -20,12 +20,23 @@ describe TypeCastingCursor do
       :query => "select id from extender_type_check where id = 1",
       :table => "extender_type_check"
     )
-    cursor.next?.should be_true
+    cursor.next?.should be true
     row = cursor.next_row
-    cursor.next?.should be_false
+    cursor.next?.should be false
     cursor.clear
   end
-  
+
+  it "connection and options should delegate to the original cursor" do
+    dummy_cursor = double('dummy cursor')
+    dummy_cursor.stub(:connection) {:dummy_connection}
+    dummy_cursor.stub(:options) {:dummy_options}
+
+    cursor = TypeCastingCursor.new Session.new.left, 'extender_type_check', dummy_cursor
+
+    cursor.connection.should == :dummy_connection
+    cursor.options.should == :dummy_options
+  end
+
   it "next_row should cast rows - including uncommon data types - correctly" do
     session = Session.new
     row = session.left.select_record(
@@ -34,7 +45,7 @@ describe TypeCastingCursor do
     )
 
     # verify that the row fields have been converted to the correct types
-    row['id'].should be_an_instance_of(Fixnum)
+    row['id'].should be_a_kind_of(Integer)
     row['timestamp'].should be_an_instance_of(Time)
     row['decimal_test'].should be_an_instance_of(BigDecimal)
     row['binary_test'].should be_an_instance_of(String)

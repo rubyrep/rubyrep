@@ -1,4 +1,4 @@
-require File.dirname(__FILE__) + '/spec_helper.rb'
+require 'spec_helper'
 
 include RR
 
@@ -43,12 +43,12 @@ describe ScanProgressPrinters do
       ScanProgressPrinters.instance_eval { class_variable_set :@@progress_printers, nil }
 
       # register a printer which will not be selected in the command line options
-      printer_x_class = mock("printer_x")
+      printer_x_class = double("printer_x")
       printer_x_class.should_not_receive :arg=
       ScanProgressPrinters.register :printer_x_id, printer_x_class, "-x", "--printer_x"
 
       # register a printer that will be selected in the command line options
-      printer_y_class = mock("printer_y")
+      printer_y_class = double("printer_y")
       printer_y_class.should_receive(:arg=).with("dummy_arg")
 
       ScanProgressPrinters.register :printer_y_id, printer_y_class, "-y", "--printer_y[=arg]", "description"
