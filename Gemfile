@@ -1,15 +1,16 @@
 source 'http://rubygems.org'
 
 gem 'activerecord', '~> 4.2'
-platforms :ruby do
-  gem 'pg'
-  gem 'mysql2'
-end
-platforms :jruby do
-  gem 'activerecord-jdbc-adapter', :git => "https://github.com/jruby/activerecord-jdbc-adapter.git", branch: "rails-5"
-  gem 'activerecord-jdbcpostgresql-adapter', :git => "https://github.com/jruby/activerecord-jdbc-adapter.git", branch: "rails-5"
-  gem 'activerecord-jdbcmysql-adapter', :git => "https://github.com/jruby/activerecord-jdbc-adapter.git", branch: "rails-5"
-end
+
+gem 'pg', platform: :ruby
+gem 'mysql2', platform: :ruby
+
+gem 'jdbc-postgres', platform: :jruby
+gem 'jdbc-mysql', platform: :jruby
+gem 'activerecord-jdbc-adapter', platform: :jruby
+gem 'activerecord-jdbcpostgresql-adapter', platform: :jruby
+gem 'activerecord-jdbcmysql-adapter', platform: :jruby
+
 gem 'rspec'
 gem 'crack'
 gem 'awesome_print', require: 'ap'
