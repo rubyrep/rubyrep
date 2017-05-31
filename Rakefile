@@ -1,3 +1,7 @@
+namespace :bundler do
+  require "bundler/gem_tasks"
+end
+
 require_relative 'lib/rubyrep'
 require_relative 'tasks/task_helper'
 

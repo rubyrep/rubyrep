@@ -32,7 +32,7 @@ module RR
     
     # Prints the version to stderr
     def self.show_version
-      $stdout.puts "rubyrep version #{RR::VERSION::STRING}"
+      $stdout.puts "rubyrep version #{RR::VERSION}"
     end
 
 
