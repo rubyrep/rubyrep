@@ -5,4 +5,8 @@ script_dir="`dirname \"$0\"`"
 jruby_path="$script_dir"/jruby/bin/jruby
 rubyrep_path="$script_dir"/bin/rubyrep
 
+# ensure isolation from rvm or other possible existing ruby installations
+unset GEM_HOME
+unset GEM_PATH
+
 $jruby_path --server $rubyrep_path $*
