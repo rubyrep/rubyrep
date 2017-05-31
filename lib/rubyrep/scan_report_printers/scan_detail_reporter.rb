@@ -16,7 +16,7 @@ module RR::ScanReportPrinters
       "The 'mode' argument determines how the row differences are printed:",
       " * full shows the full records",
       " * keys shows the primary key columns only",
-      " * diff shows the primary key and differing columsn only"
+      " * diff shows the primary key and differing columns only"
     
     # The current Session object
     attr_accessor :session
