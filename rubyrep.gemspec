@@ -25,4 +25,5 @@ Gem::Specification.new do |spec|
   spec.add_development_dependency "rspec", "~> 3.5"
 
   spec.add_runtime_dependency "activerecord", "~> 4.2"
+  spec.add_runtime_dependency "awesome_print"
 end
