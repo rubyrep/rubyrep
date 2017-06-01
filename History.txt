@@ -1,4 +1,5 @@
 == 2.0.0 2017-06-01
+
 * Feature: compatibility with Rails 4, Ruby 2.4 and JRuby 9.1
 * Breaking: specify MySQL support in database config with adapter 'mysql2' instead of 'mysql'
 * Breaking: postgres table names must not contains dots (".") anymore
