@@ -15,7 +15,7 @@ Refer to the project website at http://www.rubyrep.org
 
 (The MIT License)
 
-Copyright (c) 2009 Arndt Lehmann
+Copyright (c) 2017 Arndt Lehmann
 
 Permission is hereby granted, free of charge, to any person obtaining
 a copy of this software and associated documentation files (the
