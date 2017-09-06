@@ -109,14 +109,7 @@ module RR
       # @param [ActiveRecord::ConnectionAdapters::PostgreSQLColumn] column the target column
       # @return [String] the quoted string
       def column_aware_quote(value, column)
-        if column.try(:sql_type) == 'bytea'
-          quoted_value = "'#{escape_bytea value}'"
-          # tests showed that there is a wrong leading double backslash under JRuby
-          quoted_value.sub!(/\\\\/, '\\')
-          quoted_value
-        else
-          quote value
-        end
+        quote column.type_cast_for_database value
       end
 
       # Casts a value returned from the database back into the according ruby type.

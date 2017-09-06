@@ -325,6 +325,13 @@ def create_sample_schema(database, config)
         FOREIGN KEY (first_fk, second_fk)
         REFERENCES referenced_table(first_id, second_id)
       end_sql
+
+      create_table :postgres_types do |t|
+        t.text :text_array, array: true
+        t.float :float_array, array: true
+        t.json :json
+        t.jsonb :jsonb
+      end
     end
   end
 end
@@ -337,6 +344,7 @@ def drop_sample_schema(config)
   ActiveRecord::Base.establish_connection config
   
   ActiveRecord::Schema.define do
+    drop_table :postgres_types rescue nil
     drop_table :rr_referencing rescue nil
     drop_table :rr_duplicate rescue nil
     drop_table :table_with_strange_key rescue nil
@@ -353,7 +361,7 @@ def drop_sample_schema(config)
     drop_table :referencing_table rescue nil
     drop_table :referenced_table rescue nil
     drop_table :referenced_table2 rescue nil
-    drop_table :table_with_manual_key
+    drop_table :table_with_manual_key rescue nil
     drop_table :rr_pending_changes rescue nil
     drop_table :rr_logged_events rescue nil
     drop_table :rr_running_flags rescue nil
