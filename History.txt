@@ -1,3 +1,7 @@
+== 2.0.1 2017-09-06
+
+* Bug fix: Should read & write Postgres array and json / jsonb types correctly
+
 == 2.0.0 2017-06-01
 
 * Feature: compatibility with Rails 4, Ruby 2.4 and JRuby 9.1
