@@ -53,7 +53,7 @@ describe TypeCastingCursor do
     # verify that the row values were converted correctly
     row.should == {
       'id' => 1, 
-      'decimal_test' => BigDecimal.new("1.234"),
+      'decimal_test' => BigDecimal("1.234"),
       'timestamp' => Time.local(2007,"nov",10,20,15,1),
       'binary_test' => Marshal.dump(['bla',:dummy,1,2,3])
     }
