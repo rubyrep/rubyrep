@@ -5,3 +5,4 @@ doc/*
 website/.*\.html$
 pkg/*
 tmp/*
+*.gem
