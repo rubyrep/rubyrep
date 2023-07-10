@@ -27,7 +27,7 @@ describe ReplicationHelper do
   it "type_cast should convert unconverted values correctly" do
     session = Session.new
 
-    decimal_data = BigDecimal.new("99999.00001")
+    decimal_data = BigDecimal("99999.00001")
     multi_byte_data = "よろしくお願(ねが)いします yoroshiku onegai shimasu: I humbly ask for your favor."
     binary_data = Marshal.dump(['bla',:dummy,1,2,3])
     timestamp = Time.now.utc
