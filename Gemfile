@@ -1,6 +1,7 @@
 source 'http://rubygems.org'
 
-gem 'activerecord', '~> 4.2'
+#gem 'activerecord', '~> 4.2'
+gem 'activerecord', platform: :ruby
 
 gem 'pg', platform: :ruby
 gem 'mysql2', platform: :ruby

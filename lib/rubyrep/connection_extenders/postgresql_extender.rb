@@ -109,7 +109,8 @@ module RR
       # @param [ActiveRecord::ConnectionAdapters::PostgreSQLColumn] column the target column
       # @return [String] the quoted string
       def column_aware_quote(value, column)
-        quote column.type_cast_for_database value
+        #quote column.type_cast_for_database value
+        quote value
       end
 
       # Casts a value returned from the database back into the according ruby type.
@@ -123,7 +124,8 @@ module RR
           # So #type_cast_from_database must be prevented from double-unescaping the binary data.
             value
         else
-          column.type_cast_from_database value
+          #column.type_cast_from_database value
+          value
         end
       end
 
